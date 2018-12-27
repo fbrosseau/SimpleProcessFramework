@@ -7,7 +7,8 @@
     <authors>francis@malagauche.com</authors>
   </metadata>
   <files>
-    <file src="..\bin\Release\**.exe" />
-    <file src="..\bin\Release\**.dll" />
+    <file src="../bin/$configuration$/**.exe" exclude="**/*Test*.exe" target="tool" />
+    <file src="../bin/$configuration$/**.dll" exclude="**/SimpleProcessFramework.dll,**/*Test*.dll" target="tool" />
+    <file src="../bin/$configuration$/SimpleProcessFramework.dll" target="lib/netstandard2.0" />
   </files>
 </package>
