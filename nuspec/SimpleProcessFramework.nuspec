@@ -7,7 +7,7 @@
     <authors>francis@malagauche.com</authors>
   </metadata>
   <files>
-    <file src="..\bin\debug\**.exe" />
-    <file src="..\bin\debug\**.dll" />
+    <file src="..\bin\Release\**.exe" />
+    <file src="..\bin\Release\**.dll" />
   </files>
 </package>
