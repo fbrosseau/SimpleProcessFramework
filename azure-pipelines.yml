@@ -37,19 +37,20 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: NuGetCommand@2
-  displayName: 'Nuget Pack'
-  inputs:
-    command: pack
-    packagesToPack: '**/*.nuspec'
+#- task: NuGetCommand@2
+#  displayName: 'Nuget Pack'
+#  inputs:
+#    command: pack
+#    packagesToPack: 'nuspec/**.nuspec'
 
-- task: NuGetCommand@2
-  displayName: 'Nuget Push'
-  inputs:
-    command: push
-    nuGetFeedType: external
-    publishFeedCredentials: 'Nuget.org SimpleProcessFramework'
-    versioningScheme: byEnvVar
-    versionEnvVar: Version
+#- task: NuGetCommand@2
+#  displayName: 'Nuget Push'
+#  inputs:
+#    command: push
+#    nuGetFeedType: external
+#    publishFeedCredentials: 'Nuget.org SimpleProcessFramework'
+#    versioningScheme: byEnvVar
+#    versionEnvVar: Version
+#    packagesToPush: nuspec/**.nupkg
 
     
