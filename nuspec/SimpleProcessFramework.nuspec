@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>SimpleProcessFramework</id>
+    <version>0.0.1</version>
+    <description>A library to easily spawn subprocesses across multiple machines, .Net frameworks or operating systems</description>
+    <authors>francis@malagauche.com</authors>
+  </metadata>
+  <files>
+    <file src="..\bin\debug\**.exe" />
+    <file src="..\bin\debug\**.dll" />
+  </files>
+</package>
