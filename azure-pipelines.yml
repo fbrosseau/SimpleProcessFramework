@@ -61,7 +61,7 @@ jobs:
   steps:
   - task: DownloadBuildArtifacts@0
     inputs:
-    buildType: 'current'
-    downloadType: 'single'
-    artifactName: 'BinDrop'
-    downloadPath: '$(System.ArtifactsDirectory)' 
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'BinDrop'
+      downloadPath: '$(System.ArtifactsDirectory)' 
