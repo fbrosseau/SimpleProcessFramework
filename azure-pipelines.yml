@@ -59,9 +59,7 @@ jobs:
   steps:
   - task: DownloadBuildArtifacts@0
     inputs:
-      artifactName: 'drop'
       buildType: 'current'
-      downloadType: 'single'
       downloadPath: '$(System.ArtifactsDirectory)' 
 
   - task: VSTest@2
