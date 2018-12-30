@@ -7,7 +7,7 @@ variables:
   buildConfiguration: 'Release'
 
 jobs:
-- job: Windows Build
+- job: Windows_Build
   pool:
     vmImage: 'vs2017-win2016'
   steps:
@@ -54,8 +54,8 @@ jobs:
   #    versionEnvVar: Version
   #    packagesToPush: nuspec/**.nupkg
 
-- job: Windows Test
-  dependsOn: Windows Build
+- job: Windows_Test
+  dependsOn: Windows_Build
   pool:
     vmImage: 'vs2017-win2016'
   steps:
