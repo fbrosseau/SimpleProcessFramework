@@ -29,8 +29,12 @@ jobs:
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
 
-  - task: PublishBuildArtifacts@1
-    
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)'
+      contents: '**/*'
+      targetFolder: $(Build.ArtifactStagingDirectory)
+
   #- task: NuGetCommand@2
   #  displayName: 'Nuget Pack'
   #  inputs:
@@ -55,6 +59,7 @@ jobs:
   steps:
   - task: DownloadBuildArtifacts@0
     inputs:
+      artifactName: 'drop'
       buildType: 'current'
       downloadType: 'single'
       downloadPath: '$(System.ArtifactsDirectory)' 
