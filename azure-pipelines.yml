@@ -8,6 +8,7 @@ variables:
 
 jobs:
 - job: Windows_Build
+  displayName: 'Windows Build'
   pool:
     vmImage: 'vs2017-win2016'
   steps:
@@ -28,15 +29,7 @@ jobs:
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
 
-  - task: VSTest@2
-    inputs:
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
-
   - task: PublishBuildArtifacts@1
-    inputs: 
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-      artifactName: 'BinDrop' 
     
   #- task: NuGetCommand@2
   #  displayName: 'Nuget Pack'
@@ -55,6 +48,7 @@ jobs:
   #    packagesToPush: nuspec/**.nupkg
 
 - job: Windows_Test
+  displayName: 'Windows Tests'
   dependsOn: Windows_Build
   pool:
     vmImage: 'vs2017-win2016'
@@ -63,5 +57,9 @@ jobs:
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'BinDrop'
       downloadPath: '$(System.ArtifactsDirectory)' 
+
+  - task: VSTest@2
+    inputs:
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
