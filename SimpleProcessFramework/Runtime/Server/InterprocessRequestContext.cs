@@ -47,13 +47,14 @@ namespace SimpleProcessFramework.Runtime.Server
 
         public void SetupCancellationToken()
         {
+            var remoteCall = (RemoteInvocationRequest)Request;
+            if (!remoteCall.Cancellable)
+                return;
+
             m_cts = new CancellationTokenSource();
 
-            if (Request is RemoteInvocationRequest remoteCall)
-            {
-                if (remoteCall.AbsoluteTimeout > TimeSpan.Zero && remoteCall.AbsoluteTimeout != TimeSpan.MaxValue)
-                    m_cts.CancelAfter(remoteCall.AbsoluteTimeout);
-            }
+            if (remoteCall.HasTimeout)
+                m_cts.CancelAfter(remoteCall.AbsoluteTimeout);
         }
 
         public void Respond(object o)

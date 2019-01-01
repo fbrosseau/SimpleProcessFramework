@@ -12,5 +12,9 @@ namespace SimpleProcessFramework.Runtime.Messages
         public ProcessEndpointAddress Destination { get; set; }
         [DataMember]
         public TimeSpan AbsoluteTimeout { get; set; }
+        [DataMember]
+        public bool Cancellable { get; set; }
+
+        public bool HasTimeout => AbsoluteTimeout > TimeSpan.Zero && AbsoluteTimeout != TimeSpan.MaxValue;
     }
 }

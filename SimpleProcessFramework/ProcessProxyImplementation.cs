@@ -62,6 +62,7 @@ namespace SimpleProcessFramework
         {
             remoteCallRequest.Destination = m_remoteAddress;
             remoteCallRequest.AbsoluteTimeout = m_callTimeout;
+            remoteCallRequest.Cancellable = ct.CanBeCanceled || remoteCallRequest.HasTimeout;
 
             var res = await m_handler.ProcessCall(remoteCallRequest, ct).ConfigureAwait(false);
 
