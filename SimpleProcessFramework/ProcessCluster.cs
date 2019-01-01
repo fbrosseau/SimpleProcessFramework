@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SimpleProcessFramework
+﻿namespace SimpleProcessFramework
 {
 
     public class Process

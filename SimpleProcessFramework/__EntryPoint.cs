@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SimpleProcessFramework
+﻿namespace SimpleProcessFramework
 {
     // Found by reflection!
     public class __EntryPoint

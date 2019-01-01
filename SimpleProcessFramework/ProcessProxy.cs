@@ -1,10 +1,8 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Client;
+﻿using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Serialization;
 using System;
 using System.IO;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -121,7 +119,7 @@ namespace SimpleProcessFramework
             var connection = m_connectionFactory.GetConnection(req.Destination);
             var t = connection.SendRequest(req);
 
-            CancellationTokenRegistration ctRegistration = new CancellationTokenRegistration();
+            var ctRegistration = new CancellationTokenRegistration();
 
             if (ct.CanBeCanceled)
             {
