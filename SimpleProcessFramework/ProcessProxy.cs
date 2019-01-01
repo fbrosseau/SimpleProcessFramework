@@ -8,63 +8,6 @@ using System.Threading.Tasks;
 
 namespace SimpleProcessFramework
 {
-    internal interface IInterprocessConnection : IDisposable
-    {
-        void Initialize();
-        Task<object> SendRequest(IInterprocessRequest req);
-    }
-
-
-    internal enum DataKind : byte
-    {
-        Null = 0xAA,
-        Graph = 0xBB,
-        Type = 0xCC,
-        Assembly = 0xDD
-    }
-
-    internal interface IBinarySerializer
-    {
-        Stream Serialize<T>(T graph);
-        T Deserialize<T>(Stream s);
-    }
-
-    internal class SerializerSession
-    {
-        public Stream Stream { get; }
-        public BinaryWriter Writer { get; }
-
-        public SerializerSession(Stream ms)
-        {
-            Stream = ms;
-            Writer = new BinaryWriter(ms);
-        }
-
-        internal void WriteType(Type actualType)
-        {
-            Stream.WriteByte((byte)DataKind.Type);
-            Writer.Write(actualType.AssemblyQualifiedName);
-        }
-    }
-
-    internal interface ITypeSerializer
-    {
-        void WriteObject(SerializerSession bw, object graph);
-        object ReadObject(DeserializerSession reader);
-    }
-
-    internal class DeserializerSession
-    {
-        public Stream Stream { get; }
-        public BinaryReader Reader { get; }
-
-        public DeserializerSession(Stream s)
-        {
-            Stream = s;
-            Reader = new BinaryReader(s);
-        }
-    }
-
     internal class SameProcessConnection : IInterprocessConnection
     {
         public SameProcessConnection()
