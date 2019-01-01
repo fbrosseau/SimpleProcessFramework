@@ -22,7 +22,7 @@ namespace SimpleProcessFramework
         private static long s_nextId;
 
         public RemoteCallCompletion()
-            : base(TaskContinuationOptions.RunContinuationsAsynchronously)
+            : base(TaskCreationOptions.RunContinuationsAsynchronously)
         {
             Id = Interlocked.Increment(ref s_nextId);
         }

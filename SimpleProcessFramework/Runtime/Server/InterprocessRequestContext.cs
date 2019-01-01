@@ -25,7 +25,7 @@ namespace SimpleProcessFramework.Runtime.Server
             Client = client;
             Request = req;
             m_handler = endpointHandler;
-            m_tcs = new TaskCompletionSource<object>(TaskContinuationOptions.RunContinuationsAsynchronously);
+            m_tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             m_tcs.Task.ContinueWith((t, s) => ((InterprocessRequestContext)s).MarkAsCompleted(), this, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
@@ -87,8 +87,8 @@ namespace SimpleProcessFramework.Runtime.Server
         {
             public static MethodInfo CompleteWithTaskMethod => typeof(IInterprocessRequestContext)
                 .FindUniqueMethod(nameof(CompleteWithTask));
-            public static MethodInfo CompleteWithTaskOfTMethod => typeof(IInterprocessRequestContext)
-                .FindUniqueMethod(nameof(CompleteWithTaskOfT));
+            public static MethodInfo GetCompleteWithTaskOfTMethod(Type resultType) => typeof(IInterprocessRequestContext)
+                .FindUniqueMethod(nameof(CompleteWithTaskOfT)).MakeGenericMethod(resultType);
             public static MethodInfo Get_RequestMethod => typeof(IInterprocessRequestContext)
                 .GetProperty(nameof(Request)).GetGetMethod();
             public static MethodInfo Get_CancellationMethod => typeof(IInterprocessRequestContext)
