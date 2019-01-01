@@ -110,7 +110,7 @@ namespace SimpleProcessFramework.Runtime.Client
                         {
                             if (argType.IsValueType)
                             {
-                                ilgen.EmitCall(OpCodes.Call, BoxHelper.Reflection.GetBoxMethod(argType), null);
+                                BoxHelper.Reflection.EmitBox(ilgen, argType);
                             }
 
                             if (argType.IsByRef)
