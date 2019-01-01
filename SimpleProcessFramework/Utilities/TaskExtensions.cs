@@ -63,7 +63,7 @@ namespace SimpleProcessFramework.Utilities
                     }
                     else
                     {
-                        innerTcs.TrySetResult(((Task<T>)innerTask).Result);
+                        innerTcs.TrySetResult(BoxHelper.Box(((Task<T>)innerTask).Result));
                     }
                 }
                 else if (innerTask.Status == TaskStatus.Canceled)
