@@ -1,16 +1,18 @@
-﻿using System.IO;
+﻿using Oopi.Utilities;
+using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SimpleProcessFramework.Reflection
 {
-    [DataContract]
-    public class ReflectedAssemblyInfo
+    [DataContract(IsReference = true)]
+    public class ReflectedAssemblyInfo : IEquatable<ReflectedAssemblyInfo>
     {
         private Assembly m_resolvedAssembly;
 
         [DataMember]
-        public string Name { get; }
+        public string Name { get; private set; }
 
         public Assembly ResolvedAssembly
         {
@@ -29,8 +31,18 @@ namespace SimpleProcessFramework.Reflection
 
         public ReflectedAssemblyInfo(Assembly assembly)
         {
-            Name = Name;
+            Guard.ArgumentNotNull(assembly, nameof(assembly));
+
+            Name = assembly.FullName;
             m_resolvedAssembly = assembly;
+        }
+
+        public override bool Equals(object obj) { return Equals(obj as ReflectedAssemblyInfo); }
+        public override int GetHashCode() => Name.GetHashCode();
+
+        public bool Equals(ReflectedAssemblyInfo other)
+        {
+            return Name == other?.Name;
         }
     }
 }

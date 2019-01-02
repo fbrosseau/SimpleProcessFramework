@@ -103,7 +103,6 @@ namespace SimpleProcessFramework.Runtime.Server
             ilgen.Emit(OpCodes.Stloc, rawArgsArrayLocal);
 
             var jumpLabels = new List<Label>();
-            var returnTypes = new Dictionary<Type, int>();
 
             var methodDescriptors = new List<ProcessEndpointMethodDescriptor>();
             foreach (var m in allMethods)
@@ -116,9 +115,6 @@ namespace SimpleProcessFramework.Runtime.Server
                 });
 
                 jumpLabels.Add(ilgen.DefineLabel());
-
-                returnTypes.TryGetValue(m.ReturnType, out var count);
-                returnTypes[m.ReturnType] = count + 1;
             }
 
             ilgen.Emit(ldarg_this);
@@ -136,7 +132,7 @@ namespace SimpleProcessFramework.Runtime.Server
             ilgen.EmitCall(OpCodes.Callvirt, ProcessEndpointHandler.Reflection.ThrowBadInvocationMethod, null);
             ilgen.Emit(OpCodes.Br, returnLabel); // won't happen, this throws
 
-            Label? voidTaskCompletionLabel = null;
+            var taskLocals = new Dictionary<Type, LocalBuilder>();
 
             int i = 0;
             foreach (var m in allMethods)
@@ -173,27 +169,22 @@ namespace SimpleProcessFramework.Runtime.Server
 
                 if (typeof(Task).IsAssignableFrom(m.ReturnType))
                 {
+                    if (!taskLocals.TryGetValue(m.ReturnType, out LocalBuilder taskLocal))
+                        taskLocals[m.ReturnType] = taskLocal = ilgen.DeclareLocal(m.ReturnType);
+
+                    ilgen.Emit(OpCodes.Stloc, taskLocal);
+                    ilgen.Emit(ldarg_callContext);
+                    ilgen.Emit(OpCodes.Ldloc, taskLocal);
                     if (m.ReturnType == typeof(Task))
                     {
-                        if (voidTaskCompletionLabel == null)
-                            voidTaskCompletionLabel = ilgen.DefineLabel();
-
-                        ilgen.Emit(OpCodes.Br, voidTaskCompletionLabel.Value);
+                        ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.CompleteWithTaskMethod, null);
                     }
                     else
                     {
+                        ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(m.ReturnType.GetGenericArguments()[0]), null);
                     }
+                    ilgen.Emit(OpCodes.Br, returnLabel);
                 }
-            }
-
-            if (voidTaskCompletionLabel != null)
-            {
-                ilgen.MarkLabel(voidTaskCompletionLabel.Value);
-                var taskLocal = ilgen.DeclareLocal(typeof(Task));
-                ilgen.Emit(OpCodes.Stloc, taskLocal);
-                ilgen.Emit(ldarg_callContext);
-                ilgen.Emit(OpCodes.Ldloc, taskLocal);
-                ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.CompleteWithTaskMethod, null);
             }
 
             ilgen.MarkLabel(returnLabel);

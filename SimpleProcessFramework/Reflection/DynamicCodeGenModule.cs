@@ -5,7 +5,7 @@ namespace SimpleProcessFramework.Reflection
 {
     internal static class DynamicCodeGenModule
     {
-        public const string DynamicModuleName = "SimpleProcessFrameworkDynamicAssembly";
+        public const string DynamicModuleName = "SimpleProcessFramework.DynamicAssembly";
         public static ModuleBuilder DynamicModule { get; }
 
         static DynamicCodeGenModule()

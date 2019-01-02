@@ -12,7 +12,7 @@ namespace SimpleProcessFramework.CoreEndpoints
             return Task.FromException(new Exception());
         }
 
-        public Task AutoDestroy2(int i, CancellationToken ct)
+        public Task AutoDestroy2(ZOOM i, CancellationToken ct)
         {
             var tcs = new TaskCompletionSource<int>();
             ct.Register(() => tcs.TrySetResult(5));

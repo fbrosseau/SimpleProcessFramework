@@ -14,7 +14,7 @@ namespace SimpleProcessFramework.Serialization
     {
         public object ReadObject(DeserializerSession reader)
         {
-            int count = reader.Reader.ReadInt32();
+            int count = reader.Reader.ReadEncodedInt32();
             if (count == 0)
                 return Array.Empty<T>();
 
@@ -31,7 +31,7 @@ namespace SimpleProcessFramework.Serialization
         public void WriteObject(SerializerSession bw, object graph)
         {
             var arr = (T[])graph;
-            bw.Writer.Write(arr.Length);
+            bw.Writer.WriteEncodedInt32(arr.Length);
 
             foreach (var i in arr)
             {

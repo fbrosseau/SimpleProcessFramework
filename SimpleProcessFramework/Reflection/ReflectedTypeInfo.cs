@@ -4,18 +4,19 @@ using System.Runtime.Serialization;
 
 namespace SimpleProcessFramework.Reflection
 {
-    public class ReflectedTypeInfo
+    [DataContract(IsReference = true)]
+    public class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>
     {
         private Type m_resolvedType;
 
         [DataMember]
-        public ReflectedAssemblyInfo Assembly { get; }
+        public ReflectedAssemblyInfo Assembly { get; private set; }
 
         [DataMember]
-        public ReflectedTypeInfo[] GenericParameters { get; }
+        public ReflectedTypeInfo[] GenericParameters { get; private set; }
 
         [DataMember]
-        public string Name { get; }
+        public string Name { get; private set; }
 
         public Type ResolvedType
         {
@@ -40,6 +41,16 @@ namespace SimpleProcessFramework.Reflection
 
             if (t.IsGenericType)
                 GenericParameters = t.GetGenericArguments().Select(a => new ReflectedTypeInfo(a)).ToArray();
+        }
+
+        public override bool Equals(object obj) { return Equals(obj as ReflectedTypeInfo); }
+        public override int GetHashCode() => Assembly.GetHashCode() ^ Name.GetHashCode();
+
+        public bool Equals(ReflectedTypeInfo other)
+        {
+            if (other is null)
+                return false;
+            return other.Name == Name && other.Assembly.Equals(Assembly);
         }
     }
 }

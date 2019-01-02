@@ -5,6 +5,7 @@
         Null = 0xAA,
         Graph = 0xBB,
         Type = 0xCC,
-        Assembly = 0xDD
+        Assembly = 0xDD,
+        Ref = 0xDE
     }
 }

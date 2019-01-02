@@ -1,4 +1,5 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,13 +11,13 @@ namespace SimpleProcessFramework.Serialization
 {
     internal class DefaultBinarySerializer : IBinarySerializer
     {
-        private const int MagicHeader = unchecked((int)0xBEEF1234);
+        internal const int MagicHeader = unchecked((int)0xBEEF1234);
 
         public T Deserialize<T>(Stream s)
         {
             var reader = new DeserializerSession(s);
-            if (reader.Reader.ReadInt32() != MagicHeader)
-                throw new SerializationException("Data is invalid");
+
+            reader.PrepareRead();
 
             return (T)Deserialize(reader, typeof(T));
         }
@@ -30,21 +31,23 @@ namespace SimpleProcessFramework.Serialization
                     case DataKind.Null:
                         return null;
                     case DataKind.Type:
-                        var typeName = reader.Reader.ReadString();
-                        expectedType = Type.GetType(typeName);
+                        var typeName = (ReflectedTypeInfo)reader.ReadReference(readHeader: true);
+                        expectedType = typeName.ResolvedType;
                         break;
                     case DataKind.Assembly:
 
                         break;
                     case DataKind.Graph:
-                        return ReadGraph(reader, expectedType);
+                        return DeserializeExactType(reader, expectedType);
+                    case DataKind.Ref:
+                        return reader.ReadReference(readHeader: false);
                     default:
                         throw new SerializationException("Data is invalid");
                 }
             }
         }
 
-        private static object ReadGraph(DeserializerSession reader, Type expectedType)
+        internal static object DeserializeExactType(DeserializerSession reader, Type expectedType)
         {
             var serializer = GetSerializer(expectedType);
             return serializer.ReadObject(reader);
@@ -54,8 +57,9 @@ namespace SimpleProcessFramework.Serialization
         {
             MemoryStream ms = new MemoryStream();
             var writer = new SerializerSession(ms);
-            writer.Writer.Write(MagicHeader);
+            writer.BeginSerialization();
             Serialize(writer, graph, typeof(T));
+            writer.FinishSerialization();
             ms.Position = 0;
             return ms;
         }
@@ -64,7 +68,7 @@ namespace SimpleProcessFramework.Serialization
         {
             if (graph is null)
             {
-                bw.Stream.WriteByte((byte)DataKind.Null);
+                bw.WriteMetadata(DataKind.Null);
                 return;
             }
 
@@ -74,8 +78,13 @@ namespace SimpleProcessFramework.Serialization
                 bw.WriteType(actualType);
             }
 
-            bw.Stream.WriteByte((byte)DataKind.Graph);
+            bw.WriteMetadata(DataKind.Graph);
 
+            SerializeExactType(bw, graph, actualType);
+        }
+
+        internal static void SerializeExactType(SerializerSession bw, object graph, Type actualType)
+        {
             var serializer = GetSerializer(actualType);
             serializer.WriteObject(bw, graph);
         }

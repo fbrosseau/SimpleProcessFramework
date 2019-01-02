@@ -22,6 +22,10 @@ namespace SimpleProcessFramework.Runtime.Server
 
         public InterprocessRequestContext(ProcessEndpointHandler endpointHandler, IInterprocessClientContext client, IInterprocessRequest req)
         {
+            Guard.ArgumentNotNull(endpointHandler, nameof(endpointHandler));
+            Guard.ArgumentNotNull(client, nameof(client));
+            Guard.ArgumentNotNull(req, nameof(req));
+
             Client = client;
             Request = req;
             m_handler = endpointHandler;

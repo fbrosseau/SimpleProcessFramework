@@ -7,18 +7,28 @@ namespace SimpleProcessFramework.Serialization
 {
     internal class ReflectedDataContractSerializer : ITypeSerializer
     {
-        private class ReflectedDataMember
+        internal class ReflectedMemberTypeInfo
+        {
+            public Func<object, bool> IsDefaultValueForType;
+            public object DefaultValueForType;
+            public Type MemberType;
+            public bool IsValueType;
+        }
+
+        internal class ReflectedDataMember
         {
             public string Name;
             public MemberInfo MemberInfo;
-            public Type MemberType;
-            internal Func<object, object> GetAccessor;
-            internal Action<object, object> SetAccessor;
+            public Func<object, object> GetAccessor;
+            public Action<object, object> SetAccessor;
+            public ReflectedMemberTypeInfo TypeInfo;
         }
 
-        private ReflectedDataMember[] m_members;
+        internal IReadOnlyList<ReflectedDataMember> Members { get; }
         private readonly Type m_reflectedType;
         private readonly Func<object> m_constructor;
+        private static readonly Dictionary<Type, ReflectedMemberTypeInfo> s_typeInfos = new Dictionary<Type, ReflectedMemberTypeInfo>();
+        private static readonly Func<object, bool> s_fallbackIsDefaultValue = o => o is null;
 
         public ReflectedDataContractSerializer(Type actualType)
         {
@@ -42,74 +52,121 @@ namespace SimpleProcessFramework.Serialization
                     MemberInfo = memberInfo
                 };
 
+                Type memberType;
                 if(memberInfo is FieldInfo fi)
                 {
-                    member.MemberType = fi.FieldType;
+                    memberType = fi.FieldType;
                     member.GetAccessor = o => fi.GetValue(o);
                     member.SetAccessor = (o, v) => fi.SetValue(o, v);
                 }
                 else
                 {
                     var pi = (PropertyInfo)memberInfo;
-                    member.MemberType = pi.PropertyType;
+                    memberType = pi.PropertyType;
                     member.GetAccessor = o => pi.GetValue(o);
                     member.SetAccessor = (o, v) => pi.SetValue(o, v);
                 }
+
+                member.TypeInfo = GetTypeInfo(memberType);
 
                 members.Add(member);
             }
 
             members.Sort((m1, m2) => m1.Name.CompareTo(m2.Name));
-            m_members = members.ToArray();
+            Members = members.ToArray();
+        }
+
+        private ReflectedMemberTypeInfo GetTypeInfo(Type memberType)
+        {
+            ReflectedMemberTypeInfo info;
+            lock (s_typeInfos)
+            {
+                if (s_typeInfos.TryGetValue(memberType, out info))
+                    return info;
+            }
+
+            info = new ReflectedMemberTypeInfo
+            {
+                MemberType = memberType,
+                IsValueType = memberType.IsValueType
+            };
+
+            if (!info.IsValueType)
+            {
+                info.IsDefaultValueForType = s_fallbackIsDefaultValue;
+            }
+            else
+            {
+                info.DefaultValueForType = Activator.CreateInstance(memberType);
+                info.IsDefaultValueForType = o => info.DefaultValueForType.Equals(o);
+            }
+
+            lock (s_typeInfos)
+            {
+                if (s_typeInfos.TryGetValue(memberType, out var existing))
+                    return existing;
+
+                s_typeInfos[memberType] = info;
+                return info;
+            }
         }
 
         public void WriteObject(SerializerSession bw, object graph)
         {
-            foreach(var mem in m_members)
+            var baseLocation = bw.Stream.Position;
+            bw.Stream.Position += 4;
+
+            foreach (var mem in Members)
             {
                 var value = mem.GetAccessor(graph);
-                if (value is null)
+                if (mem.TypeInfo.IsDefaultValueForType(value))
                     continue;
 
-                bw.Writer.Write(mem.Name);
-                bw.Writer.Flush();
+                bw.WriteReference(mem.Name);
 
-                var location = bw.Stream.Position;
+                var locationBeforeMember = bw.Stream.Position;
                 bw.Stream.Position += 4;
 
-                DefaultBinarySerializer.Serialize(bw, value, mem.MemberType);
+                if (mem.TypeInfo.IsValueType)
+                    DefaultBinarySerializer.SerializeExactType(bw, value, mem.TypeInfo.MemberType);
+                else
+                    DefaultBinarySerializer.Serialize(bw, value, mem.TypeInfo.MemberType);
 
-                var newLocation = bw.Stream.Position;
-                bw.Stream.Position = location;
-                bw.Writer.Write(checked((int)(newLocation - location - 4)));
-                bw.Writer.Flush();
-                bw.Stream.Position = newLocation;
+                bw.WritePositionDelta(locationBeforeMember);
             }
+
+            bw.WritePositionDelta(baseLocation);
         }
 
         public object ReadObject(DeserializerSession reader)
         {
             object graph = m_constructor();
-            if (m_members.Length == 0)
-                return graph;
 
             int currentMemberIndex = 0;
 
-            while(currentMemberIndex < m_members.Length)
+            var totalGraphBytes = reader.Reader.ReadInt32();
+            var graphEndPosition = reader.Stream.Position + totalGraphBytes;
+
+            while (currentMemberIndex < Members.Count && reader.Stream.Position < graphEndPosition)
             {
-                var memberName = reader.Reader.ReadString();
+                var memberName = (string)reader.ReadReference(readHeader: true);
                 var memberBytes = reader.Reader.ReadInt32();
 
                 void ReadMember()
                 {
-                    if (currentMemberIndex >= m_members.Length)
+                    if (currentMemberIndex >= Members.Count)
                         return;
 
-                    var expectedMember = m_members[currentMemberIndex];
+                    var expectedMember = Members[currentMemberIndex];
                     var comparison = memberName.CompareTo(expectedMember.Name);
                     if (comparison == 0)
                     {
-                        var value = DefaultBinarySerializer.Deserialize(reader, expectedMember.MemberType);
+                        object value;
+                        if (expectedMember.TypeInfo.IsValueType)
+                            value = DefaultBinarySerializer.DeserializeExactType(reader, expectedMember.TypeInfo.MemberType);
+                        else
+                            value = DefaultBinarySerializer.Deserialize(reader, expectedMember.TypeInfo.MemberType);
+
                         expectedMember.SetAccessor(graph, value);
                         ++currentMemberIndex;
                     }
@@ -119,6 +176,7 @@ namespace SimpleProcessFramework.Serialization
                     }
                     else
                     {
+                        expectedMember.SetAccessor(graph, expectedMember.TypeInfo.DefaultValueForType);
                         ++currentMemberIndex;
                         ReadMember();
                     }
@@ -126,6 +184,8 @@ namespace SimpleProcessFramework.Serialization
 
                 ReadMember();
             }
+
+            reader.Stream.Position = graphEndPosition;
 
             return graph;
         }
