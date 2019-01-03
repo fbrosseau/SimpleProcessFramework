@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
     public interface IInterprocessClientChannel
     {
-        void SendResponse(long callId, Task<object> completion);
+        void SendFailure(long callId, Exception fault);
+        void SendResponse(long callId, object completion);
     }
 }

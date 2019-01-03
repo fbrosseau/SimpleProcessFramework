@@ -15,6 +15,7 @@ namespace SimpleProcessFramework.Runtime.Messages
         [DataMember]
         public bool Cancellable { get; set; }
 
+        public virtual bool ExpectResponse => true;
         public bool HasTimeout => AbsoluteTimeout > TimeSpan.Zero && AbsoluteTimeout != TimeSpan.MaxValue;
     }
 }

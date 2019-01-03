@@ -1,5 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SimpleProcessFramework.Runtime.Client;
+using SimpleProcessFramework.Runtime.Messages;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Tests
@@ -18,16 +21,16 @@ namespace SimpleProcessFramework.Tests
 
         private class TestCallHandler : IProxiedCallHandler
         {
-            private readonly Func<RemoteInvocationRequest, Task<object>> m_func;
+            private readonly Func<RemoteInvocationRequest, CancellationToken, Task<object>> m_func;
 
-            public TestCallHandler(Func<RemoteInvocationRequest, Task<object>> func)
+            public TestCallHandler(Func<RemoteInvocationRequest, CancellationToken, Task<object>> func)
             {
                 m_func = func;
             }
 
-            public Task<object> ProcessCall(RemoteInvocationRequest req)
+            public Task<object> ProcessCall(RemoteInvocationRequest req, CancellationToken ct)
             {
-                return m_func(req);
+                return m_func(req,ct);
             }
         }
 
@@ -39,7 +42,7 @@ namespace SimpleProcessFramework.Tests
             object expectedResult = null;
 
             ProcessEndpointAddress actualAddress = null;
-            var handler = new TestCallHandler(req =>
+            var handler = new TestCallHandler((req, ct) =>
             {
                 actualAddress = req.Destination;
                 return Task.FromResult(expectedResult);
@@ -62,7 +65,7 @@ namespace SimpleProcessFramework.Tests
             var expectedResult = 12345;
 
             ProcessEndpointAddress actualAddress = null;
-            var handler = new TestCallHandler(req =>
+            var handler = new TestCallHandler((req, ct) =>
             {
                 actualAddress = req.Destination;
                 return Task.FromResult((object)expectedResult);

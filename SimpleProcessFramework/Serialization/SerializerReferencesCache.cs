@@ -1,4 +1,5 @@
 ﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
 using System;
 using System.Collections.Generic;
@@ -26,19 +27,40 @@ namespace SimpleProcessFramework.Serialization
                 HardcodedReferences.m_referencesByObject[o] = -HardcodedReferences.m_referencesByObject.Count - 1;
             }
 
-            void AddHardcodedTypeReference(Type t)
+            void AddHardcodedTypeReference(Type t, bool addAllTypeVariations = false)
             {
-                AddHardcodedReference(new ReflectedTypeInfo(t));
+                var typeInfo = ReflectedTypeInfo.AddWellKnownType(t);
+
+                AddHardcodedReference(typeInfo);
+
+                if (addAllTypeVariations)
+                {
+                    AddHardcodedTypeReference(t.MakeArrayType());
+                    AddHardcodedTypeReference(typeof(List<>).MakeGenericType(t));
+                    if (t.IsValueType)
+                        AddHardcodedTypeReference(typeof(Nullable<>).MakeGenericType(t));
+                }
             }
 
-            AddHardcodedReference(new ReflectedAssemblyInfo(typeof(ReflectedAssemblyInfo).Assembly));
+            AddHardcodedReference(ReflectedAssemblyInfo.Create(typeof(ReflectedAssemblyInfo).Assembly));
             
-            var criticalTypes = new[] 
+            var primitiveTypes = new[] 
             {
                 typeof(string),
+                typeof(bool),
+                typeof(sbyte),
+                typeof(short),
                 typeof(int),
+                typeof(long),
+                typeof(byte),
+                typeof(ushort),
+                typeof(uint),
+                typeof(ulong),
+                typeof(Guid),
+                typeof(float),
+                typeof(double),
+                typeof(decimal),
                 typeof(object),
-                typeof(CancellationToken)
             };
 
             var criticalInternalTypes = new[]
@@ -47,12 +69,18 @@ namespace SimpleProcessFramework.Serialization
                 typeof(RemoteCallCancellationRequest),
                 typeof(ReflectedAssemblyInfo),
                 typeof(ReflectedTypeInfo),
-                typeof(ReflectedMethodInfo)
+                typeof(ReflectedMethodInfo),
+                typeof(RemoteCallFailureResponse),
+                typeof(RemoteCallSuccessResponse),
+                typeof(RemoteClientConnectionRequest),
+                typeof(RemoteClientConnectionResponse),
             };
 
-            foreach (var t in criticalTypes)
+            AddHardcodedTypeReference(typeof(CancellationToken));
+
+            foreach (var t in primitiveTypes)
             {
-                AddHardcodedTypeReference(t);
+                AddHardcodedTypeReference(t, addAllTypeVariations: true);
             }
 
             var memberNames = new HashSet<string>();
@@ -92,7 +120,7 @@ namespace SimpleProcessFramework.Serialization
                 return null;
 
             var objectType = obj.GetType();
-            var objectTypeInfo = new ReflectedTypeInfo(objectType);
+            var objectTypeInfo = ReflectedTypeInfo.Create(objectType);
             GetOrCreateCacheIndex(objectTypeInfo);
 
             idx = m_referencesByObject.Count;

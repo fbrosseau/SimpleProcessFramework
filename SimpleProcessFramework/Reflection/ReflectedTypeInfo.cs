@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -7,6 +9,8 @@ namespace SimpleProcessFramework.Reflection
     [DataContract(IsReference = true)]
     public class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>
     {
+        private static readonly Dictionary<Type, ReflectedTypeInfo> s_knownTypes;
+
         private Type m_resolvedType;
 
         [DataMember]
@@ -33,18 +37,38 @@ namespace SimpleProcessFramework.Reflection
             }
         }
 
-        public ReflectedTypeInfo(Type t)
+        private ReflectedTypeInfo(Type t)
         {
             Name = t.FullName;
-            Assembly = new ReflectedAssemblyInfo(t.Assembly);
+            Assembly = ReflectedAssemblyInfo.Create(t.Assembly);
             m_resolvedType = t;
 
             if (t.IsGenericType)
                 GenericParameters = t.GetGenericArguments().Select(a => new ReflectedTypeInfo(a)).ToArray();
         }
 
+        public static ReflectedTypeInfo Create(Type t)
+        {
+            if (s_knownTypes.TryGetValue(t, out var reflectedInfo))
+                return reflectedInfo;
+            return new ReflectedTypeInfo(t);
+        }
+
+        static ReflectedTypeInfo()
+        {
+            s_knownTypes = new Dictionary<Type, ReflectedTypeInfo>();
+        }
+
+        internal static ReflectedTypeInfo AddWellKnownType(Type t)
+        {
+            var ti = new ReflectedTypeInfo(t);
+            s_knownTypes.Add(t, ti);
+            return ti;
+        }
+
         public override bool Equals(object obj) { return Equals(obj as ReflectedTypeInfo); }
         public override int GetHashCode() => Assembly.GetHashCode() ^ Name.GetHashCode();
+        public override string ToString() => Name;
 
         public bool Equals(ReflectedTypeInfo other)
         {

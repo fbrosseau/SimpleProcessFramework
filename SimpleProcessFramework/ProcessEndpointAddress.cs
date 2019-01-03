@@ -1,5 +1,7 @@
 ﻿using Oopi.Utilities;
+using SimpleProcessFramework.Utilities;
 using System;
+using System.Net;
 using System.Runtime.Serialization;
 
 namespace SimpleProcessFramework
@@ -15,7 +17,8 @@ namespace SimpleProcessFramework
         private bool m_parsed;
         private string m_hostAuthority;
         private string m_targetProcess;
-        private string m_targetEndpoint;
+        private string m_finalEndpoint;
+        private EndPoint m_hostEndpoint;
 
         public string HostAuthority
         {
@@ -48,11 +51,21 @@ namespace SimpleProcessFramework
             get
             {
                 EnsureParsed();
-                return m_targetEndpoint;
+                return m_finalEndpoint;
             }
             private set
             {
-                m_targetEndpoint = value;
+                m_finalEndpoint = value;
+            }
+        }
+
+        public EndPoint HostEndpoint
+        {
+            get
+            {
+                if (m_hostEndpoint is null)
+                    m_hostEndpoint = EndpointHelper.ParseEndpoint(HostAuthority, ProcessCluster.DefaultRemotePort);
+                return m_hostEndpoint;
             }
         }
 
@@ -90,7 +103,7 @@ namespace SimpleProcessFramework
             m_parsed = true;
             m_hostAuthority = hostAuthority;
             m_targetProcess = targetProcess;
-            m_targetEndpoint = targetEndpoint;
+            m_finalEndpoint = targetEndpoint;
         }
 
         public static ProcessEndpointAddress Parse(string addr)

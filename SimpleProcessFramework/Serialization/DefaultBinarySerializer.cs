@@ -53,14 +53,23 @@ namespace SimpleProcessFramework.Serialization
             return serializer.ReadObject(reader);
         }
 
-        public Stream Serialize<T>(T graph)
+        public Stream Serialize<T>(T graph, bool lengthPrefix)
         {
             MemoryStream ms = new MemoryStream();
+
+            if (lengthPrefix)
+                ms.Position = 4;
+
             var writer = new SerializerSession(ms);
             writer.BeginSerialization();
             Serialize(writer, graph, typeof(T));
             writer.FinishSerialization();
+
+            if (lengthPrefix)
+                writer.WritePositionDelta(0);
+
             ms.Position = 0;
+
             return ms;
         }
 
@@ -137,6 +146,9 @@ namespace SimpleProcessFramework.Serialization
             AddSerializer(typeof(string), new SimpleTypeSerializer(
                 (bw, o) => bw.Writer.Write((string)o),
                 br => br.Reader.ReadString()));
+            AddSerializer(typeof(bool), new SimpleTypeSerializer(
+                (bw, o) => bw.Writer.Write((bool)o ? (byte)1:(byte)0),
+                br => BoxHelper.Box(br.Reader.ReadByte() != 0)));
             AddSerializer(typeof(CancellationToken), new SimpleTypeSerializer(
                 (bw, o) => { },
                 br => BoxHelper.BoxedCancellationToken));

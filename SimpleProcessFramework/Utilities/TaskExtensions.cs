@@ -76,5 +76,10 @@ namespace SimpleProcessFramework.Utilities
                 }
             }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
+
+        public static void FireAndForget(this Task t)
+        {
+            // empty on purpose
+        }
     }
 }

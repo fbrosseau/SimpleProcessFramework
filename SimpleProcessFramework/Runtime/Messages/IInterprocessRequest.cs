@@ -6,5 +6,7 @@ namespace SimpleProcessFramework.Runtime.Messages
     {
         [DataMember]
         long CallId { get; set; }
+
+        bool ExpectResponse { get; }
     }
 }

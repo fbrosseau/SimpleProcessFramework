@@ -1,23 +1,9 @@
 ﻿using SimpleProcessFramework.Reflection;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace SimpleProcessFramework.Serialization
 {
-    internal class SerializerBinaryWriter : BinaryWriter
-    {
-        public SerializerBinaryWriter(Stream output)
-            : base(output)
-        {
-        }
-
-        public void WriteEncodedInt32(int i)
-        {
-            Write(i);
-        }
-    }
-
     internal class SerializerSession
     {
         public Stream Stream { get; }
@@ -35,7 +21,7 @@ namespace SimpleProcessFramework.Serialization
         internal void WriteType(Type actualType)
         {
             WriteMetadata(DataKind.Type);
-            WriteReference(new ReflectedTypeInfo(actualType));
+            WriteReference(ReflectedTypeInfo.Create(actualType));
         }
 
         internal void BeginSerialization()

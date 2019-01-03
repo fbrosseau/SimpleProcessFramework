@@ -26,6 +26,7 @@ namespace SimpleProcessFramework.Serialization
 
         internal IReadOnlyList<ReflectedDataMember> Members { get; }
         private readonly Type m_reflectedType;
+        private readonly bool m_isSerializedByRef;
         private readonly Func<object> m_constructor;
         private static readonly Dictionary<Type, ReflectedMemberTypeInfo> s_typeInfos = new Dictionary<Type, ReflectedMemberTypeInfo>();
         private static readonly Func<object, bool> s_fallbackIsDefaultValue = o => o is null;
@@ -33,6 +34,7 @@ namespace SimpleProcessFramework.Serialization
         public ReflectedDataContractSerializer(Type actualType)
         {
             m_reflectedType = actualType;
+            m_isSerializedByRef = actualType.GetCustomAttribute<DataContractAttribute>()?.IsReference ?? false;
             var defaultCtor = actualType.GetConstructor(Type.EmptyTypes);
             if (defaultCtor != null)
                 m_constructor = () => Activator.CreateInstance(m_reflectedType);
@@ -158,7 +160,7 @@ namespace SimpleProcessFramework.Serialization
                         return;
 
                     var expectedMember = Members[currentMemberIndex];
-                    var comparison = memberName.CompareTo(expectedMember.Name);
+                    var comparison = StringComparer.Ordinal.Compare(memberName, expectedMember.Name);
                     if (comparison == 0)
                     {
                         object value;

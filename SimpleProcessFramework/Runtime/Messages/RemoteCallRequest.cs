@@ -12,9 +12,9 @@ namespace SimpleProcessFramework.Runtime.Messages
         public int MethodId { get; set; }
 
         [DataMember]
-        public object[] Args { get; set; }
+        public object[] Arguments { get; set; }
 
-        public object[] GetArgsOrEmpty() => Args ?? Array.Empty<object>();
+        public object[] GetArgsOrEmpty() => Arguments ?? Array.Empty<object>();
 
         internal static class Reflection
         {

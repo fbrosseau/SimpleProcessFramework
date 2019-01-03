@@ -1,35 +1,10 @@
 ﻿using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework
 {
-    internal class SameProcessConnection : IInterprocessConnection
-    {
-        public SameProcessConnection()
-        {
-
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public void Initialize()
-        {
-        }
-
-        public Task<object> SendRequest(IInterprocessRequest req)
-        {
-            var s = new DefaultBinarySerializer().Serialize(req);
-            var req2 = new DefaultBinarySerializer().Deserialize<IInterprocessRequest>(s);
-            throw null;
-        }
-    }
 
     internal interface IConnectionFactory
     {

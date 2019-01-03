@@ -32,6 +32,8 @@
 
     public class ProcessCluster
     {
+        public const int DefaultRemotePort = 41412;
+
         private ProcessClusterConfiguration m_config;
 
         public ProcessProxy PrimaryProxy => MasterProcess.ClusterProxy;

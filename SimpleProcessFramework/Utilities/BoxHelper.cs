@@ -24,6 +24,10 @@ namespace SimpleProcessFramework.Utilities
         {
             if (typeof(T) == typeof(VoidType))
                 return VoidType.BoxedValue;
+            if (typeof(T) == typeof(byte))
+                return ((BoxHelperImpl<T>)(object)ByteBoxHelper.Instance).Box(val);
+            if (typeof(T) == typeof(short))
+                return ((BoxHelperImpl<T>)(object)Int16BoxHelper.Instance).Box(val);
             if (typeof(T) == typeof(int))
                 return ((BoxHelperImpl<T>)(object)Int32BoxHelper.Instance).Box(val);
             if (typeof(T) == typeof(long))
@@ -32,7 +36,59 @@ namespace SimpleProcessFramework.Utilities
                 return ((BoxHelperImpl<T>)(object)DateTimeBoxHelper.Instance).Box(val);
             if (typeof(T) == typeof(TimeSpan))
                 return ((BoxHelperImpl<T>)(object)TimeSpanBoxHelper.Instance).Box(val);
+            if (typeof(T) == typeof(bool))
+                return ((BoxHelperImpl<T>)(object)BoolBoxHelper.Instance).Box(val);
             return val;
+        }
+
+        private sealed class BoolBoxHelper : BoxHelperImpl<bool>
+        {
+            private static readonly object s_true = true;
+            private static readonly object s_false = false;
+
+            public static readonly BoolBoxHelper Instance = new BoolBoxHelper();
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override object Box(bool val)
+            {
+                return val ? s_true : s_false;
+            }
+        }
+
+        private sealed class ByteBoxHelper : BoxHelperImpl<byte>
+        {
+            private const byte s_min = 0;
+            private const byte s_max = 100;
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)(byte)i).ToArray();
+
+            public static readonly ByteBoxHelper Instance = new ByteBoxHelper();
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override object Box(byte val)
+            {
+                if (val >= s_min && val <= s_max)
+                    return s_boxedInts[val - s_min];
+
+                return val;
+            }
+        }
+
+        private sealed class Int16BoxHelper : BoxHelperImpl<short>
+        {
+            private const short s_min = -10;
+            private const short s_max = 100;
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)(short)i).ToArray();
+
+            public static readonly Int16BoxHelper Instance = new Int16BoxHelper();
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override object Box(short val)
+            {
+                if (val >= s_min && val <= s_max)
+                    return s_boxedInts[val - s_min];
+
+                return val;
+            }
         }
 
         private sealed class Int32BoxHelper : BoxHelperImpl<int>

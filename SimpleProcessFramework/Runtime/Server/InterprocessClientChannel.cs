@@ -1,12 +1,32 @@
-﻿using System.Threading.Tasks;
+﻿using SimpleProcessFramework.Runtime.Messages;
+using System;
+using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
     internal class InterprocessClientChannel : IInterprocessClientChannel
     {
-        public void SendResponse(long callId, Task<object> completion)
+        public void SendFailure(long callId, Exception fault)
         {
-            throw new System.NotImplementedException();
+            Send(new RemoteCallFailureResponse
+            {
+                CallId = callId,
+                Error = fault
+            });
+        }
+
+        public void SendResponse(long callId, object result)
+        {
+            Send(new RemoteCallSuccessResponse
+            {
+                CallId = callId,
+                Result = result
+            });
+        }
+
+        private void Send(RemoteInvocationResponse msg)
+        {
+            throw new NotImplementedException();
         }
     }
 }

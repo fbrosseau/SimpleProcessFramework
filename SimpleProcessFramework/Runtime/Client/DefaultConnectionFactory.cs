@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleProcessFramework.Serialization;
+using System;
 using System.Collections.Generic;
 
 namespace SimpleProcessFramework.Runtime.Client
@@ -6,6 +7,12 @@ namespace SimpleProcessFramework.Runtime.Client
     internal class DefaultConnectionFactory : IConnectionFactory
     {
         private readonly Dictionary<string, IInterprocessConnection> m_connections = new Dictionary<string, IInterprocessConnection>(StringComparer.OrdinalIgnoreCase);
+        private readonly IBinarySerializer m_serializer;
+
+        public DefaultConnectionFactory(IBinarySerializer serializer = null)
+        {
+            m_serializer = serializer ?? new DefaultBinarySerializer();
+        }
 
         public IInterprocessConnection GetConnection(ProcessEndpointAddress destination)
         {
@@ -38,7 +45,7 @@ namespace SimpleProcessFramework.Runtime.Client
 
         private IInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
         {
-            return new SameProcessConnection();
+            return new RemoteInterprocessConnection(destination.HostEndpoint, m_serializer);
         }
     }
 }

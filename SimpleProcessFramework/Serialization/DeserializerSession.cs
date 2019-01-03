@@ -4,19 +4,6 @@ using System.Runtime.Serialization;
 
 namespace SimpleProcessFramework.Serialization
 {
-    internal class SerializerBinaryReader : BinaryReader
-    {
-        public SerializerBinaryReader(Stream input) 
-            : base(input)
-        {
-        }
-
-        internal int ReadEncodedInt32()
-        {
-            return ReadInt32();
-        }
-    }
-
     internal class DeserializerSession
     {
         public Stream Stream { get; }

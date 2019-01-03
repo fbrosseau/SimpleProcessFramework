@@ -54,7 +54,7 @@ namespace SimpleProcessFramework
         {
             return ExecuteRequest<T>(new RemoteCallRequest
             {
-                Args = args
+                Arguments = args
             }, ct);
         }
 
