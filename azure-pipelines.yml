@@ -1,56 +1,68 @@
-# .NET Desktop
-# Build and run tests for .NET Desktop or Windows classic desktop solutions.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
-
 trigger:
 - master
-
-pool:
-  vmImage: 'VS2017-Win2016'
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-steps:
-- task: NuGetToolInstaller@0
+jobs:
+- job: Windows_Build
+  displayName: 'Windows Build'
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: NuGetToolInstaller@0
 
-- task: DotNetCoreInstaller@0
-  inputs:
-    version: '2.1.300'
+  - task: DotNetCoreInstaller@0
+    inputs:
+      version: '2.1.300'
 
-- task: NuGetCommand@2
-  displayName: 'Nuget Restore'
-  inputs:
-    restoreSolution: '$(solution)'
+  - task: NuGetCommand@2
+    displayName: 'Nuget Restore'
+    inputs:
+      restoreSolution: '$(solution)'
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+  - task: VSBuild@1
+    inputs:
+      solution: '$(solution)'
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)'
+      contents: '**/*'
+      targetFolder: $(Build.ArtifactStagingDirectory)
 
-#- task: NuGetCommand@2
-#  displayName: 'Nuget Pack'
-#  inputs:
-#    command: pack
-#    packagesToPack: 'nuspec/**.nuspec'
+  #- task: NuGetCommand@2
+  #  displayName: 'Nuget Pack'
+  #  inputs:
+  #    command: pack
+  #    packagesToPack: 'nuspec/**.nuspec'
 
-#- task: NuGetCommand@2
-#  displayName: 'Nuget Push'
-#  inputs:
-#    command: push
-#    nuGetFeedType: external
-#    publishFeedCredentials: 'Nuget.org SimpleProcessFramework'
-#    versioningScheme: byEnvVar
-#    versionEnvVar: Version
-#    packagesToPush: nuspec/**.nupkg
+  #- task: NuGetCommand@2
+  #  displayName: 'Nuget Push'
+  #  inputs:
+  #    command: push
+  #    nuGetFeedType: external
+  #    publishFeedCredentials: 'Nuget.org SimpleProcessFramework'
+  #    versioningScheme: byEnvVar
+  #    versionEnvVar: Version
+  #    packagesToPush: nuspec/**.nupkg
 
-    
+- job: Windows_Test
+  displayName: 'Windows Tests'
+  dependsOn: Windows_Build
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadPath: '$(System.ArtifactsDirectory)' 
+
+  - task: VSTest@2
+    inputs:
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
