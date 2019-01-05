@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework
+﻿namespace SimpleProcessFramework.Runtime
 {
     // Found by reflection!
     public class __EntryPoint
