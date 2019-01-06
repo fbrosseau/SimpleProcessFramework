@@ -3,12 +3,16 @@ using SimpleProcessFramework.Utilities;
 using System;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 
 namespace SimpleProcessFramework
 {
     [DataContract]
     public class ProcessEndpointAddress : IEquatable<ProcessEndpointAddress>
     {
+        public static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
+        public static readonly StringComparison StringComparison = StringComparison.OrdinalIgnoreCase;
+
         public const string Scheme = "SPFW";
 
         [DataMember]
@@ -46,7 +50,7 @@ namespace SimpleProcessFramework
             }
         }
 
-        public string TargetEndpoint
+        public string FinalEndpoint
         {
             get
             {
@@ -128,8 +132,19 @@ namespace SimpleProcessFramework
             if (!Uri.TryCreate(m_originalString, UriKind.Absolute, out Uri u))
                 return false;
 
-            if (!Scheme.Equals(u.Scheme, StringComparison.OrdinalIgnoreCase))
+            if (!Scheme.Equals(u.Scheme, StringComparison))
                 return false;
+
+            m_parsed = true;
+            m_hostAuthority = u.Authority;
+
+            var segments = u.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length > 0)
+            {
+                m_targetProcess = segments[0];
+                if (segments.Length > 1)
+                    m_finalEndpoint = segments[1];
+            }
 
             return true;
         }

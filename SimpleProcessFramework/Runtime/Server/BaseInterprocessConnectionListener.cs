@@ -10,7 +10,7 @@ namespace SimpleProcessFramework.Runtime.Server
         {
         }
 
-        public abstract void Start();
+        public abstract void Start(IClientConnectionManager owner);
 
         protected void RaiseConnectionReceived(IInterprocessClientChannel client)
         {

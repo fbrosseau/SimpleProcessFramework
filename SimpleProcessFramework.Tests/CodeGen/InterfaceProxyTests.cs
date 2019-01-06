@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
 using System;
@@ -17,21 +18,6 @@ namespace SimpleProcessFramework.Tests
         public interface ITestInterface2
         {
             Task<int> Test();
-        }
-
-        private class TestCallHandler : IProxiedCallHandler
-        {
-            private readonly Func<RemoteInvocationRequest, CancellationToken, Task<object>> m_func;
-
-            public TestCallHandler(Func<RemoteInvocationRequest, CancellationToken, Task<object>> func)
-            {
-                m_func = func;
-            }
-
-            public Task<object> ProcessCall(RemoteInvocationRequest req, CancellationToken ct)
-            {
-                return m_func(req,ct);
-            }
         }
 
         [TestMethod]

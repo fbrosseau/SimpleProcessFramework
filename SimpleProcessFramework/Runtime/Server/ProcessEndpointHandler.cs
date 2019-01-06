@@ -92,7 +92,7 @@ namespace SimpleProcessFramework.Runtime.Server
             throw new InvalidOperationException("Unknown method");
         }
 
-        internal void CompleteCall(IInterprocessRequestContext req)
+        void IProcessEndpointHandler.CompleteCall(IInterprocessRequestContext req)
         {
             var key = new PendingCallKey(req);
             lock (m_pendingCalls)
@@ -112,7 +112,7 @@ namespace SimpleProcessFramework.Runtime.Server
 
         private struct PendingCallKey : IEquatable<PendingCallKey>
         {
-            public IInterprocessClientContext Client { get; }
+            public IInterprocessClientProxy Client { get; }
             public long CallId { get; }
 
             public PendingCallKey(IInterprocessRequestContext req)
@@ -120,7 +120,7 @@ namespace SimpleProcessFramework.Runtime.Server
             {
             }
 
-            public PendingCallKey(IInterprocessClientContext client, long callId)
+            public PendingCallKey(IInterprocessClientProxy client, long callId)
             {
                 Client = client;
                 CallId = callId;

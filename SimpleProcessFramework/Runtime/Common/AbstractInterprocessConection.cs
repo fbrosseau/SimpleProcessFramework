@@ -8,36 +8,39 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace SimpleProcessFramework.Runtime.Common
 {
     internal abstract class AbstractInterprocessConection : IInterprocessConnection
     {
+        public event EventHandler ConnectionLost;
+
         private readonly AsyncQueue<PendingOperation> m_pendingWrites;
         private Task m_writeFlow;
         private Task m_readFlow;
         private Task m_keepAliveTask;
+        private bool m_raisedConnectionLost;
 
         protected Stream ReadStream { get; private set; }
         protected Stream WriteStream { get; private set; }
         protected IBinarySerializer BinarySerializer { get; }
         protected virtual TimeSpan KeepAliveInterval { get; } = TimeSpan.FromSeconds(30);
 
-        private class PendingOperation : IAbortableItem
+        protected class PendingOperation : IAbortableItem
         {
             public Stream Data { get; }
             public TaskCompletionSource<object> Completion { get; }
-            public IInterprocessRequest Request { get; }
+            public IInterprocessMessage Request { get; }
 
-            public PendingOperation(IInterprocessRequest req, Stream serializedRequest)
+            public PendingOperation(IInterprocessMessage req, Stream serializedRequest)
             {
                 Request = req;
                 Completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
                 Data = serializedRequest;
             }
 
-            public PendingOperation(ConnectionCodes keepAlive)
+            public PendingOperation(ConnectionCodes code)
             {
-                Data = new MemoryStream(BitConverter.GetBytes((int)keepAlive));
+                Data = new MemoryStream(BitConverter.GetBytes((int)code));
             }
 
             public void Abort(Exception ex)
@@ -62,37 +65,13 @@ namespace SimpleProcessFramework.Runtime.Client
             };
         }
 
-        private Dictionary<long, PendingOperation> m_pendingResponses = new Dictionary<long, PendingOperation>();
-
-        private async ValueTask DoWriteAsync(PendingOperation op)
+        private async ValueTask ExecuteWrite(PendingOperation op)
         {
             try
             {
                 try
                 {
-                    if (op.Request.ExpectResponse)
-                    {
-                        lock (m_pendingResponses)
-                        {
-                            m_pendingResponses.Add(op.Request.CallId, op);
-                        }
-
-                        op.Completion.Task.ContinueWith(t =>
-                        {
-                            lock (m_pendingResponses)
-                            {
-                                m_pendingResponses.Remove(op.Request.CallId);
-                            }
-                        }).FireAndForget();
-                    }
-
-                    await op.Data.CopyToAsync(WriteStream);
-
-                    if (!op.Request.ExpectResponse)
-                    {
-                        op.Completion.TrySetResult(null);
-                        op.Dispose();
-                    }
+                    await DoWrite(op);                    
                 }
                 catch (Exception ex)
                 {
@@ -107,9 +86,23 @@ namespace SimpleProcessFramework.Runtime.Client
             }
         }
 
-        private void HandleFailure(Exception ex)
+        protected virtual ValueTask DoWrite(PendingOperation op)
+        {
+            return new ValueTask(op.Data.CopyToAsync(WriteStream));
+        }
+
+        protected void HandleFailure(Exception ex)
         {
             m_pendingWrites.Dispose(ex);
+
+            lock (this)
+            {
+                if (m_raisedConnectionLost)
+                    return;
+                m_raisedConnectionLost = true;
+            }
+
+            ConnectionLost?.Invoke(this, EventArgs.Empty);
         }
 
         public virtual void Dispose()
@@ -132,7 +125,7 @@ namespace SimpleProcessFramework.Runtime.Client
 
                 RescheduleKeepAlive();
 
-                m_writeFlow = m_pendingWrites.ForEachAsync(i => DoWriteAsync(i));
+                m_writeFlow = m_pendingWrites.ForEachAsync(i => ExecuteWrite(i));
 
                 await ReceiveLoop();
             }
@@ -144,38 +137,24 @@ namespace SimpleProcessFramework.Runtime.Client
 
         private async Task ReceiveLoop()
         {
-            while (true)
+            try
             {
-                var stream = await ReadStream.ReadLengthPrefixedBlock();
-                var msg = BinarySerializer.Deserialize<IInterprocessRequest>(stream);
-                switch (msg)
+                while (true)
                 {
-                    case RemoteInvocationResponse callResponse:
-                        PendingOperation op;
-                        lock (m_pendingResponses)
-                        {
-                            m_pendingResponses.TryGetValue(callResponse.CallId, out op);
-                        }
-
-                        if (op is null)
-                            continue;
-
-                        if (callResponse is RemoteCallSuccessResponse success)
-                        {
-                            op.Completion.TrySetResult(success.Result);
-                        }
-                        else if (callResponse is RemoteCallFailureResponse failure)
-                        {
-                            op.Completion.TrySetException(failure.Error);
-                        }
-                        else
-                        {
-                            HandleFailure(new SerializationException("Unexpected response"));
-                        }
-
-                        break;
+                    var stream = await ReadStream.ReadLengthPrefixedBlock();
+                    var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
+                    HandleMessage(msg);
                 }
             }
+            catch(Exception ex)
+            {
+                HandleFailure(ex);
+            }
+        }
+
+        protected virtual void HandleMessage(IInterprocessMessage msg)
+        {
+            throw new InvalidOperationException("Message of type " + msg.GetType().FullName + " is not handled");
         }
 
         private void RescheduleKeepAlive()
@@ -195,7 +174,7 @@ namespace SimpleProcessFramework.Runtime.Client
         private async Task DoKeepAlive(TimeSpan delay)
         {
             await Task.Delay(delay);
-            await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
+         //   await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
             RescheduleKeepAlive();
         }
 
@@ -206,13 +185,13 @@ namespace SimpleProcessFramework.Runtime.Client
 
         internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
 
-        public Task<object> SendRequest(IInterprocessRequest req)
+        public Task<object> SerializeAndSendMessage(IInterprocessMessage req)
         {
-            var serializedRequest = BinarySerializer.Serialize(req, lengthPrefix: true);
+            var serializedRequest = BinarySerializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(req, BinarySerializer), lengthPrefix: true);
             return EnqueueOperation(new PendingOperation(req, serializedRequest));
         }
 
-        private Task<object> EnqueueOperation(PendingOperation pendingOperation)
+        protected Task<object> EnqueueOperation(PendingOperation pendingOperation)
         {
             m_pendingWrites.Enqueue(pendingOperation);
             return pendingOperation.Completion.Task;

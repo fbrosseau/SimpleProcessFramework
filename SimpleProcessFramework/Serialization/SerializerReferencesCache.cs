@@ -72,6 +72,7 @@ namespace SimpleProcessFramework.Serialization
                 typeof(RemoteCallSuccessResponse),
                 typeof(RemoteClientConnectionRequest),
                 typeof(RemoteClientConnectionResponse),
+                typeof(WrappedInterprocessMessage)
             };
 
             AddHardcodedTypeReference(typeof(CancellationToken));

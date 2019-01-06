@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleProcessFramework.Reflection;
+using System;
 
 namespace SimpleProcessFramework.Serialization
 {
@@ -22,7 +23,7 @@ namespace SimpleProcessFramework.Serialization
 
             for (int i = 0; i < count; ++i)
             {
-                arr[i] = (T)DefaultBinarySerializer.Deserialize(reader, typeof(T));
+                arr[i] = (T)DefaultBinarySerializer.Deserialize(reader, ReflectionUtilities.GetType<T>());
             }
 
             return arr;
@@ -35,7 +36,7 @@ namespace SimpleProcessFramework.Serialization
 
             foreach (var i in arr)
             {
-                DefaultBinarySerializer.Serialize(bw, i, typeof(T));
+                DefaultBinarySerializer.Serialize(bw, i, ReflectionUtilities.GetType<T>());
             }
         }
     }

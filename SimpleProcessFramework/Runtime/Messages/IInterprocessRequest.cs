@@ -2,7 +2,12 @@
 
 namespace SimpleProcessFramework.Runtime.Messages
 {
-    public interface IInterprocessRequest
+    public interface IInterprocessMessage
+    {
+        ProcessEndpointAddress Destination { get; set; }
+    }
+
+    public interface IInterprocessRequest : IInterprocessMessage
     {
         [DataMember]
         long CallId { get; set; }

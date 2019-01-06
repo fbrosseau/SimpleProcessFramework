@@ -8,7 +8,7 @@ namespace SimpleProcessFramework.Runtime.Server
     public interface IInterprocessRequestContext : IDisposable
     {
         IInterprocessRequest Request { get; }
-        IInterprocessClientContext Client { get; }
+        IInterprocessClientProxy Client { get; }
 
         CancellationToken Cancellation { get; }
 

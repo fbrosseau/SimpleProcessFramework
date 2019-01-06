@@ -9,5 +9,7 @@ namespace SimpleProcessFramework.Runtime.Messages
         public long CallId { get; set; }
 
         public bool ExpectResponse => false;
+
+        public ProcessEndpointAddress Destination { get; set; }
     }
 }

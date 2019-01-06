@@ -46,8 +46,11 @@ namespace SimpleProcessFramework.TestApp
             processCluster.AddListener(new TlsInterprocessConnectionListener(cert, ProcessCluster.DefaultRemotePort));
 
             cts = new CancellationTokenSource();
-            var proc = processCluster.PrimaryProxy.CreateInterface<IProcessManager>(new ProcessEndpointAddress("localhost", "master"));
-            proc.AutoDestroy2(new ZOOM(), default).Wait();
+            var proc = processCluster.PrimaryProxy.CreateInterface<IProcessManager>(new ProcessEndpointAddress("localhost", "master", "ProcessManager"));
+            proc.CreateProcess(new ProcessCreationInfo
+            {
+                ProcessName = "Test"
+            }, mustCreate: true).Wait();
 
             Thread.Sleep(-1);
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace SimpleProcessFramework.Runtime.Exceptions
 {
     public class RemoteConnectionException : Exception
     {

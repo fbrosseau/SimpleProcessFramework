@@ -6,18 +6,18 @@ using System.Runtime.Serialization;
 namespace SimpleProcessFramework.Reflection
 {
     [DataContract]
-    public class ReflectedMethodInfo
+    public class ReflectedMethodInfo : IEquatable<ReflectedMethodInfo>
     {
         private MethodInfo m_resolvedMethod;
 
         [DataMember]
-        public ReflectedTypeInfo Type { get; }
+        public ReflectedTypeInfo Type { get; set; }
 
         [DataMember]
-        public ReflectedTypeInfo[] Arguments { get; }
+        public ReflectedTypeInfo[] Arguments { get; set; }
 
         [DataMember]
-        public string Name { get; }
+        public string Name { get; set; }
 
         public MethodInfo ResolvedMethod
         {
@@ -46,6 +46,19 @@ namespace SimpleProcessFramework.Reflection
             }
 
             m_resolvedMethod = m;
+        }
+
+        public override bool Equals(object obj) { return Equals(obj as ReflectedMethodInfo); }
+        public override int GetHashCode() => Type.GetHashCode() ^ Name.GetHashCode();
+        public override string ToString() => Name;
+
+        public bool Equals(ReflectedMethodInfo other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null)
+                return false;
+            return other.Name == Name && other.Type.Equals(Type);
         }
     }
 }

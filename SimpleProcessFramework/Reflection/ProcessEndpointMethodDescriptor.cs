@@ -2,6 +2,7 @@
 
 namespace SimpleProcessFramework.Reflection
 {
+    [DataContract]
     public class ProcessEndpointMethodDescriptor
     {
         [DataMember]

@@ -63,6 +63,8 @@ namespace SimpleProcessFramework.Reflection
 
         public bool Equals(ReflectedAssemblyInfo other)
         {
+            if (ReferenceEquals(this, other))
+                return true;
             return Name == other?.Name;
         }
     }

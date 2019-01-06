@@ -19,7 +19,7 @@ namespace SimpleProcessFramework.Serialization
 
             reader.PrepareRead();
 
-            return (T)Deserialize(reader, typeof(T));
+            return (T)Deserialize(reader, ReflectionUtilities.GetType<T>());
         }
 
         internal static object Deserialize(DeserializerSession reader, Type expectedType)
@@ -53,6 +53,12 @@ namespace SimpleProcessFramework.Serialization
             return serializer.ReadObject(reader);
         }
 
+        public byte[] SerializeToBytes<T>(T graph, bool lengthPrefix)
+        {
+            var ms = (MemoryStream)Serialize(graph, lengthPrefix);
+            return ms.ToArray();
+        }
+
         public Stream Serialize<T>(T graph, bool lengthPrefix)
         {
             MemoryStream ms = new MemoryStream();
@@ -62,7 +68,7 @@ namespace SimpleProcessFramework.Serialization
 
             var writer = new SerializerSession(ms);
             writer.BeginSerialization();
-            Serialize(writer, graph, typeof(T));
+            Serialize(writer, graph, ReflectionUtilities.GetType<T>());
             writer.FinishSerialization();
 
             if (lengthPrefix)
@@ -131,6 +137,9 @@ namespace SimpleProcessFramework.Serialization
                 s_knownSerializers.Add(t, s);
             }
 
+            AddSerializer(typeof(byte), new SimpleTypeSerializer(
+                (bw, o) => bw.Writer.Write((byte)o),
+                br => BoxHelper.Box(br.Reader.ReadByte())));
             AddSerializer(typeof(int), new SimpleTypeSerializer(
                 (bw, o) => bw.Writer.Write((int)o),
                 br => BoxHelper.Box(br.Reader.ReadInt32())));

@@ -59,7 +59,7 @@ namespace SimpleProcessFramework.Utilities
         {
             private const byte s_min = 0;
             private const byte s_max = 100;
-            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)(byte)i).ToArray();
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max + 1 - s_min).Select(i => (object)(byte)i).ToArray();
 
             public static readonly ByteBoxHelper Instance = new ByteBoxHelper();
 

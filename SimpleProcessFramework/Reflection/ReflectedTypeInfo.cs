@@ -71,6 +71,8 @@ namespace SimpleProcessFramework.Reflection
 
         public bool Equals(ReflectedTypeInfo other)
         {
+            if (ReferenceEquals(this, other))
+                return true;
             if (other is null)
                 return false;
             return other.Name == Name && other.Assembly.Equals(Assembly);

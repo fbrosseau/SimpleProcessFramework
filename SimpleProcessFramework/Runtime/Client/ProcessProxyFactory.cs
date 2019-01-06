@@ -1,5 +1,6 @@
 ﻿using Oopi.Utilities;
 using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Exceptions;
 using SimpleProcessFramework.Utilities;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace SimpleProcessFramework.Runtime.Client
 
             static FactoryStorage()
             {
-                Func = CreateFactory(typeof(T));
+                Func = CreateFactory(ReflectionUtilities.GetType<T>());
             }
         }
 

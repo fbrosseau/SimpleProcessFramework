@@ -11,16 +11,16 @@ namespace SimpleProcessFramework.Runtime.Server
 {
     internal class InterprocessRequestContext : IInterprocessRequestContext
     {
-        private readonly ProcessEndpointHandler m_handler;
+        private readonly IProcessEndpointHandler m_handler;
         private CancellationTokenSource m_cts;
         private readonly TaskCompletionSource<object> m_tcs;
 
         public IInterprocessRequest Request { get; }
-        public IInterprocessClientContext Client { get; }
+        public IInterprocessClientProxy Client { get; }
         public CancellationToken Cancellation => m_cts?.Token ?? default;
         public Task<object> Completion => m_tcs.Task;
 
-        public InterprocessRequestContext(ProcessEndpointHandler endpointHandler, IInterprocessClientContext client, IInterprocessRequest req)
+        public InterprocessRequestContext(IProcessEndpointHandler endpointHandler, IInterprocessClientProxy client, IInterprocessRequest req)
         {
             Guard.ArgumentNotNull(endpointHandler, nameof(endpointHandler));
             Guard.ArgumentNotNull(client, nameof(client));
@@ -69,7 +69,14 @@ namespace SimpleProcessFramework.Runtime.Server
         private void MarkAsCompleted()
         {
             m_handler.CompleteCall(this);
-            Client.CallbackChannel.SendResponse(Request.CallId, Completion);
+            if (Completion.Status == TaskStatus.RanToCompletion)
+            {
+                Client.SendResponse(Request.CallId, Completion.Result);
+            }
+            else
+            {
+                Client.SendFailure(Request.CallId, Completion.Exception);
+            }
         }
 
         public void CompleteWithTask(Task t)

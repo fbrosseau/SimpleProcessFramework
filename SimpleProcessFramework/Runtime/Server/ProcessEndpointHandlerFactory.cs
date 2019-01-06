@@ -20,7 +20,7 @@ namespace SimpleProcessFramework.Runtime.Server
 
             static FactoryStorage()
             {
-                Func = CreateFactory(typeof(T));
+                Func = CreateFactory(ReflectionUtilities.GetType<T>());
             }
         }
 
@@ -104,16 +104,8 @@ namespace SimpleProcessFramework.Runtime.Server
 
             var jumpLabels = new List<Label>();
 
-            var methodDescriptors = new List<ProcessEndpointMethodDescriptor>();
             foreach (var m in allMethods)
             {
-                methodDescriptors.Add(new ProcessEndpointMethodDescriptor
-                {
-                    Method = new ReflectedMethodInfo(m),
-                    MethodId = methodDescriptors.Count,
-                    IsCancellable = m.GetParameters().Any(p => p.ParameterType == typeof(CancellationToken))
-                });
-
                 jumpLabels.Add(ilgen.DefineLabel());
             }
 
@@ -181,7 +173,8 @@ namespace SimpleProcessFramework.Runtime.Server
                     }
                     else
                     {
-                        ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(m.ReturnType.GetGenericArguments()[0]), null);
+                        var finalMethod = InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(m.ReturnType.GetGenericArguments()[0]);
+                        ilgen.EmitCall(OpCodes.Callvirt, finalMethod, null);
                     }
                     ilgen.Emit(OpCodes.Br, returnLabel);
                 }
@@ -194,10 +187,7 @@ namespace SimpleProcessFramework.Runtime.Server
             var factoryMethod = finalType.FindUniqueMethod(factoryName);
 
             var finalMetadataField = finalType.GetField(metadataFieldName, BindingFlags.NonPublic | BindingFlags.Static);
-            finalMetadataField.SetValue(null, new ProcessEndpointDescriptor
-            {
-                Methods = methodDescriptors.ToArray()
-            });
+            finalMetadataField.SetValue(null, ProcessEndpointDescriptor.CreateFromCurrentProcess(type));
 
             return (Func<object, ProcessEndpointHandler>)Delegate.CreateDelegate(typeof(Func<object, ProcessEndpointHandler>), factoryMethod);
         }

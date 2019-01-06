@@ -36,7 +36,7 @@ namespace SimpleProcessFramework.Runtime.Server
             m_listener.Stop();
         }
 
-        public override void Start()
+        public override void Start(IClientConnectionManager owner)
         {
             m_listener.Start();
             m_listenLoop = ListenLoop();
@@ -63,7 +63,7 @@ namespace SimpleProcessFramework.Runtime.Server
 
                 var finalStream = await clientHandshakeTask;
 
-                var conn = new ServerRemoteInterprocessConnection(m_serializer, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
+                var conn = new ServerInterprocessChannel(m_serializer, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
                 disposeBag.ReleaseAll();
                 RaiseConnectionReceived(conn);
             }

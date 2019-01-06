@@ -1,21 +1,14 @@
 ﻿using Oopi.Utilities;
 using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Common;
 using SimpleProcessFramework.Runtime.Messages;
 using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework
+namespace SimpleProcessFramework.Runtime.Client
 {
-    public class InvalidProxyInterfaceException : Exception
-    {
-        public InvalidProxyInterfaceException(string message) 
-            : base(message)
-        {
-        }
-    }
-
     internal sealed class RemoteCallCompletion<T> : TaskCompletionSource<T>
     {
         public long Id { get; }
@@ -28,20 +21,17 @@ namespace SimpleProcessFramework
         }
     }
 
-    public interface IProxiedCallHandler
-    {
-        Task<object> ProcessCall(RemoteInvocationRequest req, CancellationToken ct);
-    }
-
     public abstract class ProcessProxyImplementation
     {
-        private IProxiedCallHandler m_handler;
+        private IInterprocessRequestHandler m_handler;
+        private IClientInterprocessConnection m_connection;
         private ProcessEndpointAddress m_remoteAddress;
         private TimeSpan m_callTimeout;
 
-        internal void Initialize(IProxiedCallHandler handler, ProcessEndpointAddress remoteAddress)
+        internal void Initialize(IInterprocessRequestHandler handler, IClientInterprocessConnection connection, ProcessEndpointAddress remoteAddress)
         {
             m_handler = handler;
+            m_connection = connection;
             m_remoteAddress = remoteAddress;
         }
 
@@ -52,19 +42,20 @@ namespace SimpleProcessFramework
 
         protected Task<T> WrapGenericTaskReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
-            return ExecuteRequest<T>(new RemoteCallRequest
+            return ExecuteRequest<T>(method, new RemoteCallRequest
             {
                 Arguments = args
             }, ct);
         }
 
-        private async Task<T> ExecuteRequest<T>(RemoteCallRequest remoteCallRequest, CancellationToken ct)
+        private async Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteCallRequest remoteCallRequest, CancellationToken ct)
         {
             remoteCallRequest.Destination = m_remoteAddress;
             remoteCallRequest.AbsoluteTimeout = m_callTimeout;
             remoteCallRequest.Cancellable = ct.CanBeCanceled || remoteCallRequest.HasTimeout;
+            remoteCallRequest.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
 
-            var res = await m_handler.ProcessCall(remoteCallRequest, ct).ConfigureAwait(false);
+            var res = await m_handler.ProcessCall(m_connection, remoteCallRequest, ct).ConfigureAwait(false);
 
             if (typeof(T) == typeof(VoidType))
             {

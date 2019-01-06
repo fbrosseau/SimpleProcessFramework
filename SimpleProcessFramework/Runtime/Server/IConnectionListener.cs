@@ -16,6 +16,6 @@ namespace SimpleProcessFramework.Runtime.Server
     {
         event EventHandler<IpcConnectionReceivedEventArgs> ConnectionReceived;
 
-        void Start();
+        void Start(IClientConnectionManager clientConnectionsManager);
     }
 }

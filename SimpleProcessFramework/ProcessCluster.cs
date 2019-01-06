@@ -1,48 +1,33 @@
-﻿using SimpleProcessFramework.Runtime.Server;
-using System;
+﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Client;
+using SimpleProcessFramework.Runtime.Server;
+using SimpleProcessFramework.Serialization;
 using System.Collections.Generic;
 
 namespace SimpleProcessFramework
 {
-
-    public class Process
-    {
-        public const string MasterProcessUniqueId = "Master";
-
-        public ProcessProxy ClusterProxy { get; }
-        public string HostAuthority { get; }
-        public string UniqueId { get; }
-        public ProcessEndpointAddress UniqueAddress { get; }
-
-        public Process(string hostAuthority, string uniqueId)
-        {
-            ClusterProxy = new ProcessProxy();
-            HostAuthority = hostAuthority;
-            UniqueAddress = CreateRelativeAddressInternal();
-        }
-
-        public ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null)
-        {
-            if (string.IsNullOrWhiteSpace(endpointAddress))
-                return UniqueAddress;
-            return CreateRelativeAddressInternal(endpointAddress);
-        }
-
-        private ProcessEndpointAddress CreateRelativeAddressInternal(string endpointAddress = null)
-        {
-            return new ProcessEndpointAddress(HostAuthority, UniqueId, endpointAddress);
-        }
-    }
-
     public class ProcessCluster
     {
+        internal static DefaultTypeResolver DefaultTypeResolver { get; }
+
+        static ProcessCluster()
+        {
+            DefaultTypeResolver = new DefaultTypeResolver();
+            DefaultTypeResolver.AddService<IBinarySerializer>(new DefaultBinarySerializer());
+            DefaultTypeResolver.AddService<IInternalProcessManager>(r => new ProcessManager(r));
+            DefaultTypeResolver.AddService<IClientConnectionFactory>(r => new DefaultClientConnectionFactory(r.GetService<IBinarySerializer>()));
+            DefaultTypeResolver.AddService<IClientConnectionManager>(r => new ClientConnectionManager(r.GetService<IInternalProcessManager>()));
+        }
+
         public const int DefaultRemotePort = 41412;
 
         private ProcessClusterConfiguration m_config;
-        private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
+        private readonly ITypeResolver m_typeResolver;
+        private readonly IInternalProcessManager m_processManager;
+        private readonly IClientConnectionManager m_connectionsManager;
 
         public ProcessProxy PrimaryProxy => MasterProcess.ClusterProxy;
-        public Process MasterProcess { get; }
+        public IProcess MasterProcess => m_processManager.MasterProcess;
 
         public ProcessCluster()
             : this(null)
@@ -52,46 +37,19 @@ namespace SimpleProcessFramework
         public ProcessCluster(ProcessClusterConfiguration cfg)
         {
             m_config = cfg ?? ProcessClusterConfiguration.Default;
-            MasterProcess = CreateMasterProcess();
-        }
-
-        private Process CreateMasterProcess()
-        {
-            return new Process("localhost", Process.MasterProcessUniqueId);
+            m_typeResolver = m_config.TypeResolver.CreateNewScope();
+            m_processManager = m_typeResolver.CreateService<IInternalProcessManager>();
+            m_connectionsManager = m_typeResolver.CreateService<IClientConnectionManager>();
         }
 
         public void AddListener(IConnectionListener listener)
         {
-            lock(m_listeners)
-            {
-                if (!m_listeners.Add(listener))
-                    throw new InvalidOperationException("This listener was added twice");
-            }
-
-            try
-            {
-                listener.ConnectionReceived += OnConnectionReceived;
-                listener.Start();
-            }
-            catch
-            {
-                RemoveListener(listener);
-            }
+            m_connectionsManager.AddListener(listener);
         }
 
-        private void RemoveListener(IConnectionListener listener)
+        public void RemoveListener(IConnectionListener listener)
         {
-            listener.ConnectionReceived -= OnConnectionReceived;
-
-            lock (m_listeners)
-            {
-                m_listeners.Remove(listener);
-            }
-        }
-
-        private void OnConnectionReceived(object sender, IpcConnectionReceivedEventArgs e)
-        {
-            throw new NotImplementedException();
+            m_connectionsManager.RemoveListener(listener);
         }
     }
 }

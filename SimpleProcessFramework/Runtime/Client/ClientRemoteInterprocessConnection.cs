@@ -1,4 +1,6 @@
-﻿using SimpleProcessFramework.Runtime.Messages;
+﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Exceptions;
+using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Serialization;
 using SimpleProcessFramework.Utilities;
 using System;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Client
 {
-    internal class ClientRemoteInterprocessConnection : AbstractInterprocessConection
+    internal class ClientRemoteInterprocessConnection : AbstractClientInterprocessConnection
     {
         private readonly EndPoint m_destination;
 
@@ -19,6 +21,14 @@ namespace SimpleProcessFramework.Runtime.Client
             : base(serializer)
         {
             m_destination = destination;
+        }
+
+        protected override async Task<ProcessEndpointDescriptor> GetRemoteEndpointMetadata(ProcessEndpointAddress destination, ReflectedTypeInfo type)
+        {
+            return (ProcessEndpointDescriptor)await SerializeAndSendMessage(new EndpointDescriptionRequest
+            {
+                Destination = destination
+            });
         }
 
         internal override async Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync()

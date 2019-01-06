@@ -4,21 +4,26 @@ using System.Collections.Generic;
 
 namespace SimpleProcessFramework.Runtime.Client
 {
-    internal class DefaultConnectionFactory : IConnectionFactory
+    public interface IClientConnectionFactory
     {
-        private readonly Dictionary<string, IInterprocessConnection> m_connections = new Dictionary<string, IInterprocessConnection>(StringComparer.OrdinalIgnoreCase);
+        IClientInterprocessConnection GetConnection(ProcessEndpointAddress destination);
+    }
+
+    internal class DefaultClientConnectionFactory : IClientConnectionFactory
+    {
+        private readonly Dictionary<string, IClientInterprocessConnection> m_connections = new Dictionary<string, IClientInterprocessConnection>(StringComparer.OrdinalIgnoreCase);
         private readonly IBinarySerializer m_serializer;
 
-        public DefaultConnectionFactory(IBinarySerializer serializer = null)
+        public DefaultClientConnectionFactory(IBinarySerializer serializer)
         {
-            m_serializer = serializer ?? new DefaultBinarySerializer();
+            m_serializer = serializer;
         }
 
-        public IInterprocessConnection GetConnection(ProcessEndpointAddress destination)
+        public IClientInterprocessConnection GetConnection(ProcessEndpointAddress destination)
         {
             var hostAuthority = destination.HostAuthority;
 
-            IInterprocessConnection conn;
+            IClientInterprocessConnection conn;
 
             lock (m_connections)
             {
@@ -43,7 +48,7 @@ namespace SimpleProcessFramework.Runtime.Client
             return newConn;
         }
 
-        private IInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
+        private IClientInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
         {
             return new ClientRemoteInterprocessConnection(destination.HostEndpoint, m_serializer);
         }

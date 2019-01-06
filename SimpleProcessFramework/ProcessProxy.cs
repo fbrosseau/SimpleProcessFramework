@@ -1,47 +1,50 @@
-﻿using SimpleProcessFramework.Runtime.Client;
+﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework
 {
-
-    internal interface IConnectionFactory
+    public interface IInterprocessRequestHandler
     {
-        IInterprocessConnection GetConnection(ProcessEndpointAddress destination);
+        Task<object> ProcessCall(IClientInterprocessConnection targetConnection, RemoteCallRequest remoteCallRequest, CancellationToken ct);
     }
 
-    public class ProcessProxy : IProxiedCallHandler
+    public class ProcessProxy : IInterprocessRequestHandler
     {
-        private readonly IConnectionFactory m_connectionFactory;
+        private readonly IClientConnectionFactory m_connectionFactory;
+        private readonly ITypeResolver m_typeResolver;
 
         public ProcessProxy()
-            : this(new DefaultConnectionFactory())
+            : this(ProcessCluster.DefaultTypeResolver.CreateNewScope())
         {
         }
 
-        internal ProcessProxy(IConnectionFactory connectionFactory)
+        public ProcessProxy(ITypeResolver resolver)
         {
-            m_connectionFactory = connectionFactory;
+            m_typeResolver = resolver.CreateNewScope();
+            m_connectionFactory = m_typeResolver.CreateService<IClientConnectionFactory>();
         }
 
         public T CreateInterface<T>(ProcessEndpointAddress address)
         {
             var proxy = ProcessProxyFactory.CreateImplementation<T>();
-            proxy.Initialize(this, address);
+            proxy.Initialize(this, m_connectionFactory.GetConnection(address), address);
             return (T)(object)proxy;
         }
 
-        async Task<object> IProxiedCallHandler.ProcessCall(RemoteInvocationRequest req, CancellationToken ct)
+        async Task<object> IInterprocessRequestHandler.ProcessCall(IClientInterprocessConnection targetConnection, RemoteCallRequest req, CancellationToken ct)
         {
-            var connection = m_connectionFactory.GetConnection(req.Destination);
-            var t = connection.SendRequest(req);
+            var t = targetConnection.SerializeAndSendMessage(req);
 
             var ctRegistration = new CancellationTokenRegistration();
 
             if (ct.CanBeCanceled)
             {
-                ct.Register(() => connection.SendRequest(new RemoteCallCancellationRequest
+                ct.Register(() => targetConnection.SerializeAndSendMessage(new RemoteCallCancellationRequest
                 {
                     CallId = req.CallId,
                     Destination = req.Destination
