@@ -1,19 +1,9 @@
-﻿using SimpleProcessFramework;
-using SimpleProcessFramework.CoreEndpoints;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using SimpleProcessFramework.Interfaces;
 using SimpleProcessFramework.Runtime.Server;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
 using System;
-using System.ComponentModel;
 using System.Linq;
-using System.Net.Security;
-using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.TestApp
 {

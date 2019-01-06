@@ -1,5 +1,4 @@
-﻿using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Serialization;
 using SimpleProcessFramework.Utilities;
 using System;
