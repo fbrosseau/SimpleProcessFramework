@@ -1,4 +1,5 @@
 ﻿using Oopi.Utilities;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -80,6 +81,31 @@ namespace SimpleProcessFramework.Utilities
         public static void FireAndForget(this Task t)
         {
             // empty on purpose
+        }
+
+        public static Task<bool> WaitAsync(this Task t, TimeSpan timeout)
+        {
+            if (t.IsCompleted)
+                return Task.FromResult(true);
+
+            if (timeout == TimeSpan.Zero)
+                return Task.FromResult(false);
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            t.ContinueWith((innerT, s) =>
+            {
+                var innerTcs = (TaskCompletionSource<bool>)s;
+                innerTcs.TrySetResult(true);
+            }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+            Task.Delay(timeout).ContinueWith((innerT, s) =>
+            {
+                var innerTcs = (TaskCompletionSource<bool>)s;
+                innerTcs.TrySetResult(false);
+            }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+            return tcs.Task;
         }
     }
 }

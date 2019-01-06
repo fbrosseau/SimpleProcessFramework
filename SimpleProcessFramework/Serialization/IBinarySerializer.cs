@@ -2,7 +2,7 @@
 
 namespace SimpleProcessFramework.Serialization
 {
-    internal interface IBinarySerializer
+    public interface IBinarySerializer
     {
         Stream Serialize<T>(T graph, bool lengthPrefix);
         T Deserialize<T>(Stream s);

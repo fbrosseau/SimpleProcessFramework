@@ -53,39 +53,7 @@ namespace SimpleProcessFramework.TestApp
             var cert = s.Certificates.Cast<X509Certificate2>().FirstOrDefault(c => c.HasPrivateKey && c.GetRSAPrivateKey() != null);
             s.Close();
 
-            var list = TcpListener.Create(ProcessCluster.DefaultRemotePort);
-            list.Start();
-            list.AcceptTcpClientAsync().ContinueWith(async t=>
-            {
-                var ns = t.Result.GetStream();
-                var ssl = new SslStream(ns);
-                ssl.AuthenticateAsServer(cert);
-
-                var ser = new DefaultBinarySerializer();
-
-                var msg = await ssl.ReadLengthPrefixedBlock();
-                var sssj = ser.Deserialize<object>(msg);
-
-                var ssss = ser.Serialize<object>(new RemoteClientConnectionResponse
-                {
-                    Success = true
-                }, lengthPrefix: true);
-
-                ssss.CopyTo(ssl);
-
-                msg = await ssl.ReadLengthPrefixedBlock();
-                sssj = ser.Deserialize<IInterprocessRequest>(msg);
-
-                ssss = ser.Serialize<IInterprocessRequest>(new RemoteCallSuccessResponse
-                {
-                   CallId = 0,
-                   Result = null
-                }, lengthPrefix: true);
-
-                ssss.CopyTo(ssl);
-
-                ssl.Flush();
-            }).Unwrap();
+            processCluster.AddListener(new TlsInterprocessConnectionListener(cert, ProcessCluster.DefaultRemotePort));
 
             cts = new CancellationTokenSource();
             var proc = processCluster.PrimaryProxy.CreateInterface<IProcessManager>(new ProcessEndpointAddress("localhost", "master"));

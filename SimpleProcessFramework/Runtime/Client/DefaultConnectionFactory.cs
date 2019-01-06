@@ -45,7 +45,7 @@ namespace SimpleProcessFramework.Runtime.Client
 
         private IInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
         {
-            return new RemoteInterprocessConnection(destination.HostEndpoint, m_serializer);
+            return new ClientRemoteInterprocessConnection(destination.HostEndpoint, m_serializer);
         }
     }
 }

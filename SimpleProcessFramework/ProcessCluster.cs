@@ -1,4 +1,8 @@
-﻿namespace SimpleProcessFramework
+﻿using SimpleProcessFramework.Runtime.Server;
+using System;
+using System.Collections.Generic;
+
+namespace SimpleProcessFramework
 {
 
     public class Process
@@ -35,6 +39,7 @@
         public const int DefaultRemotePort = 41412;
 
         private ProcessClusterConfiguration m_config;
+        private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
 
         public ProcessProxy PrimaryProxy => MasterProcess.ClusterProxy;
         public Process MasterProcess { get; }
@@ -53,6 +58,40 @@
         private Process CreateMasterProcess()
         {
             return new Process("localhost", Process.MasterProcessUniqueId);
+        }
+
+        public void AddListener(IConnectionListener listener)
+        {
+            lock(m_listeners)
+            {
+                if (!m_listeners.Add(listener))
+                    throw new InvalidOperationException("This listener was added twice");
+            }
+
+            try
+            {
+                listener.ConnectionReceived += OnConnectionReceived;
+                listener.Start();
+            }
+            catch
+            {
+                RemoveListener(listener);
+            }
+        }
+
+        private void RemoveListener(IConnectionListener listener)
+        {
+            listener.ConnectionReceived -= OnConnectionReceived;
+
+            lock (m_listeners)
+            {
+                m_listeners.Remove(listener);
+            }
+        }
+
+        private void OnConnectionReceived(object sender, IpcConnectionReceivedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }

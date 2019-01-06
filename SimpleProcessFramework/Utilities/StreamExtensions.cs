@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,12 +9,16 @@ namespace SimpleProcessFramework.Utilities
 {
     internal static class StreamExtensions
     {
-        public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream)
+        public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream, int maximumSize = int.MaxValue)
         {
             var buf = new byte[4];
             await ReadBytes(stream, new ArraySegment<byte>(buf));
 
-            Array.Resize(ref buf, BitConverter.ToInt32(buf, 0));
+            int size = BitConverter.ToInt32(buf, 0);
+            if (size > maximumSize)
+                throw new SerializationException("Received a message larger than the maximum allowed size");
+
+            Array.Resize(ref buf, size);
 
             await ReadBytes(stream, new ArraySegment<byte>(buf));
             return new MemoryStream(buf);
