@@ -49,7 +49,8 @@ namespace SimpleProcessFramework.TestApp
             var proc = processCluster.PrimaryProxy.CreateInterface<IProcessManager>(new ProcessEndpointAddress("localhost", "master", "ProcessManager"));
             proc.CreateProcess(new ProcessCreationInfo
             {
-                ProcessName = "Test"
+                ProcessName = "Test",
+                ProcessKind = ProcessKind.Netfx
             }, mustCreate: true).Wait();
 
             Thread.Sleep(-1);

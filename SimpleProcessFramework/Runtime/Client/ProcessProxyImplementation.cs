@@ -37,15 +37,25 @@ namespace SimpleProcessFramework.Runtime.Client
 
         protected Task WrapTaskReturn(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
-            return WrapGenericTaskReturn<VoidType>(args, method, ct);
+            return WrapTaskOfTReturn<VoidType>(args, method, ct);
         }
 
-        protected Task<T> WrapGenericTaskReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
+        protected ValueTask WrapValueTaskReturn(object[] args, ReflectedMethodInfo method, CancellationToken ct)
+        {
+            return new ValueTask(WrapTaskOfTReturn<VoidType>(args, method, ct));
+        }
+
+        protected Task<T> WrapTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
             return ExecuteRequest<T>(method, new RemoteCallRequest
             {
                 Arguments = args
             }, ct);
+        }
+
+        protected ValueTask<T> WrapValueTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
+        {
+            return new ValueTask<T>(WrapTaskOfTReturn<T>(args, method, ct));
         }
 
         private async Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteCallRequest remoteCallRequest, CancellationToken ct)
@@ -69,8 +79,10 @@ namespace SimpleProcessFramework.Runtime.Client
 
         internal static class Reflection
         {
-            public static MethodInfo WrapTaskReturnMethod { get; } = typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapTaskReturn));
-            public static MethodInfo WrapGenericTaskReturnMethod { get; } = typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapGenericTaskReturn));
+            public static MethodInfo WrapTaskReturnMethod => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapTaskReturn));
+            public static MethodInfo WrapValueTaskReturnMethod => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapTaskReturnMethod));
+            public static MethodInfo GetWrapTaskOfTReturnMethod(Type t) => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapTaskOfTReturn)).MakeGenericMethod(t);
+            public static MethodInfo GetWrapValueTaskOfTReturnMethod(Type t) => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapValueTaskReturnMethod)).MakeGenericMethod(t);
         }
     }
 }

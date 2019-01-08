@@ -192,6 +192,11 @@ namespace SimpleProcessFramework.Serialization
                 return ArraySerializer.Create(actualType.GetElementType());
             }
 
+            if(actualType.IsEnum)
+            {
+                return EnumSerializer.Create(actualType);
+            }
+
             throw new InvalidOperationException("Unable to serialize type " + actualType);
         }
     }

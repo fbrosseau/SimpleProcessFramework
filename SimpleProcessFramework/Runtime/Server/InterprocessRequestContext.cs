@@ -79,27 +79,22 @@ namespace SimpleProcessFramework.Runtime.Server
             }
         }
 
-        public void CompleteWithTask(Task t)
-        {
-            CompleteWithTask<VoidType>(t);
-        }
-
-        public void CompleteWithTaskOfT<T>(Task<T> t)
-        {
-            CompleteWithTask<T>(t);
-        }
-
-        private void CompleteWithTask<T>(Task t)
-        {
-            m_tcs.CompleteWithResultAsObject<T>(t);
-        }
+        public void CompleteWithTask(Task t) => CompleteWithTask<VoidType>(t);
+        public void CompleteWithValueTask(ValueTask t) => CompleteWithTask<VoidType>(t.AsTask());
+        public void CompleteWithTaskOfT<T>(Task<T> t) => CompleteWithTask<T>(t);
+        public void CompleteWithValueTaskOfT<T>(ValueTask<T> t) => CompleteWithTask<T>(t.AsTask());
+        private void CompleteWithTask<T>(Task t) => m_tcs.CompleteWithResultAsObject<T>(t);
 
         internal static class Reflection
         {
             public static MethodInfo CompleteWithTaskMethod => typeof(IInterprocessRequestContext)
                 .FindUniqueMethod(nameof(CompleteWithTask));
+            public static MethodInfo CompleteWithValueTaskMethod => typeof(IInterprocessRequestContext)
+                .FindUniqueMethod(nameof(CompleteWithValueTask));
             public static MethodInfo GetCompleteWithTaskOfTMethod(Type resultType) => typeof(IInterprocessRequestContext)
                 .FindUniqueMethod(nameof(CompleteWithTaskOfT)).MakeGenericMethod(resultType);
+            public static MethodInfo GetCompleteWithValueTaskOfTMethod(Type resultType) => typeof(IInterprocessRequestContext)
+                .FindUniqueMethod(nameof(CompleteWithValueTaskOfT)).MakeGenericMethod(resultType);
             public static MethodInfo Get_RequestMethod => typeof(IInterprocessRequestContext)
                 .GetProperty(nameof(Request)).GetGetMethod();
             public static MethodInfo Get_CancellationMethod => typeof(IInterprocessRequestContext)

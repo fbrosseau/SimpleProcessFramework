@@ -131,23 +131,32 @@ namespace SimpleProcessFramework.Runtime.Client
 
                 ilgen.Emit(OpCodes.Ldsfld, methodInfoField);
 
-                if (typeof(Task).IsAssignableFrom(m.ReturnType))
+                var retType = m.ReturnType;
+                if (typeof(Task).IsAssignableFrom(retType))
                 {
                     ilgen.Emit(OpCodes.Ldloc, cancellationTokenLocal);
 
-                    if (m.ReturnType == typeof(Task))
+                    if (retType == typeof(Task))
                     {
                         ilgen.Emit(OpCodes.Tailcall);
                         ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.WrapTaskReturnMethod, null);
                     }
                     else
                     {
-                        var taskResultType = m.ReturnType.GetGenericArguments()[0];
-                        var genericTaskMethod = ProcessProxyImplementation.Reflection.WrapGenericTaskReturnMethod;
-                        var taskMethod = genericTaskMethod.MakeGenericMethod(taskResultType);
                         ilgen.Emit(OpCodes.Tailcall);
-                        ilgen.EmitCall(OpCodes.Callvirt, genericTaskMethod, null);
+                        ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.GetWrapTaskOfTReturnMethod(retType.GetGenericArguments()[0]), null);
                     }
+                }
+                else if (retType == typeof(ValueTask))
+                {
+                    ilgen.Emit(OpCodes.Ldloc, cancellationTokenLocal);
+                    ilgen.Emit(OpCodes.Tailcall);
+                    ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.WrapValueTaskReturnMethod, null);
+                }
+                else if(retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                {
+                    ilgen.Emit(OpCodes.Tailcall);
+                    ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.GetWrapValueTaskOfTReturnMethod(retType.GetGenericArguments()[0]), null);
                 }
 
                 ilgen.Emit(OpCodes.Ret);

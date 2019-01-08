@@ -131,6 +131,8 @@ namespace SimpleProcessFramework.Runtime.Server
             {
                 ilgen.MarkLabel(jumpLabels[i++]);
 
+                var retType = m.ReturnType;
+
                 var methodArgs = m.GetParameters();
                 for (int argI = 0; argI < methodArgs.Length; ++argI)
                 {
@@ -159,25 +161,42 @@ namespace SimpleProcessFramework.Runtime.Server
 
                 ilgen.EmitCall(OpCodes.Callvirt, m, null);
 
-                if (typeof(Task).IsAssignableFrom(m.ReturnType))
-                {
-                    if (!taskLocals.TryGetValue(m.ReturnType, out LocalBuilder taskLocal))
-                        taskLocals[m.ReturnType] = taskLocal = ilgen.DeclareLocal(m.ReturnType);
+                if (!taskLocals.TryGetValue(retType, out LocalBuilder returnLocal))
+                    taskLocals[retType] = returnLocal = ilgen.DeclareLocal(retType);
 
-                    ilgen.Emit(OpCodes.Stloc, taskLocal);
-                    ilgen.Emit(ldarg_callContext);
-                    ilgen.Emit(OpCodes.Ldloc, taskLocal);
-                    if (m.ReturnType == typeof(Task))
-                    {
-                        ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.CompleteWithTaskMethod, null);
-                    }
-                    else
-                    {
-                        var finalMethod = InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(m.ReturnType.GetGenericArguments()[0]);
-                        ilgen.EmitCall(OpCodes.Callvirt, finalMethod, null);
-                    }
-                    ilgen.Emit(OpCodes.Br, returnLabel);
+                ilgen.Emit(OpCodes.Stloc, returnLocal);
+
+                MethodInfo handlerMethod = null;
+
+                if (retType == typeof(Task))
+                {
+                    handlerMethod = InterprocessRequestContext.Reflection.CompleteWithTaskMethod;
                 }
+                else if (retType == typeof(ValueTask))
+                {
+                    handlerMethod = InterprocessRequestContext.Reflection.CompleteWithValueTaskMethod;
+                }
+                else if (retType.IsGenericType)
+                {
+                    var baseGeneric = retType.GetGenericTypeDefinition();
+                    if (baseGeneric == typeof(Task<>))
+                    {
+                        handlerMethod = InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(retType.GetGenericArguments()[0]);
+                    }
+                    else if (baseGeneric == typeof(Task<>))
+                    {
+                        handlerMethod = InterprocessRequestContext.Reflection.GetCompleteWithValueTaskOfTMethod(retType.GetGenericArguments()[0]);
+                    }
+                }
+
+                if (handlerMethod == null)
+                {
+                    throw new InvalidOperationException("Return type of method " + m.Name + " is not handled");
+                }
+
+                ilgen.Emit(ldarg_callContext);
+                ilgen.Emit(OpCodes.Ldloc, returnLocal);
+                ilgen.EmitCall(OpCodes.Callvirt, handlerMethod, null);
             }
 
             ilgen.MarkLabel(returnLabel);
