@@ -12,6 +12,11 @@ namespace SimpleProcessFramework.Utilities
     internal static class BoxHelper
     {
         public static readonly object BoxedCancellationToken = CancellationToken.None;
+        public static readonly object BoxedInvalidType = new InvalidType();
+
+        private struct InvalidType
+        {
+        }
 
         private abstract class BoxHelperImpl<T>
         {
