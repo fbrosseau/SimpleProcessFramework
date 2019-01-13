@@ -4,17 +4,19 @@ namespace SimpleProcessFramework.Reflection
 {
     public interface ITypeResolver
     {
-        T CreateService<T>(bool addResultToCache = true);
-        T CreateService<T>(ITypeResolver scope, bool addResultToCache = true);
-        T GetService<T>();
+        T CreateSingleton<T>(bool addResultToCache = true);
+        T CreateSingleton<T>(ITypeResolver scope, bool addResultToCache = true);
+        T GetSingleton<T>();
 
         ITypeResolver CreateNewScope();
 
-        void AddService<T, TImpl>()
+        void RegisterFactory<T, TImpl>()
             where TImpl : T;
 
-        void AddService<T>(Func<ITypeResolver, T> factory);
+        void RegisterFactory<T>(Func<ITypeResolver, T> factory);
 
-        void AddService<T>(T service);
+        void RegisterSingleton<T>(T service);
+
+        object CreateInstance(Type interfaceType, Type implementationType);
     }
 }

@@ -10,19 +10,19 @@ namespace SimpleProcessFramework.Reflection
         private readonly Dictionary<Type, object> m_services = new Dictionary<Type, object>();
         private readonly ITypeResolver m_parent;
 
-        public void AddService<T, TImpl>()
+        public void RegisterFactory<T, TImpl>()
             where TImpl : T
         {
             Func<ITypeResolver, object> realFactory = DependencyInjectionFactoryProvider.GetFactory<T, TImpl>();
-            AddServiceFactory(ReflectionUtilities.GetType<T>(), realFactory);
+            RegisterFactory(ReflectionUtilities.GetType<T>(), realFactory);
         }
 
-        public void AddService<T>(Func<ITypeResolver, T> factory)
+        public void RegisterFactory<T>(Func<ITypeResolver, T> factory)
         {
-            AddServiceFactory(ReflectionUtilities.GetType<T>(), r => factory(r));
+            RegisterFactory(ReflectionUtilities.GetType<T>(), r => factory(r));
         }
 
-        private void AddServiceFactory(Type t, Func<ITypeResolver, object> f)
+        private void RegisterFactory(Type t, Func<ITypeResolver, object> f)
         {
             lock (m_factories)
             {
@@ -35,7 +35,7 @@ namespace SimpleProcessFramework.Reflection
             m_parent = parent;
         }
 
-        public void AddService<T>(T service)
+        public void RegisterSingleton<T>(T service)
         {
             lock (m_services)
             {
@@ -48,12 +48,12 @@ namespace SimpleProcessFramework.Reflection
             return new DefaultTypeResolver(this);
         }
 
-        public T CreateService<T>(bool addResultToCache)
+        public T CreateSingleton<T>(bool addResultToCache)
         {
-            return CreateService<T>(this, addResultToCache);
+            return CreateSingleton<T>(this, addResultToCache);
         }
 
-        public T CreateService<T>(ITypeResolver scope, bool addResultToCache)
+        public T CreateSingleton<T>(ITypeResolver scope, bool addResultToCache)
         {
             Guard.ArgumentNotNull(scope, nameof(scope));
 
@@ -67,7 +67,7 @@ namespace SimpleProcessFramework.Reflection
             if (factory is null)
             {
                 if (m_parent != null)
-                    service = m_parent.CreateService<T>(scope, addResultToCache: false);
+                    service = m_parent.CreateSingleton<T>(scope, addResultToCache: false);
                 else
                     throw new InvalidOperationException("Unable to build a service of type " + ReflectionUtilities.GetType<T>().FullName);
             }
@@ -78,13 +78,13 @@ namespace SimpleProcessFramework.Reflection
 
             if (addResultToCache)
             {
-                AddService(service);
+                RegisterSingleton(service);
             }
 
             return service;
         }
 
-        public T GetService<T>()
+        public T GetSingleton<T>()
         {
             object s;
             lock (m_services)
@@ -95,11 +95,16 @@ namespace SimpleProcessFramework.Reflection
             if (s is null)
             {
                 if (m_parent != null)
-                    return m_parent.GetService<T>();
+                    return m_parent.GetSingleton<T>();
                 throw new InvalidOperationException("Unable to build a service of type " + ReflectionUtilities.GetType<T>().FullName);
             }
 
             return (T)s;
+        }
+
+        public object CreateInstance(Type interfaceType, Type implementationType)
+        {
+            return Activator.CreateInstance(implementationType);
         }
     }
 }

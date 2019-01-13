@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
@@ -13,6 +14,7 @@ namespace SimpleProcessFramework.Runtime.Server
     public abstract class ProcessEndpointHandler : IProcessEndpointHandler
     {
         private object m_realTarget;
+        private IProcessEndpoint m_realTargetAsEndpoint;
         private ProcessEndpointDescriptor m_descriptor;
         private readonly Dictionary<PendingCallKey, IInterprocessRequestContext> m_pendingCalls = new Dictionary<PendingCallKey, IInterprocessRequestContext>();
         private ProcessEndpointMethodDescriptor[] m_methods;
@@ -20,6 +22,7 @@ namespace SimpleProcessFramework.Runtime.Server
         protected ProcessEndpointHandler(object realTarget, ProcessEndpointDescriptor descriptor)
         {
             m_realTarget = realTarget;
+            m_realTargetAsEndpoint = m_realTarget as IProcessEndpoint;
             m_descriptor = descriptor;
             m_methods = m_descriptor.Methods.ToArray();
         }
@@ -78,7 +81,9 @@ namespace SimpleProcessFramework.Runtime.Server
             var method = m_methods[remoteCall.MethodId];
             var args = remoteCall.GetArgsOrEmpty();
 
-            if (args.Length != method.Method.Arguments.Length)
+            var actualArgsCount = method.Method.Arguments?.Length ?? 0;
+
+            if (args.Length != actualArgsCount)
                 ThrowBadInvocation();
 
             if (method.IsCancellable)
@@ -102,6 +107,12 @@ namespace SimpleProcessFramework.Runtime.Server
         }
 
         protected abstract void DoRemoteCallImpl(IInterprocessRequestContext callRequest); // codegen
+
+        public async Task InitializeAsync(IProcess parentProcess)
+        {
+            if (m_realTargetAsEndpoint != null)
+                await m_realTargetAsEndpoint.InitializeAsync(parentProcess).ConfigureAwait(false);
+        }
 
         #region Inner classes
         internal static class Reflection

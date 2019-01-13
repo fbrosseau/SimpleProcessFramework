@@ -15,6 +15,7 @@ namespace SimpleProcessFramework.Runtime.Messages
         public object[] Arguments { get; set; }
 
         public object[] GetArgsOrEmpty() => Arguments ?? Array.Empty<object>();
+        public override bool ExpectResponse => true;
 
         internal static class Reflection
         {

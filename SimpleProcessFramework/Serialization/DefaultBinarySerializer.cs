@@ -59,12 +59,11 @@ namespace SimpleProcessFramework.Serialization
             return ms.ToArray();
         }
 
-        public Stream Serialize<T>(T graph, bool lengthPrefix)
+        public Stream Serialize<T>(T graph, bool lengthPrefix, int startOffset = 0)
         {
             MemoryStream ms = new MemoryStream();
 
-            if (lengthPrefix)
-                ms.Position = 4;
+            ms.Position = startOffset + (lengthPrefix ? 4 : 0);
 
             var writer = new SerializerSession(ms);
             writer.BeginSerialization();
@@ -72,9 +71,9 @@ namespace SimpleProcessFramework.Serialization
             writer.FinishSerialization();
 
             if (lengthPrefix)
-                writer.WritePositionDelta(0);
+                writer.WritePositionDelta(startOffset);
 
-            ms.Position = 0;
+            ms.Position = startOffset;
 
             return ms;
         }

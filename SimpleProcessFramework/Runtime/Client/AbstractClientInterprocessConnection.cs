@@ -19,25 +19,21 @@ namespace SimpleProcessFramework.Runtime.Client
 
     internal abstract class AbstractClientInterprocessConnection : AbstractInterprocessConection, IClientInterprocessConnection
     {
-        private Dictionary<long, PendingOperation> m_pendingResponses = new Dictionary<long, PendingOperation>();
+        private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
+        private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingResponses = new SimpleUniqueIdFactory<PendingOperation>();
 
         protected AbstractClientInterprocessConnection(IBinarySerializer serializer)
             : base(serializer)
         {
         }
 
-        protected override void HandleMessage(IInterprocessMessage msg)
+        protected override void HandleExternalMessage(IInterprocessMessage msg)
         {
             msg = ((WrappedInterprocessMessage)msg).Unwrap(BinarySerializer);
             switch (msg)
             {
                 case RemoteInvocationResponse callResponse:
-                    PendingOperation op;
-                    lock (m_pendingResponses)
-                    {
-                        m_pendingResponses.TryGetValue(callResponse.CallId, out op);
-                    }
-
+                    PendingOperation op = m_pendingResponses.RemoveById(callResponse.CallId);
                     if (op is null)
                         return;
 
@@ -56,7 +52,7 @@ namespace SimpleProcessFramework.Runtime.Client
 
                     break;
                 default:
-                    base.HandleMessage(msg);
+                    base.HandleExternalMessage(msg);
                     break;
             }
         }
@@ -68,17 +64,10 @@ namespace SimpleProcessFramework.Runtime.Client
             if (op.Request is IInterprocessRequest req && req.ExpectResponse)
             {
                 expectResponse = true;
-                lock (m_pendingResponses)
-                {
-                    m_pendingResponses.Add(req.CallId, op);
-                }
 
                 op.Completion.Task.ContinueWith(t =>
                 {
-                    lock (m_pendingResponses)
-                    {
-                        m_pendingResponses.Remove(req.CallId);
-                    }
+                    m_pendingResponses.RemoveById(req.CallId);
                 }).FireAndForget();
             }
 
@@ -86,12 +75,21 @@ namespace SimpleProcessFramework.Runtime.Client
 
             if (!expectResponse)
             {
-                op.Completion.TrySetResult(null);
+                op.Completion.TrySetResult(BoxHelper.BoxedInvalidType);
                 op.Dispose();
             }
         }
 
-        private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
+        public override Task<object> SerializeAndSendMessage(IInterprocessMessage msg)
+        {
+            var op = new PendingOperation(msg);
+            if (msg is IInterprocessRequest req)
+            {
+                req.CallId = m_pendingResponses.GetNextId(op);
+            }
+
+            return EnqueueOperation(op);
+        }
 
         private class DescribedRemoteEndpoint
         {

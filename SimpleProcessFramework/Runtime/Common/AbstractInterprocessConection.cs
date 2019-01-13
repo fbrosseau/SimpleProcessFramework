@@ -27,15 +27,19 @@ namespace SimpleProcessFramework.Runtime.Common
 
         protected class PendingOperation : IAbortableItem
         {
-            public Stream Data { get; }
+            public Stream Data { get; private set; }
             public TaskCompletionSource<object> Completion { get; }
             public IInterprocessMessage Request { get; }
 
-            public PendingOperation(IInterprocessMessage req, Stream serializedRequest)
+            public PendingOperation(IInterprocessMessage req)
             {
                 Request = req;
                 Completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-                Data = serializedRequest;
+            }
+
+            public void SerializeRequest(IBinarySerializer serializer)
+            {
+                Data = serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Request, serializer), lengthPrefix: true);
             }
 
             public PendingOperation(ConnectionCodes code)
@@ -143,7 +147,7 @@ namespace SimpleProcessFramework.Runtime.Common
                 {
                     var stream = await ReadStream.ReadLengthPrefixedBlock();
                     var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
-                    HandleMessage(msg);
+                    HandleExternalMessage(msg);
                 }
             }
             catch(Exception ex)
@@ -152,7 +156,7 @@ namespace SimpleProcessFramework.Runtime.Common
             }
         }
 
-        protected virtual void HandleMessage(IInterprocessMessage msg)
+        protected virtual void HandleExternalMessage(IInterprocessMessage msg)
         {
             throw new InvalidOperationException("Message of type " + msg.GetType().FullName + " is not handled");
         }
@@ -185,14 +189,14 @@ namespace SimpleProcessFramework.Runtime.Common
 
         internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
 
-        public Task<object> SerializeAndSendMessage(IInterprocessMessage req)
+        public virtual Task<object> SerializeAndSendMessage(IInterprocessMessage req)
         {
-            var serializedRequest = BinarySerializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(req, BinarySerializer), lengthPrefix: true);
-            return EnqueueOperation(new PendingOperation(req, serializedRequest));
+            return EnqueueOperation(new PendingOperation(req));
         }
 
         protected Task<object> EnqueueOperation(PendingOperation pendingOperation)
         {
+            pendingOperation.SerializeRequest(BinarySerializer);
             m_pendingWrites.Enqueue(pendingOperation);
             return pendingOperation.Completion.Task;
         }

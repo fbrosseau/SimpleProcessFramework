@@ -6,11 +6,11 @@ namespace SimpleProcessFramework.Runtime.Server
 {
     internal class ClientConnectionManager : IClientConnectionManager, IClientRequestHandler
     {
-        private readonly List<IInterprocessClientChannel> m_activeChannels = new List<IInterprocessClientChannel>();
+        private readonly Dictionary<long, IInterprocessClientChannel> m_activeChannels = new Dictionary<long, IInterprocessClientChannel>();
         private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
-        private readonly IInternalProcessManager m_processManager;
+        private readonly IInternalProcessBroker m_processManager;
 
-        public ClientConnectionManager(IInternalProcessManager processManager)
+        public ClientConnectionManager(IInternalProcessBroker processManager)
         {
             m_processManager = processManager;
         }
@@ -49,7 +49,7 @@ namespace SimpleProcessFramework.Runtime.Server
             var cli = e.Client;
             lock (m_activeChannels)
             {
-                m_activeChannels.Add(cli);
+                m_activeChannels.Add(cli.UniqueId, cli);
             }
 
             cli.ConnectionLost += OnConnectionLost;
@@ -60,13 +60,22 @@ namespace SimpleProcessFramework.Runtime.Server
         {
             lock (m_activeChannels)
             {
-                m_activeChannels.Remove((IInterprocessClientChannel)sender);
+                m_activeChannels.Remove(((IInterprocessClientChannel)sender).UniqueId);
             }
         }
 
         void IClientRequestHandler.OnRequestReceived(IInterprocessClientChannel source, WrappedInterprocessMessage wrappedMessage)
         {
             m_processManager.ForwardMessage(source.GetWrapperProxy(), wrappedMessage);
+        }
+
+        public IInterprocessClientChannel GetClientChannel(long connectionId)
+        {
+            lock (m_activeChannels)
+            {
+                m_activeChannels.TryGetValue(connectionId, out var c);
+                return c;
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace SimpleProcessFramework
         public ProcessProxy(ITypeResolver resolver)
         {
             m_typeResolver = resolver.CreateNewScope();
-            m_connectionFactory = m_typeResolver.CreateService<IClientConnectionFactory>();
+            m_connectionFactory = m_typeResolver.CreateSingleton<IClientConnectionFactory>();
         }
 
         public T CreateInterface<T>(ProcessEndpointAddress address)

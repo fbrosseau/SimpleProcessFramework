@@ -32,6 +32,12 @@ namespace SimpleProcessFramework.Runtime.Server
             return handler;
         }
 
+        public static IProcessEndpointHandler Create(object handler, Type interfaceType)
+        {
+            var createMethod = typeof(ProcessEndpointHandlerFactory).GetMethods(BindingFlags.Public | BindingFlags.Static).First(m => m.Name == "Create" && m.IsGenericMethod);
+            return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { handler });
+        }
+        
         private static Func<object, ProcessEndpointHandler> CreateFactory(Type type)
         {
             Guard.ArgumentNotNull(type, nameof(type));
@@ -197,6 +203,7 @@ namespace SimpleProcessFramework.Runtime.Server
                 ilgen.Emit(ldarg_callContext);
                 ilgen.Emit(OpCodes.Ldloc, returnLocal);
                 ilgen.EmitCall(OpCodes.Callvirt, handlerMethod, null);
+                ilgen.Emit(OpCodes.Br, returnLabel);
             }
 
             ilgen.MarkLabel(returnLabel);

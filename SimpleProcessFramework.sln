@@ -6,6 +6,10 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netfx", "Subprocess.Netfx\Subprocess.Netfx.csproj", "{24F00FF0-ED19-4550-9071-78A90CB8FC12}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework", "SimpleProcessFramework\SimpleProcessFramework.csproj", "{6175D4E9-B76F-4541-A60D-08C07C92516E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5B8DC953-43AA-4AF4-A485-91501F1A7CDD} = {5B8DC953-43AA-4AF4-A485-91501F1A7CDD}
+		{24F00FF0-ED19-4550-9071-78A90CB8FC12} = {24F00FF0-ED19-4550-9071-78A90CB8FC12}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netcore", "Subprocess.Netcore\Subprocess.Netcore.csproj", "{5B8DC953-43AA-4AF4-A485-91501F1A7CDD}"
 EndProject

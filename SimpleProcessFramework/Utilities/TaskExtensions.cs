@@ -107,5 +107,23 @@ namespace SimpleProcessFramework.Utilities
 
             return tcs.Task;
         }
+
+        public static T WaitOrTimeout<T>(this Task<T> t, TimeSpan timeout)
+        {
+            ((Task)t).WaitOrTimeout(timeout);
+            return t.Result;
+        }
+
+        public static void WaitOrTimeout(this Task t, TimeSpan timeout)
+        {
+            if (!t.Wait(timeout))
+                throw new TimeoutException();
+        }
+
+        public static void ExpectAlreadyCompleted(this Task t)
+        {
+            if (!t.IsCompleted)
+                throw new InvalidOperationException("This task was supposed to be already completed");
+        }
     }
 }
