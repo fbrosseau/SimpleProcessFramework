@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Client
@@ -15,12 +16,24 @@ namespace SimpleProcessFramework.Runtime.Client
     public interface IClientInterprocessConnection : IInterprocessConnection
     {
         ValueTask<ProcessEndpointMethodDescriptor> GetRemoteMethodDescriptor(ProcessEndpointAddress destination, ReflectedMethodInfo calledMethod);
+        Task ChangeEventSubscription(EventRegistrationRequestInfo req);
     }
 
     internal abstract class AbstractClientInterprocessConnection : AbstractInterprocessConection, IClientInterprocessConnection
     {
         private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
         private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingResponses = new SimpleUniqueIdFactory<PendingOperation>();
+        private SimpleUniqueIdFactory<RemoteEventRegistration> m_eventRegistrations = new SimpleUniqueIdFactory<RemoteEventRegistration>();
+
+        private class RemoteEventRegistration
+        {
+            public Action<EventRaisedMessage> Callback { get; }
+
+            public RemoteEventRegistration(Action<EventRaisedMessage> callback)
+            {
+                Callback = callback;
+            }
+        }
 
         protected AbstractClientInterprocessConnection(IBinarySerializer serializer)
             : base(serializer)
@@ -51,6 +64,10 @@ namespace SimpleProcessFramework.Runtime.Client
                     }
 
                     break;
+                case EventRaisedMessage eventMsg:
+                    var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
+                    handler?.Callback(eventMsg);
+                    break;
                 default:
                     base.HandleExternalMessage(msg);
                     break;
@@ -80,9 +97,9 @@ namespace SimpleProcessFramework.Runtime.Client
             }
         }
 
-        public override Task<object> SerializeAndSendMessage(IInterprocessMessage msg)
+        public override Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
-            var op = new PendingOperation(msg);
+            var op = new PendingOperation(msg, ct);
             if (msg is IInterprocessRequest req)
             {
                 req.CallId = m_pendingResponses.GetNextId(op);
@@ -122,5 +139,30 @@ namespace SimpleProcessFramework.Runtime.Client
         }
 
         protected abstract Task<ProcessEndpointDescriptor> GetRemoteEndpointMetadata(ProcessEndpointAddress destination, ReflectedTypeInfo type);
+
+        public Task ChangeEventSubscription(EventRegistrationRequestInfo req)
+        {
+            var outgoingMessage = new EventRegistrationRequest
+            {
+                Destination = req.Destination,
+                RemovedEvents = req.RemovedEvents?.ToList()
+            };
+
+            if (req.NewEvents?.Count > 0)
+            {
+                outgoingMessage.AddedEvents = new List<EventRegistrationItem>();
+
+                foreach (var evt in req.NewEvents)
+                {
+                    outgoingMessage.AddedEvents.Add(new EventRegistrationItem
+                    {
+                        EventName = evt.EventName,
+                        RegistrationId = m_eventRegistrations.GetNextId(new RemoteEventRegistration(evt.Callback))
+                    });
+                }
+            }
+
+            return SerializeAndSendMessage(outgoingMessage);
+        }
     }
 }

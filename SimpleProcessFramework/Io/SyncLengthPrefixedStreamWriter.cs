@@ -49,7 +49,7 @@ namespace SimpleProcessFramework.Io
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
             }
             finally

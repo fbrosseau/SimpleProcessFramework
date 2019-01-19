@@ -10,8 +10,13 @@ namespace SimpleProcessFramework.Utilities
         {
             var parameters = methodToOverride.GetParameters();
 
+            MethodAttributes methodAttr = MethodAttributes.Public | MethodAttributes.Virtual;
+
+            if (methodToOverride.IsSpecialName)
+                methodAttr |= MethodAttributes.SpecialName;
+
             var implBuilder = typeBuilder.DefineMethod(methodToOverride.Name,
-                MethodAttributes.Public | MethodAttributes.Virtual,
+                methodAttr,
                 CallingConventions.HasThis,
                 methodToOverride.ReturnType,
                 methodToOverride.ReturnParameter.GetRequiredCustomModifiers(),

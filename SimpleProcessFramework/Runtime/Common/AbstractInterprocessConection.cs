@@ -30,9 +30,11 @@ namespace SimpleProcessFramework.Runtime.Common
             public Stream Data { get; private set; }
             public TaskCompletionSource<object> Completion { get; }
             public IInterprocessMessage Request { get; }
+            public CancellationToken CancellationToken { get; }
 
-            public PendingOperation(IInterprocessMessage req)
+            public PendingOperation(IInterprocessMessage req, CancellationToken ct = default)
             {
+                CancellationToken = ct;
                 Request = req;
                 Completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
@@ -189,16 +191,31 @@ namespace SimpleProcessFramework.Runtime.Common
 
         internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
 
-        public virtual Task<object> SerializeAndSendMessage(IInterprocessMessage req)
+        public virtual Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
-            return EnqueueOperation(new PendingOperation(req));
+            return EnqueueOperation(new PendingOperation(msg, ct));
         }
 
-        protected Task<object> EnqueueOperation(PendingOperation pendingOperation)
+        protected async Task<object> EnqueueOperation(PendingOperation op)
         {
-            pendingOperation.SerializeRequest(BinarySerializer);
-            m_pendingWrites.Enqueue(pendingOperation);
-            return pendingOperation.Completion.Task;
+            op.SerializeRequest(BinarySerializer);
+            m_pendingWrites.Enqueue(op);
+
+            var ctRegistration = new CancellationTokenRegistration();
+
+            if (op.CancellationToken.CanBeCanceled && op.Request is RemoteInvocationRequest req)
+            {
+                op.CancellationToken.Register(() => SerializeAndSendMessage(new RemoteCallCancellationRequest
+                {
+                    CallId = req.CallId,
+                    Destination = req.Destination
+                }).FireAndForget(), false);
+            }
+
+            using (ctRegistration)
+            {
+                return await op.Completion.Task.ConfigureAwait(false);
+            }
         }
     }
 }

@@ -79,22 +79,9 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
                 throw new NotImplementedException();
             }
 
-            public void SendFailure(long callId, Exception fault)
+            public void SendMessage(IInterprocessMessage msg)
             {
-                m_owner.SerializeAndSendMessage(UniqueId, new RemoteCallFailureResponse
-                {
-                    CallId = callId,
-                    Error = fault
-                });
-            }
-
-            public void SendResponse(long callId, object result)
-            {
-                m_owner.SerializeAndSendMessage(UniqueId, new RemoteCallSuccessResponse
-                {
-                    CallId = callId,
-                    Result = result
-                });
+                m_owner.SerializeAndSendMessage(UniqueId, msg);
             }
         }
 

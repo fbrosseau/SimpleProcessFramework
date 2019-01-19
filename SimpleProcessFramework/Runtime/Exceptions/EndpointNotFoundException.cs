@@ -2,7 +2,6 @@
 
 namespace SimpleProcessFramework.Runtime.Exceptions
 {
-    
     public class EndpointNotFoundException : Exception
     {
         private ProcessEndpointAddress destination;

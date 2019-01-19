@@ -12,6 +12,9 @@ namespace SimpleProcessFramework.Runtime.Messages
         public int MethodId { get; set; }
 
         [DataMember]
+        public string MethodName { get; set; }
+
+        [DataMember]
         public object[] Arguments { get; set; }
 
         public object[] GetArgsOrEmpty() => Arguments ?? Array.Empty<object>();

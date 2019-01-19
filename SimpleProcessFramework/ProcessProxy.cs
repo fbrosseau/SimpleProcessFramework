@@ -1,19 +1,46 @@
 ﻿using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
+using SimpleProcessFramework.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework
 {
-    public interface IInterprocessRequestHandler
+    public class EventRegistrationRequestInfo
     {
-        Task<object> ProcessCall(IClientInterprocessConnection targetConnection, RemoteCallRequest remoteCallRequest, CancellationToken ct);
+        public class NewEventRegistration
+        {
+            public Action<EventRaisedMessage> Callback { get; }
+            public string EventName { get; }
+
+            public NewEventRegistration(string eventName, Action<EventRaisedMessage> callback)
+            {
+                EventName = eventName;
+                Callback = callback;
+            }
+        }
+
+        public EventRegistrationRequestInfo(ProcessEndpointAddress destination)
+        {
+            Destination = destination;
+        }
+
+        public List<NewEventRegistration> NewEvents { get; } = new List<NewEventRegistration>();
+        public List<string> RemovedEvents { get; } = new List<string>();
+        public ProcessEndpointAddress Destination { get; }
     }
 
-    public class ProcessProxy : IInterprocessRequestHandler
+    public interface IInterprocessRequestHandler
+    {
+        Task<object> ProcessCall(IClientInterprocessConnection targetConnection, RemoteInvocationRequest remoteCallRequest, CancellationToken ct = default);
+        Task ChangeEventSubscription(IClientInterprocessConnection targetConnection, EventRegistrationRequestInfo req);
+    }
+
+    public class ProcessProxy
     {
         private readonly IClientConnectionFactory m_connectionFactory;
         private readonly ITypeResolver m_typeResolver;
@@ -32,29 +59,8 @@ namespace SimpleProcessFramework
         public T CreateInterface<T>(ProcessEndpointAddress address)
         {
             var proxy = ProcessProxyFactory.CreateImplementation<T>();
-            proxy.Initialize(this, m_connectionFactory.GetConnection(address), address);
+            proxy.Initialize(m_connectionFactory.GetConnection(address), address);
             return (T)(object)proxy;
-        }
-
-        async Task<object> IInterprocessRequestHandler.ProcessCall(IClientInterprocessConnection targetConnection, RemoteCallRequest req, CancellationToken ct)
-        {
-            var t = targetConnection.SerializeAndSendMessage(req);
-
-            var ctRegistration = new CancellationTokenRegistration();
-
-            if (ct.CanBeCanceled)
-            {
-                ct.Register(() => targetConnection.SerializeAndSendMessage(new RemoteCallCancellationRequest
-                {
-                    CallId = req.CallId,
-                    Destination = req.Destination
-                }), false);
-            }
-
-            using (ctRegistration)
-            {
-                return await t.ConfigureAwait(false);
-            }
-        }
+        }        
     }
 }

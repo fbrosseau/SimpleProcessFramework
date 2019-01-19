@@ -3,6 +3,7 @@ using SimpleProcessFramework.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -155,11 +156,14 @@ namespace SimpleProcessFramework.Serialization
                 (bw, o) => bw.Writer.Write((string)o),
                 br => br.Reader.ReadString()));
             AddSerializer(typeof(bool), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((bool)o ? (byte)1:(byte)0),
+                (bw, o) => bw.Writer.Write((bool)o ? (byte)1 : (byte)0),
                 br => BoxHelper.Box(br.Reader.ReadByte() != 0)));
             AddSerializer(typeof(CancellationToken), new SimpleTypeSerializer(
                 (bw, o) => { },
                 br => BoxHelper.BoxedCancellationToken));
+            AddSerializer(typeof(EventArgs), new SimpleTypeSerializer(
+                (bw, o) => { },
+                br => EventArgs.Empty));
         }
 
         internal static ITypeSerializer GetSerializer(Type actualType)
@@ -194,6 +198,16 @@ namespace SimpleProcessFramework.Serialization
             if(actualType.IsEnum)
             {
                 return EnumSerializer.Create(actualType);
+            }
+
+            if (actualType.IsGenericType)
+            {
+                var baseType = actualType.GetGenericTypeDefinition();
+                var genericArgs = actualType.GetGenericArguments();
+                if (baseType == typeof(List<>))
+                {
+                    return ListSerializer.Create(genericArgs.Single());
+                }
             }
 
             throw new InvalidOperationException("Unable to serialize type " + actualType);

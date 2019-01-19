@@ -1,4 +1,5 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using SimpleProcessFramework.Runtime.Messages;
+using SimpleProcessFramework.Utilities;
 using System;
 using System.Threading.Tasks;
 
@@ -20,15 +21,9 @@ namespace SimpleProcessFramework.Runtime.Server
             return Task.FromResult(m_actualChannel);
         }
 
-        public void SendFailure(long callId, Exception fault)
+        public void SendMessage(IInterprocessMessage msg)
         {
-            m_actualChannel.SendFailure(callId, fault);
-        }
-
-        public void SendResponse(long callId, object completion)
-        {
-            m_actualChannel.SendResponse(callId, completion);
+            m_actualChannel.SendMessage(msg);
         }
     }
-
 }

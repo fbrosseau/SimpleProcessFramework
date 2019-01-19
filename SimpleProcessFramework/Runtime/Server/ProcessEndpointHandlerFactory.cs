@@ -79,14 +79,31 @@ namespace SimpleProcessFramework.Runtime.Server
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             ilgen.Emit(OpCodes.Ldsfld, endpointMetadataField);
-            ilgen.Emit(OpCodes.Call, typeof(ProcessEndpointHandler).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Single());
+            ilgen.Emit(OpCodes.Call, ProcessEndpointHandler.Reflection.Constructor);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             ilgen.Emit(OpCodes.Castclass, type);
             ilgen.Emit(OpCodes.Stfld, realImplField);
+
+            string GetFieldNameForEvent(EventInfo evt)
+            {
+                return "EventInfo__" + evt.Name;
+            }
+
+            foreach (var evt in type.GetEvents())
+            {
+                var staticField = typeBuilder.DefineField(GetFieldNameForEvent(evt), typeof(ReflectedEventInfo), FieldAttributes.Private | FieldAttributes.Static);
+
+                ilgen.Emit(OpCodes.Ldarg_0);
+                ilgen.Emit(OpCodes.Ldsfld, staticField);
+                ilgen.EmitCall(OpCodes.Callvirt, ProcessEndpointHandler.Reflection.PrepareEventMethod, null);
+            }
+
             ilgen.Emit(OpCodes.Ret);
 
-            var allMethods = type.GetMethods();
+            var typeDescriptor = ProcessEndpointDescriptor.CreateFromCurrentProcess(type);
+
+            var allMethods = typeDescriptor.Methods.Select(m => m.Method.ResolvedMethod).ToArray();
 
             var doRemoteCallImplDecl = ProcessEndpointHandler.Reflection.DoRemoteCallImplMethod;
             var doRemoteCallImplMethod = typeBuilder.DefineExactOverride(doRemoteCallImplDecl);
@@ -127,7 +144,7 @@ namespace SimpleProcessFramework.Runtime.Server
             // fallthrough
             ilgen.Emit(OpCodes.Pop);
             ilgen.Emit(ldarg_this);
-            ilgen.EmitCall(OpCodes.Callvirt, ProcessEndpointHandler.Reflection.ThrowBadInvocationMethod, null);
+            ilgen.EmitCall(OpCodes.Callvirt, ProcessEndpointHandler.Reflection.ThrowBadInvocationWithoutTextMethod, null);
             ilgen.Emit(OpCodes.Br, returnLabel); // won't happen, this throws
 
             var taskLocals = new Dictionary<Type, LocalBuilder>();
@@ -213,7 +230,13 @@ namespace SimpleProcessFramework.Runtime.Server
             var factoryMethod = finalType.FindUniqueMethod(factoryName);
 
             var finalMetadataField = finalType.GetField(metadataFieldName, BindingFlags.NonPublic | BindingFlags.Static);
-            finalMetadataField.SetValue(null, ProcessEndpointDescriptor.CreateFromCurrentProcess(type));
+            finalMetadataField.SetValue(null, typeDescriptor);
+
+            foreach (var evt in type.GetEvents())
+            {
+                var staticField = finalType.GetField(GetFieldNameForEvent(evt), BindingFlags.NonPublic | BindingFlags.Static);
+                staticField.SetValue(null, new ReflectedEventInfo(evt));
+            }
 
             return (Func<object, ProcessEndpointHandler>)Delegate.CreateDelegate(typeof(Func<object, ProcessEndpointHandler>), factoryMethod);
         }

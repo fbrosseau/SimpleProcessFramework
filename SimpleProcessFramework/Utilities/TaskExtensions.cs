@@ -125,5 +125,10 @@ namespace SimpleProcessFramework.Utilities
             if (!t.IsCompleted)
                 throw new InvalidOperationException("This task was supposed to be already completed");
         }
+
+        public static Exception GetFriendlyException(this Task t)
+        {
+            return t.Exception;
+        }
     }
 }

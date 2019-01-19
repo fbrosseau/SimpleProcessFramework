@@ -15,8 +15,11 @@ namespace SimpleProcessFramework.Reflection
         public static ProcessEndpointDescriptor CreateFromCurrentProcess(Type type)
         {
             var methodDescriptors = new List<ProcessEndpointMethodDescriptor>();
-            foreach (var m in type.GetMethods())
+            foreach (var m in type.GetMethods().OrderBy(m => m.Name))
             {
+                if (m.IsSpecialName)
+                    continue;
+
                 methodDescriptors.Add(new ProcessEndpointMethodDescriptor
                 {
                     Method = new ReflectedMethodInfo(m),

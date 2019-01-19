@@ -69,13 +69,22 @@ namespace SimpleProcessFramework.Runtime.Server
         private void MarkAsCompleted()
         {
             m_handler.CompleteCall(this);
+            
             if (Completion.Status == TaskStatus.RanToCompletion)
             {
-                Client.SendResponse(Request.CallId, Completion.Result);
+                Client.SendMessage(new RemoteCallSuccessResponse
+                {
+                    CallId = Request.CallId,
+                    Result = Completion.Result
+                });
             }
             else
             {
-                Client.SendFailure(Request.CallId, Completion.Exception);
+                Client.SendMessage(new RemoteCallFailureResponse
+                {
+                    CallId = Request.CallId,
+                    Error = Completion.GetFriendlyException()
+                });
             }
         }
 

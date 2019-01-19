@@ -48,6 +48,13 @@ namespace SimpleProcessFramework.Reflection
             m_resolvedMethod = m;
         }
 
+        internal string GetUniqueName()
+        {
+            return $"{Name}|{GetArgumentCount()}";
+        }
+
+        public int GetArgumentCount() => Arguments?.Length ?? 0;
+               
         public override bool Equals(object obj) { return Equals(obj as ReflectedMethodInfo); }
         public override int GetHashCode() => Type.GetHashCode() ^ Name.GetHashCode();
         public override string ToString() => Name;

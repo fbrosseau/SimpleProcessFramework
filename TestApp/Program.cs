@@ -11,11 +11,14 @@ namespace SimpleProcessFramework.TestApp
 {
     public interface ITest
     {
+        event EventHandler Allo;
         Task LOL();
     }
 
     public class GreatTest : AbstractProcessEndpoint, ITest
     {
+        public event EventHandler Allo;
+
         protected override Task InitializeAsync()
         {
             return base.InitializeAsync();
@@ -23,6 +26,7 @@ namespace SimpleProcessFramework.TestApp
 
         public Task LOL()
         {
+            Allo?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
         }
     }
@@ -67,26 +71,32 @@ namespace SimpleProcessFramework.TestApp
 
             cts = new CancellationTokenSource();
             var proc = processCluster.PrimaryProxy.CreateInterface<IProcessBroker>(new ProcessEndpointAddress("localhost", "master", WellKnownEndpoints.ProcessBroker));
-            proc.CreateProcess(new ProcessCreationInfo
+           /* proc.CreateProcess(new ProcessCreationInfo
             {
                 ProcessName = "",
                 ProcessKind = ProcessKind.Netfx,
                 ProcessUniqueId = "Test"
             }, mustCreate: true).Wait();
+            */
 
             var testPRocess = "master";
 
             var remoteProcess = processCluster.PrimaryProxy.CreateInterface<IEndpointBroker>(new ProcessEndpointAddress("localhost", testPRocess, WellKnownEndpoints.EndpointBroker));
             var res = remoteProcess.CreateEndpoint("LOL", ReflectedTypeInfo.Create(typeof(ITest)), ReflectedTypeInfo.Create(typeof(GreatTest))).Result;
 
-            var wowow = remoteProcess.GetProcessCreationInfo().Result;
+            //var wowow = remoteProcess.GetProcessCreationInfo().Result;
 
             var remoteTest = processCluster.PrimaryProxy.CreateInterface<ITest>(new ProcessEndpointAddress("localhost", testPRocess, "LOL"));
+            remoteTest.Allo += RemoteTest_Allo;
             remoteTest.LOL().Wait();
 
             Thread.Sleep(-1);
 
             Console.WriteLine("Hello World!");
+        }
+
+        private static void RemoteTest_Allo(object sender, EventArgs e)
+        {
         }
     }
 }

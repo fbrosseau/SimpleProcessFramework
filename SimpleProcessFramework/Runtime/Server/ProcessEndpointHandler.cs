@@ -1,4 +1,5 @@
 ﻿using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Exceptions;
 using SimpleProcessFramework.Runtime.Messages;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,9 @@ namespace SimpleProcessFramework.Runtime.Server
         private IProcessEndpoint m_realTargetAsEndpoint;
         private ProcessEndpointDescriptor m_descriptor;
         private readonly Dictionary<PendingCallKey, IInterprocessRequestContext> m_pendingCalls = new Dictionary<PendingCallKey, IInterprocessRequestContext>();
-        private ProcessEndpointMethodDescriptor[] m_methods;
+        private readonly ProcessEndpointMethodDescriptor[] m_methods;
+        private readonly Dictionary<string, ProcessEndpointMethodDescriptor> m_methodsByName;
+        private Dictionary<string, EventSubscriptionInfo> m_eventsByName = new Dictionary<string, EventSubscriptionInfo>();
 
         protected ProcessEndpointHandler(object realTarget, ProcessEndpointDescriptor descriptor)
         {
@@ -25,6 +28,12 @@ namespace SimpleProcessFramework.Runtime.Server
             m_realTargetAsEndpoint = m_realTarget as IProcessEndpoint;
             m_descriptor = descriptor;
             m_methods = m_descriptor.Methods.ToArray();
+            m_methodsByName = m_methods.ToDictionary(m => m.Method.GetUniqueName());
+        }
+
+        protected void PrepareEvent(ReflectedEventInfo evt)
+        {
+            m_eventsByName.Add(evt.Name, new EventSubscriptionInfo(m_realTarget, evt));
         }
 
         public virtual void HandleMessage(IInterprocessRequestContext req)
@@ -41,6 +50,9 @@ namespace SimpleProcessFramework.Runtime.Server
                         break;
                     case RemoteCallCancellationRequest _:
                         CancelCall(req);
+                        break;
+                    case EventRegistrationRequest evt:
+                        UpdateEventSubscriptions(req, evt);
                         break;
                     default:
                         req.Fail(new InvalidOperationException("Cannot handle request"));
@@ -75,16 +87,22 @@ namespace SimpleProcessFramework.Runtime.Server
                 m_pendingCalls.Add(key, req);
             }
 
+            if(remoteCall.MethodName != null)
+            {
+                if (!m_methodsByName.TryGetValue(remoteCall.MethodName, out var m))
+                    ThrowBadInvocation("Method not found: " + remoteCall.MethodName);
+
+                remoteCall.MethodId = m.MethodId;
+            }
+
             if (remoteCall.MethodId < 0 || remoteCall.MethodId >= m_methods.Length)
-                ThrowBadInvocation();
+                ThrowBadInvocation("Method ID is unknown");
 
             var method = m_methods[remoteCall.MethodId];
             var args = remoteCall.GetArgsOrEmpty();
 
-            var actualArgsCount = method.Method.Arguments?.Length ?? 0;
-
-            if (args.Length != actualArgsCount)
-                ThrowBadInvocation();
+            if (args.Length != method.Method.GetArgumentCount())
+                ThrowBadInvocation($"Expected {method.Method.GetArgumentCount()} parameters - {args.Length} provided");
 
             if (method.IsCancellable)
                 req.SetupCancellationToken();
@@ -92,9 +110,119 @@ namespace SimpleProcessFramework.Runtime.Server
             DoRemoteCallImpl(req);
         }
 
-        protected void ThrowBadInvocation()
+        protected class EventSubscriptionInfo
         {
-            throw new InvalidOperationException("Unknown method");
+            private class ClientEventRegistration
+            {
+                public IInterprocessClientProxy Client;
+                public long RegistrationId;
+            }
+
+            public ReflectedEventInfo Event { get; }
+            private List<ClientEventRegistration> m_listeners = new List<ClientEventRegistration>();
+            private Delegate m_eventHandler;
+
+            private static MethodInfo s_eventHandlerMethod = typeof(EventSubscriptionInfo).FindUniqueMethod(nameof(OnEventRaised));
+            private readonly object m_target;
+
+            private Delegate CreateEventHandler()
+            {
+                if(m_eventHandler is null)
+                    m_eventHandler = Delegate.CreateDelegate(Event.ResolvedEvent.EventHandlerType, this, s_eventHandlerMethod);
+                return m_eventHandler;
+            }
+
+            public EventSubscriptionInfo(object target, ReflectedEventInfo eventInfo)
+            {
+                m_target = target;
+                Event = eventInfo;
+            }
+
+            internal void AddConsumer(IInterprocessClientProxy client, long registrationId)
+            {
+                bool newSub = false;
+                lock (this)
+                {
+                    newSub = m_listeners.Count == 0;
+                    var newList = new List<ClientEventRegistration>(m_listeners.Count + 1);
+                    newList.AddRange(m_listeners);
+                    newList.Add(new ClientEventRegistration { Client = client, RegistrationId = registrationId });
+                    m_listeners = newList;
+                }
+
+                if(newSub)
+                {
+                    Event.ResolvedEvent.AddEventHandler(m_target, CreateEventHandler());
+                }
+            }
+
+            internal void RemoveConsumer(IInterprocessClientProxy client)
+            {
+                bool unsubscribe = false;
+                lock (this)
+                {
+                    var newList = m_listeners.ToList();
+                    newList.RemoveAll(r => r.Client == client);
+                    m_listeners = newList;
+                    unsubscribe = m_listeners.Count == 0;
+                }
+
+                if (unsubscribe)
+                {
+                    Event.ResolvedEvent.RemoveEventHandler(m_target, CreateEventHandler());
+                }
+            }
+
+            public void OnEventRaised(object sender, object args)
+            {
+                var listeners = m_listeners;
+                foreach(var l in listeners)
+                {
+                    l.Client.SendMessage(new EventRaisedMessage
+                    {
+                        SubscriptionId = l.RegistrationId,
+                        EventName = Event.Name,
+                        EventArgs = args
+                    });
+                }
+            }
+        }
+
+        private void UpdateEventSubscriptions(IInterprocessRequestContext req, EventRegistrationRequest evt)
+        {
+            if (evt.AddedEvents?.Count > 0)
+            {
+                foreach (var e in evt.AddedEvents)
+                {
+                    if (!m_eventsByName.TryGetValue(e.EventName, out var eventInfo))
+                        ThrowBadInvocation("Event does not exist: " + e);
+
+                    eventInfo.AddConsumer(req.Client, e.RegistrationId);
+                }
+            }
+
+            if (evt.RemovedEvents?.Count > 0)
+            {
+                foreach (var e in evt.RemovedEvents)
+                {
+                    if (!m_eventsByName.TryGetValue(e, out var eventInfo))
+                        ThrowBadInvocation("Event does not exist: " + e);
+
+                    eventInfo.RemoveConsumer(req.Client);
+                }
+            }
+
+            req.Respond(null);
+        }
+        
+        protected void ThrowBadInvocation(string reason)
+        {
+            throw new BadMethodInvocationException(reason);
+        }
+
+        protected void ThrowBadInvocationWithoutText()
+        {
+            ThrowBadInvocation("Unknown method");
         }
 
         void IProcessEndpointHandler.CompleteCall(IInterprocessRequestContext req)
@@ -118,7 +246,9 @@ namespace SimpleProcessFramework.Runtime.Server
         internal static class Reflection
         {
             public static MethodInfo DoRemoteCallImplMethod => typeof(ProcessEndpointHandler).FindUniqueMethod(nameof(DoRemoteCallImpl));
-            public static MethodInfo ThrowBadInvocationMethod => typeof(ProcessEndpointHandler).FindUniqueMethod(nameof(ThrowBadInvocation));
+            public static MethodInfo ThrowBadInvocationWithoutTextMethod => typeof(ProcessEndpointHandler).FindUniqueMethod(nameof(ThrowBadInvocationWithoutText));
+            public static MethodInfo PrepareEventMethod => typeof(ProcessEndpointHandler).FindUniqueMethod(nameof(PrepareEvent));
+            public static ConstructorInfo Constructor => typeof(ProcessEndpointHandler).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Single();
         }
 
         private struct PendingCallKey : IEquatable<PendingCallKey>

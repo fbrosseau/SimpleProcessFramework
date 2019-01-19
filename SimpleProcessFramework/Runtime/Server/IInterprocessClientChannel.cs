@@ -10,8 +10,7 @@ namespace SimpleProcessFramework.Runtime.Server
 
         Task<IInterprocessClientChannel> GetClientInfo();
 
-        void SendFailure(long callId, Exception fault);
-        void SendResponse(long callId, object completion);
+        void SendMessage(IInterprocessMessage msg);
     }
 
     public interface IInterprocessClientChannel
@@ -22,8 +21,6 @@ namespace SimpleProcessFramework.Runtime.Server
         void Initialize(IClientRequestHandler clientConnectionsManager);
         IInterprocessClientProxy GetWrapperProxy();
 
-        void SendFailure(long callId, Exception fault);
-        void SendResponse(long callId, object completion);
         void SendMessage(IInterprocessMessage msg);
     }
 }
