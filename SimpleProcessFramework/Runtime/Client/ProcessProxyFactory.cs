@@ -112,13 +112,17 @@ namespace SimpleProcessFramework.Runtime.Client
                         }
                         else
                         {
-                            if (argType.IsValueType)
+                            var primitiveType = argType;
+                            if (argType.IsByRef)
                             {
-                                BoxHelper.Reflection.EmitBox(ilgen, argType);
+                                primitiveType = argType.GetElementType();
+                                ilgen.Emit(OpCodes.Ldobj, primitiveType);
                             }
 
-                            if (argType.IsByRef)
-                                throw new InvalidProxyInterfaceException("Method " + m.Name + " of type " + type.AssemblyQualifiedName + " cannot have ref/out parameters");
+                            if (primitiveType.IsValueType)
+                            {
+                                BoxHelper.Reflection.EmitBox(ilgen, primitiveType);
+                            }
                         }
 
                         ilgen.Emit(OpCodes.Stelem_Ref);

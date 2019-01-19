@@ -73,7 +73,8 @@ namespace SimpleProcessFramework.Runtime.Client
 
             if (remoteCallRequest is RemoteCallRequest callReq)
             {
-                callReq.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
+                callReq.MethodName = calledMethod.GetUniqueName();
+                //callReq.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
             }
 
             var res = await m_connection.SerializeAndSendMessage(remoteCallRequest, ct).ConfigureAwait(false);
