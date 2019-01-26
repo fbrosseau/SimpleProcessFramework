@@ -37,12 +37,12 @@ namespace SimpleProcessFramework.Reflection
         public ReflectedMethodInfo(MethodInfo m)
         {
             Name = m.Name;
-            Type = ReflectedTypeInfo.Create(m.DeclaringType);
+            Type = m.DeclaringType;
 
             var args = m.GetParameters();
             if(args.Length > 0)
             {
-                Arguments = args.Select(p => ReflectedTypeInfo.Create(p.ParameterType)).ToArray();
+                Arguments = args.Select(p => (ReflectedTypeInfo)p.ParameterType).ToArray();
             }
 
             m_resolvedMethod = m;

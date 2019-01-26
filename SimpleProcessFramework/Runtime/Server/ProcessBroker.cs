@@ -1,23 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using SimpleProcessFramework.Utilities;
 using SimpleProcessFramework.Interfaces;
 using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Exceptions;
 using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Runtime.Server.Processes;
+using SimpleProcessFramework.Utilities.Threading;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
-    public interface IInternalProcessBroker : IProcessBroker
+    public interface IInternalProcessBroker : IProcessBroker, IAsyncDestroyable
     {
         IProcess MasterProcess { get; }
         void ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
     }
 
-    internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IProcessBroker
+    public interface IInternalMessageDispatcher
+    {
+        void ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct);
+    }
+
+    internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IProcessBroker, IInternalMessageDispatcher
     {
         private readonly Dictionary<string, IProcessHandle> m_subprocesses = new Dictionary<string, IProcessHandle>(ProcessEndpointAddress.StringComparer);
         private readonly ProcessCluster m_owner;
@@ -31,17 +39,59 @@ namespace SimpleProcessFramework.Runtime.Server
         {
             m_owner = owner;
             m_typeResolver = owner.TypeResolver;
+            m_typeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
             m_config = m_typeResolver.GetSingleton<ProcessClusterConfiguration>();
 
             m_masterProcess = new Process2(owner);
             m_typeResolver.RegisterSingleton<IProcess>(m_masterProcess);
         }
 
+        protected override void OnDispose()
+        {
+            List<IProcessHandle> processes;
+            lock (m_subprocesses)
+            {
+                processes = m_subprocesses.Values.ToList();
+                m_subprocesses.Clear();
+            }
+
+            foreach (var p in processes)
+            {
+                p.Dispose();
+            }
+
+            m_masterProcess.Dispose();
+
+            base.OnDispose();
+        }
+
+        protected async override Task OnTeardownAsync(CancellationToken ct)
+        {
+            List<IProcessHandle> processes;
+            lock (m_subprocesses)
+            {
+                processes = m_subprocesses.Values.ToList();
+            }
+
+            var teardownTasks = new List<Task>();
+
+            foreach (var p in processes)
+            {
+                teardownTasks.Add(p.TeardownAsync(ct));
+            }
+
+            await Task.WhenAll(teardownTasks);
+
+            await m_masterProcess.TeardownAsync(ct);
+
+            await base.OnTeardownAsync(ct);
+        }
+
         void IInternalProcessBroker.ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {
             if (ProcessEndpointAddress.StringComparer.Equals(wrappedMessage.Destination.TargetProcess, Process2.MasterProcessUniqueId))
             {
-                m_masterProcess.HandleMessage(source, wrappedMessage);
+                m_masterProcess.ProcessIncomingMessage(source, wrappedMessage);
             }
             else
             {
@@ -64,12 +114,14 @@ namespace SimpleProcessFramework.Runtime.Server
             throw new ProcessNotFoundException(targetProcess);
         }
 
-        public async Task<bool> CreateProcess(ProcessCreationInfo info, bool mustCreate)
+        public async Task<bool> CreateProcess(ProcessCreationRequest req)
         {
+            var info = req.ProcessInfo;
+
             if (ProcessEndpointAddress.StringComparer.Equals(info.ProcessUniqueId, Process2.MasterProcessUniqueId))
                 throw new InvalidOperationException("The master process cannot be created this way");
 
-            info.EnsureIsValid();
+            ApplyConfigToProcessRequest(req);
 
             var handle = CreateNewProcessHandle(info);
 
@@ -77,9 +129,11 @@ namespace SimpleProcessFramework.Runtime.Server
             {
                 lock (m_subprocesses)
                 {
+                    ThrowIfDisposing();
+
                     if (m_subprocesses.ContainsKey(info.ProcessUniqueId))
                     {
-                        if (mustCreate)
+                        if (req.MustCreateNew)
                             throw new InvalidOperationException("The process already exists");
                         return false;
                     }
@@ -109,9 +163,17 @@ namespace SimpleProcessFramework.Runtime.Server
                     }
                 }
 
-                handle.Dispose();
+                await handle.TeardownAsync(TimeSpan.FromSeconds(5));
                 throw;
             }
+        }
+
+        private void ApplyConfigToProcessRequest(ProcessCreationRequest req)
+        {
+            if (req.ProcessInfo.ProcessKind == ProcessKind.Default)
+                req.ProcessInfo.ProcessKind = m_config.DefaultProcessKind;
+
+            req.ProcessInfo.EnsureIsValid();
         }
 
         private IProcessHandle CreateNewProcessHandle(ProcessCreationInfo info)
@@ -162,13 +224,35 @@ namespace SimpleProcessFramework.Runtime.Server
 
             try
             {
-                await target.DestroyAsync();
+                await target.TeardownAsync().ConfigureAwait(false);
             }
             catch
             {
             }
 
             return true;
+        }
+
+        void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct)
+        {
+            Guard.ArgumentNotNull(source, nameof(source));
+            Guard.ArgumentNotNull(req, nameof(req));
+
+            var sourceProxy = source.GetWrapperProxy();
+            if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.TargetProcess, Process2.MasterProcessUniqueId))
+            {
+                m_masterProcess.ProcessIncomingMessage(sourceProxy, req);
+            }
+            else
+            {
+                var target = GetSubprocess(req.Destination.TargetProcess, throwIfMissing: true);
+                target.ProcessIncomingRequest(sourceProxy, req);
+            }
+        }
+
+        Task<ProcessClusterHostInformation> IProcessBroker.GetHostInformation()
+        {
+            return Task.FromResult(ProcessClusterHostInformation.GetCurrent());
         }
     }
 }

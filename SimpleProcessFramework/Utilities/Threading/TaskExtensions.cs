@@ -1,9 +1,8 @@
-﻿using Oopi.Utilities;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Utilities
+namespace SimpleProcessFramework.Utilities.Threading
 {
     internal static class TaskExtensions
     {

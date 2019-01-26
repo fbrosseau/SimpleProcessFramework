@@ -1,22 +1,16 @@
-﻿using System;
-using System.Threading;
+﻿using SimpleProcessFramework.Utilities.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
-    public interface IProcessEndpoint : IDisposable
+    public interface IProcessEndpoint : IAsyncDestroyable
     {
         Task InitializeAsync(IProcess parentProcess);
-        Task TeardownAsync(CancellationToken ct = default);
     }
 
-    public class AbstractProcessEndpoint : IProcessEndpoint
+    public class AbstractProcessEndpoint : AsyncDestroyable, IProcessEndpoint
     {
         public IProcess ParentProcess { get; private set; }
-
-        public virtual void Dispose()
-        {
-        }
 
         Task IProcessEndpoint.InitializeAsync(IProcess parentProcess)
         {
@@ -25,11 +19,6 @@ namespace SimpleProcessFramework.Runtime.Server
         }
 
         protected virtual Task InitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task TeardownAsync(CancellationToken ct = default)
         {
             return Task.CompletedTask;
         }

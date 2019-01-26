@@ -1,6 +1,7 @@
 ﻿using SimpleProcessFramework.Interfaces;
 using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Server;
+using SimpleProcessFramework.Tests.Integration;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -35,6 +36,11 @@ namespace SimpleProcessFramework.TestApp
     {
         static void Main(string[] args)
         {
+            var t = new GeneralEndToEndSanity();
+            t.Init();
+            t.BasicDefaultNameSubprocess();
+            t.Cleanup();
+
             var cts = new CancellationTokenSource();
 
             /*            var aaa = (ProcessEndpointHandler)ProcessEndpointHandlerFactory.Create<IProcessManager>(new ProcessManager());
@@ -70,7 +76,7 @@ namespace SimpleProcessFramework.TestApp
             processCluster.AddListener(new TlsInterprocessConnectionListener(cert, ProcessCluster.DefaultRemotePort));
 
             cts = new CancellationTokenSource();
-            var proc = processCluster.PrimaryProxy.CreateInterface<IProcessBroker>(new ProcessEndpointAddress("localhost", "master", WellKnownEndpoints.ProcessBroker));
+            var proc = processCluster.PrimaryProxy.CreateInterface<IProcessBroker>(ProcessEndpointAddress.Parse($"/master/{WellKnownEndpoints.ProcessBroker}"));
            /* proc.CreateProcess(new ProcessCreationInfo
             {
                 ProcessName = "",

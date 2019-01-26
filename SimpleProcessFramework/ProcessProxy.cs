@@ -1,10 +1,8 @@
 ﻿using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,27 +38,65 @@ namespace SimpleProcessFramework
         Task ChangeEventSubscription(IClientInterprocessConnection targetConnection, EventRegistrationRequestInfo req);
     }
 
+    public interface IInternalRequestsHandler
+    {
+        ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address);
+    }
+
+    internal class InternalRequestsHandler : IInternalRequestsHandler
+    {
+        private readonly string m_localAuthority;
+
+        public InternalRequestsHandler(string localAuthority)
+        {
+            m_localAuthority = localAuthority;
+        }
+
+        public ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address)
+        {
+            if (!string.IsNullOrWhiteSpace(address.HostAuthority))
+                return address;
+            return new ProcessEndpointAddress(m_localAuthority, address.TargetProcess, address.LeafEndpoint);
+        }
+    }
+
+    internal class NullInternalRequestsHandler : IInternalRequestsHandler
+    {
+        public ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address)
+        {
+            if (string.IsNullOrWhiteSpace(address.HostAuthority))
+                throw new ArgumentException("Relative addresses are not supported by this instance");
+            return address;
+        }
+    }
+
     public class ProcessProxy
     {
         private readonly IClientConnectionFactory m_connectionFactory;
         private readonly ITypeResolver m_typeResolver;
 
         public ProcessProxy()
-            : this(ProcessCluster.DefaultTypeResolver.CreateNewScope())
+            : this(ProcessCluster.DefaultTypeResolver)
         {
         }
 
         public ProcessProxy(ITypeResolver resolver)
         {
             m_typeResolver = resolver.CreateNewScope();
-            m_connectionFactory = m_typeResolver.CreateSingleton<IClientConnectionFactory>();
+            m_connectionFactory = m_typeResolver.GetSingleton<IClientConnectionFactory>();
         }
 
         public T CreateInterface<T>(ProcessEndpointAddress address)
         {
+            address = NormalizeAddress(address);
             var proxy = ProcessProxyFactory.CreateImplementation<T>();
             proxy.Initialize(m_connectionFactory.GetConnection(address), address);
             return (T)(object)proxy;
-        }        
+        }
+
+        public ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address)
+        {
+            return m_connectionFactory.NormalizeAddress(address);
+        }
     }
 }

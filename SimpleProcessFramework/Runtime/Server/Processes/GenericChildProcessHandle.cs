@@ -9,6 +9,8 @@ using System.Collections;
 using SimpleProcessFramework.Serialization;
 using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Reflection;
+using System.Threading;
+using SimpleProcessFramework.Utilities.Threading;
 
 namespace SimpleProcessFramework.Runtime.Server.Processes
 {
@@ -22,7 +24,7 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
         protected string WorkingDirectory { get; set; } = PathHelper.BinFolder.FullName;
         public ProcessSpawnPunchPayload RemotePunchPayload { get; private set; }
 
-        private TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>();
+        private TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private MasterProcessIpcConnector m_ipcConnector;
         private readonly IClientConnectionManager m_clientManager;
 
@@ -35,6 +37,8 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
         public override async Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
         {
             RemotePunchPayload = punchPayload;
+
+            CommandLine = $"{ProcessCreationInfo.ProcessUniqueId} {Process.GetCurrentProcess().Id}";
 
             ComputeExecutablePath();
 
@@ -67,7 +71,7 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             }
         }
 
-        private static string GetDefaultExecutableFileName(ProcessKind processKind, ProcessClusterConfiguration config)
+        internal static string GetDefaultExecutableFileName(ProcessKind processKind, ProcessClusterConfiguration config)
         {
             switch (processKind)
             {
@@ -128,14 +132,14 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
                 startInfo.Environment[kvp.Key] = kvp.Value;
             }
 
-            GenericProcessSpawnPunchHandles punchHandles = null;
+            AbstractProcessSpawnPunchHandles punchHandles = null;
             string serializedPayloadForOtherProcess;
 
             try
             {
                 lock (ProcessCreationUtilities.ProcessCreationLock)
                 {
-                    punchHandles = new GenericProcessSpawnPunchHandles();
+                    punchHandles = new WindowsProcessSpawnPunchHandles();
                     m_targetProcess = Process.Start(startInfo) ?? throw new InvalidOperationException("Unable to start process");
                     serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);
                 }
@@ -189,7 +193,7 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
 
         private void CreateMissingExecutable()
         {
-            throw new NotImplementedException();
+            File.Copy(GetDefaultExecutable(), TargetExecutable, true);
         }
 
         protected virtual void ComputeExecutablePath()
@@ -203,26 +207,23 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             TargetExecutable = GetFullExecutableName(name, ext);
         }
 
-        public override Task DestroyAsync()
+        protected override async Task OnTeardownAsync(CancellationToken ct)
         {
-            throw new NotImplementedException();
+            await m_ipcConnector.TeardownAsync(ct).ConfigureAwait(false);
         }
 
-        public override void Dispose()
+        protected override void OnDispose()
         {
-            throw new NotImplementedException();
+            m_ipcConnector.Dispose();
         }
 
         void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)
         {
-            var origin = m_clientManager.GetClientChannel(msg.SourceConnectionId);
-            if (origin is null)
-                throw new InvalidOperationException("This connection no longer exists");
-
+            var origin = m_clientManager.GetClientChannel(msg.SourceConnectionId, mustExist: true);
             origin.SendMessage(msg);
         }
 
-        void IIpcConnectorListener.OnTeardownReceived()
+        void IIpcConnectorListener.OnTeardownRequestReceived()
         {
             throw new NotImplementedException();
         }

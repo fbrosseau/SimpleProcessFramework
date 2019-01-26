@@ -2,7 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472</TargetFrameworks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
+    <OutputPath>C:\Users\fb\source\repos\SimpleProcessFramework\bin\debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
+    <OutputPath>C:\Users\fb\source\repos\SimpleProcessFramework\bin\release</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

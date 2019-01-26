@@ -3,11 +3,10 @@ using SimpleProcessFramework.Runtime.Common;
 using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Serialization;
 using SimpleProcessFramework.Utilities;
+using SimpleProcessFramework.Utilities.Threading;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,18 +22,8 @@ namespace SimpleProcessFramework.Runtime.Client
     {
         private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
         private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingResponses = new SimpleUniqueIdFactory<PendingOperation>();
-        private SimpleUniqueIdFactory<RemoteEventRegistration> m_eventRegistrations = new SimpleUniqueIdFactory<RemoteEventRegistration>();
-
-        private class RemoteEventRegistration
-        {
-            public Action<EventRaisedMessage> Callback { get; }
-
-            public RemoteEventRegistration(Action<EventRaisedMessage> callback)
-            {
-                Callback = callback;
-            }
-        }
-
+        private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
+        
         protected AbstractClientInterprocessConnection(IBinarySerializer serializer)
             : base(serializer)
         {
@@ -47,26 +36,11 @@ namespace SimpleProcessFramework.Runtime.Client
             {
                 case RemoteInvocationResponse callResponse:
                     PendingOperation op = m_pendingResponses.RemoveById(callResponse.CallId);
-                    if (op is null)
-                        return;
-
-                    if (callResponse is RemoteCallSuccessResponse success)
-                    {
-                        op.Completion.TrySetResult(success.Result);
-                    }
-                    else if (callResponse is RemoteCallFailureResponse failure)
-                    {
-                        op.Completion.TrySetException(failure.Error);
-                    }
-                    else
-                    {
-                        HandleFailure(new SerializationException("Unexpected response"));
-                    }
-
+                    callResponse.ForwardResult(op.Completion);
                     break;
                 case EventRaisedMessage eventMsg:
                     var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
-                    handler?.Callback(eventMsg);
+                    handler?.Invoke(eventMsg);
                     break;
                 default:
                     base.HandleExternalMessage(msg);
@@ -157,7 +131,7 @@ namespace SimpleProcessFramework.Runtime.Client
                     outgoingMessage.AddedEvents.Add(new EventRegistrationItem
                     {
                         EventName = evt.EventName,
-                        RegistrationId = m_eventRegistrations.GetNextId(new RemoteEventRegistration(evt.Callback))
+                        RegistrationId = m_eventRegistrations.GetNextId(evt.Callback)
                     });
                 }
             }

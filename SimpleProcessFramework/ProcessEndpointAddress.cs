@@ -1,9 +1,7 @@
-﻿using Oopi.Utilities;
-using SimpleProcessFramework.Utilities;
+﻿using SimpleProcessFramework.Utilities;
 using System;
 using System.Net;
 using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
 
 namespace SimpleProcessFramework
 {
@@ -21,7 +19,7 @@ namespace SimpleProcessFramework
         private bool m_parsed;
         private string m_hostAuthority;
         private string m_targetProcess;
-        private string m_finalEndpoint;
+        private string m_leafEndpoint;
         private EndPoint m_hostEndpoint;
 
         public string HostAuthority
@@ -50,16 +48,16 @@ namespace SimpleProcessFramework
             }
         }
 
-        public string FinalEndpoint
+        public string LeafEndpoint
         {
             get
             {
                 EnsureParsed();
-                return m_finalEndpoint;
+                return m_leafEndpoint;
             }
             private set
             {
-                m_finalEndpoint = value;
+                m_leafEndpoint = value;
             }
         }
 
@@ -107,7 +105,26 @@ namespace SimpleProcessFramework
             m_parsed = true;
             m_hostAuthority = hostAuthority;
             m_targetProcess = targetProcess;
-            m_finalEndpoint = targetEndpoint;
+            m_leafEndpoint = targetEndpoint;
+        }
+
+        internal ProcessEndpointAddress Combine(string rightPart)
+        {
+            Guard.ArgumentNotNullOrEmpty(rightPart, nameof(rightPart));
+
+            var result = m_originalString;
+            if (!result.EndsWith("/"))
+                result += "/";
+
+            if (!rightPart.StartsWith("/"))
+                result += rightPart;
+            else
+                result += rightPart.Substring(1);
+
+            return new ProcessEndpointAddress
+            {
+                m_originalString = result
+            };
         }
 
         public static ProcessEndpointAddress Parse(string addr)
@@ -129,23 +146,32 @@ namespace SimpleProcessFramework
             if (m_parsed)
                 return true;
 
-            if (!Uri.TryCreate(m_originalString, UriKind.Absolute, out Uri u))
+            if (!Uri.TryCreate(m_originalString, UriKind.RelativeOrAbsolute, out Uri u))
                 return false;
 
-            if (!Scheme.Equals(u.Scheme, StringComparison))
-                return false;
+            string[] segments;
+            if (u.IsAbsoluteUri)
+            {
+                if (!Scheme.Equals(u.Scheme, StringComparison))
+                    return false;
 
-            m_parsed = true;
-            m_hostAuthority = u.Authority;
+                m_hostAuthority = u.Authority;
+                segments = u.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                m_hostAuthority = "";
+                segments = m_originalString.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            }
 
-            var segments = u.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             if (segments.Length > 0)
             {
                 m_targetProcess = segments[0];
                 if (segments.Length > 1)
-                    m_finalEndpoint = segments[1];
+                    m_leafEndpoint = segments[1];
             }
 
+            m_parsed = true;
             return true;
         }
 

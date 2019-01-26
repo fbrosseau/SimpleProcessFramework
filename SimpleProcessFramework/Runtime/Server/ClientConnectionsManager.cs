@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using SimpleProcessFramework.Runtime.Messages;
+using SimpleProcessFramework.Utilities.Threading;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
-    internal class ClientConnectionManager : IClientConnectionManager, IClientRequestHandler
+    internal class ClientConnectionManager : AsyncDestroyable, IClientConnectionManager, IClientRequestHandler
     {
         private readonly Dictionary<long, IInterprocessClientChannel> m_activeChannels = new Dictionary<long, IInterprocessClientChannel>();
         private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
@@ -25,7 +26,6 @@ namespace SimpleProcessFramework.Runtime.Server
 
             try
             {
-                listener.ConnectionReceived += OnConnectionReceived;
                 listener.Start(this);
             }
             catch
@@ -36,17 +36,14 @@ namespace SimpleProcessFramework.Runtime.Server
 
         public void RemoveListener(IConnectionListener listener)
         {
-            listener.ConnectionReceived -= OnConnectionReceived;
-
             lock (m_listeners)
             {
                 m_listeners.Remove(listener);
             }
         }
 
-        private void OnConnectionReceived(object sender, IpcConnectionReceivedEventArgs e)
+        void IClientConnectionManager.RegisterClientChannel(IInterprocessClientChannel cli)
         {
-            var cli = e.Client;
             lock (m_activeChannels)
             {
                 m_activeChannels.Add(cli.UniqueId, cli);
@@ -69,13 +66,18 @@ namespace SimpleProcessFramework.Runtime.Server
             m_processManager.ForwardMessage(source.GetWrapperProxy(), wrappedMessage);
         }
 
-        public IInterprocessClientChannel GetClientChannel(long connectionId)
+        public IInterprocessClientChannel GetClientChannel(long connectionId, bool mustExist)
         {
+            IInterprocessClientChannel c;
             lock (m_activeChannels)
             {
-                m_activeChannels.TryGetValue(connectionId, out var c);
-                return c;
+                m_activeChannels.TryGetValue(connectionId, out c);
             }
+
+            if (c is null && mustExist)
+                throw new InvalidOperationException("This connection no longer exists");
+
+            return c;
         }
     }
 }

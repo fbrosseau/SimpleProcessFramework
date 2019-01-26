@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using System.Runtime.Serialization;
-using SimpleProcessFramework.Utilities;
+using System.Runtime.InteropServices;
+using SimpleProcessFramework.Utilities.Threading;
 
 namespace SimpleProcessFramework.Runtime.Server.Processes
 {
@@ -55,6 +55,40 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             });
 
             return readTask.WaitOrTimeout(TimeSpan.FromSeconds(5));
+        }
+
+        public static string SerializeHandle(SafeHandle safeHandle)
+        {
+            return SerializeHandle(safeHandle.DangerousGetHandle());
+        }
+
+        public static string SerializeHandle(IntPtr intPtr)
+        {
+            return intPtr.ToInt64().ToString();
+        }
+
+        public static SafeHandle DeserializeHandleFromString(string str)
+        {
+            return new Win32SafeHandle(new IntPtr(long.Parse(str)));
+        }
+    }
+
+    internal class Win32SafeHandle : SafeHandle
+    {
+        public override bool IsInvalid => handle == (IntPtr)(-1);
+
+        [DllImport("api-ms-win-core-handle-l1-1-0", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr handle);
+
+        public Win32SafeHandle(IntPtr val)
+            : base((IntPtr)(-1), true)
+        {
+            handle = val;
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return CloseHandle(handle);
         }
     }
 }

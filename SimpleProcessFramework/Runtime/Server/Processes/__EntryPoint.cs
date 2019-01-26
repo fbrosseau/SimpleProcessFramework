@@ -5,12 +5,22 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
     // Found by reflection!
     public class __EntryPoint
     {
-        public static void Run(string[] args)
+        public static void Run()
         {
-            using (var container = new ProcessContainer())
+            bool graceful = false;
+            try
             {
-                container.Initialize();
-                container.Run();
+                using (var container = new ProcessContainer())
+                {
+                    container.Initialize();
+                    container.Run();
+                    graceful = true;
+                }
+
+            }
+            finally
+            {
+                Environment.Exit(graceful ? 0 : -1);
             }
         }
     }

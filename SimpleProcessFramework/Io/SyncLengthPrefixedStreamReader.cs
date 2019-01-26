@@ -1,5 +1,5 @@
-﻿using Oopi.Utilities;
-using SimpleProcessFramework.Utilities;
+﻿using SimpleProcessFramework.Utilities;
+using SimpleProcessFramework.Utilities.Threading;
 using System;
 using System.IO;
 using System.Threading;
@@ -20,7 +20,8 @@ namespace SimpleProcessFramework.Io
 
             m_readThread = new Thread(ReadLoop)
             {
-                Name = name
+                Name = name,
+                IsBackground = true
             };
 
             m_readThread.Start();
@@ -45,7 +46,7 @@ namespace SimpleProcessFramework.Io
                     }
 
                     byte[] buf;
-                    if(count < 4)
+                    if(count <= 4)
                     {
                         buf = sizeBuffer;
                         sizeBuffer = null;

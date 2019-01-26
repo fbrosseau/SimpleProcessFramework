@@ -1,4 +1,4 @@
-﻿namespace Oopi.Utilities
+﻿namespace SimpleProcessFramework.Utilities
 {
     internal struct VoidType
     {

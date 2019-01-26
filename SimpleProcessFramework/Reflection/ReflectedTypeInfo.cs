@@ -46,6 +46,11 @@ namespace SimpleProcessFramework.Reflection
                 GenericParameters = t.GetGenericArguments().Select(a => new ReflectedTypeInfo(a)).ToArray();
         }
 
+        public static implicit operator ReflectedTypeInfo(Type t)
+        {
+            return Create(t);
+        }
+
         public static ReflectedTypeInfo Create(Type t)
         {
             if (s_knownTypes.TryGetValue(t, out var reflectedInfo))

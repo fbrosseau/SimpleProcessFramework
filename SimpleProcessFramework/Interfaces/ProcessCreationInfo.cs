@@ -8,7 +8,7 @@ namespace SimpleProcessFramework.Interfaces
     public class ProcessCreationInfo
     {
         [DataMember]
-        public ProcessKind ProcessKind { get; set; }
+        public ProcessKind ProcessKind { get; set; } = ProcessKind.Default;
 
         [DataMember]
         public string ProcessName { get; set; }
@@ -35,6 +35,16 @@ namespace SimpleProcessFramework.Interfaces
             public string Key { get; set; }
             [DataMember]
             public string Value { get; set; }
+
+            public KeyValuePair()
+            {
+            }
+
+            public KeyValuePair(string key, string value)
+            {
+                Key = key;
+                Value = value;
+            }
         }
     }
 }

@@ -1,20 +1,21 @@
-﻿using System;
-
-namespace SimpleProcessFramework.Runtime.Server
+﻿namespace SimpleProcessFramework.Runtime.Server
 {
     public abstract class BaseInterprocessConnectionListener : IConnectionListener
     {
-        public event EventHandler<IpcConnectionReceivedEventArgs> ConnectionReceived;
+        private IClientConnectionManager m_connectionManager;
 
         public virtual void Dispose()
         {
         }
 
-        public abstract void Start(IClientConnectionManager owner);
+        public virtual void Start(IClientConnectionManager owner)
+        {
+            m_connectionManager = owner;
+        }
 
         protected void RaiseConnectionReceived(IInterprocessClientChannel client)
         {
-            ConnectionReceived?.Invoke(this, new IpcConnectionReceivedEventArgs(client));
+            m_connectionManager.RegisterClientChannel(client);
         }
     }
 }

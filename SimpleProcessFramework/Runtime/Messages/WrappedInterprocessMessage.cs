@@ -43,7 +43,7 @@ namespace SimpleProcessFramework.Runtime.Messages
             return new WrappedInterprocessMessage
             {
                 Destination = dest,
-                PayloadType = ReflectedTypeInfo.Create(msg.GetType()),
+                PayloadType = msg.GetType(),
                 Payload = payload,
                 CallId = callId
             };

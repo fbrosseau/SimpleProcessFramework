@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Messages
 {
@@ -11,5 +12,7 @@ namespace SimpleProcessFramework.Runtime.Messages
         public bool ExpectResponse => false;
 
         public ProcessEndpointAddress Destination { get; set; }
+
+        internal abstract void ForwardResult(TaskCompletionSource<object> completion);
     }
 }

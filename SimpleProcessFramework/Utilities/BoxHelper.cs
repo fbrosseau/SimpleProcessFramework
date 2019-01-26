@@ -1,11 +1,11 @@
-﻿using Oopi.Utilities;
-using SimpleProcessFramework.Reflection;
+﻿using SimpleProcessFramework.Reflection;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Utilities
 {
@@ -76,6 +76,17 @@ namespace SimpleProcessFramework.Utilities
 
                 return val;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Task<T> GetDefaultSuccessTask<T>()
+        {
+            return TaskHelper<T>.DefaultSuccessTask;
+        }
+
+        private class TaskHelper<T>
+        {
+            public static readonly Task<T> DefaultSuccessTask = Task.FromResult(default(T));
         }
 
         private sealed class Int16BoxHelper : BoxHelperImpl<short>

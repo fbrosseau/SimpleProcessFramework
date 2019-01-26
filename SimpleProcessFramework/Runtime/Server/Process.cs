@@ -1,13 +1,16 @@
-﻿using SimpleProcessFramework.Interfaces;
+﻿using SimpleProcessFramework.Utilities;
+using SimpleProcessFramework.Interfaces;
 using SimpleProcessFramework.Reflection;
+using SimpleProcessFramework.Runtime.Client;
 using SimpleProcessFramework.Runtime.Exceptions;
 using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Runtime.Server;
 using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
+using SimpleProcessFramework.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
@@ -31,18 +34,19 @@ namespace SimpleProcessFramework.Runtime.Server
         ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null);
     }
 
-    internal interface IProcessInternal : IProcess, IDisposable
+    internal interface IProcessInternal : IProcess, IAsyncDestroyable
     {
         Task InitializeAsync();
 
-        void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
+        void ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req);
     }
 
-    internal class Process2 : IProcessInternal
+    internal class Process2 : AsyncDestroyable, IProcessInternal
     {
         public const string MasterProcessUniqueId = "Master";
 
         public ProcessProxy ClusterProxy { get; }
+
         public string HostAuthority { get; }
         public string UniqueId { get; }
         public ProcessEndpointAddress UniqueAddress { get; }
@@ -50,7 +54,9 @@ namespace SimpleProcessFramework.Runtime.Server
         public ITypeResolver DefaultTypeResolver { get; }
 
         private readonly IBinarySerializer m_binarySerializer;
+        private readonly IInternalMessageDispatcher m_outgoingMessageDispatcher;
         private readonly Dictionary<string, IProcessEndpointHandler> m_endpointHandlers = new Dictionary<string, IProcessEndpointHandler>(ProcessEndpointAddress.StringComparer);
+        private IEndpointBroker m_endpointBroker;
 
         internal Process2(ProcessCluster root)
             : this("localhost", MasterProcessUniqueId, root.TypeResolver)
@@ -67,21 +73,64 @@ namespace SimpleProcessFramework.Runtime.Server
 
         internal Process2(string hostAuthority, string uniqueId, ITypeResolver typeResolver)
         {
-            ClusterProxy = new ProcessProxy();
+            Guard.ArgumentNotNullOrEmpty(hostAuthority, nameof(hostAuthority));
+            Guard.ArgumentNotNullOrEmpty(uniqueId, nameof(uniqueId));
+            Guard.ArgumentNotNull(typeResolver, nameof(typeResolver));
+
+            DefaultTypeResolver = typeResolver.CreateNewScope();
+
+            UniqueId = uniqueId;
             HostAuthority = hostAuthority;
             UniqueAddress = CreateRelativeAddressInternal();
-            DefaultTypeResolver = typeResolver;
-            m_binarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            m_binarySerializer = DefaultTypeResolver.GetSingleton<IBinarySerializer>();
+
+            DefaultTypeResolver.RegisterSingleton<IInternalRequestsHandler>(new InternalRequestsHandler(hostAuthority));
+            DefaultTypeResolver.RegisterSingleton<IProcess>(this);
+            DefaultTypeResolver.RegisterSingleton<IProcessInternal>(this);
+            DefaultTypeResolver.RegisterSingleton<IClientConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
+            ClusterProxy = new ProcessProxy(DefaultTypeResolver);
+
+            m_outgoingMessageDispatcher = DefaultTypeResolver.GetSingleton<IInternalMessageDispatcher>();
         }
 
-        public void Dispose()
+        protected override void OnDispose()
         {
+            List<IProcessEndpointHandler> endpoints;
+            lock (m_endpointHandlers)
+            {
+                endpoints = m_endpointHandlers.Values.ToList();
+                m_endpointHandlers.Clear();
+            }
 
+            foreach (var ep in endpoints)
+            {
+                ep.Dispose();
+            }
+        }
+
+        protected async override Task OnTeardownAsync(CancellationToken ct)
+        {
+            List<IProcessEndpointHandler> endpoints;
+            lock (m_endpointHandlers)
+            {
+                endpoints = m_endpointHandlers.Values.ToList();
+                m_endpointHandlers.Clear();
+            }
+
+            var disposeTasks = new List<Task>();
+            foreach (var ep in endpoints)
+            {
+                disposeTasks.Add(ep.TeardownAsync(ct));
+            }
+
+            await Task.WhenAll(disposeTasks);
+
+            await base.OnTeardownAsync(ct);
         }
 
         public async Task InitializeAsync()
         {
-            await InitializeEndpointAsync<IEndpointBroker>(WellKnownEndpoints.EndpointBroker);
+            await InitializeEndpointAsync<IEndpointBroker>(WellKnownEndpoints.EndpointBroker).ConfigureAwait(false);
         }
 
         public ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null)
@@ -91,14 +140,18 @@ namespace SimpleProcessFramework.Runtime.Server
             return CreateRelativeAddressInternal(endpointAddress);
         }
 
-        void IProcessInternal.HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
+        void IProcessInternal.ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req)
         {
-            var message = wrappedMessage.Unwrap(m_binarySerializer);
-            switch(message)
+            if (req is WrappedInterprocessMessage wrappedMessage)
+                req = wrappedMessage.Unwrap(m_binarySerializer);
+
+            switch(req)
             {
                 case IInterprocessRequest callReq:
                     InvokeEndpoint(source, callReq);
                     break;
+                default:
+                    throw new InvalidOperationException("Unhandled message!");
             }
         }
 
@@ -137,6 +190,7 @@ namespace SimpleProcessFramework.Runtime.Server
 
             lock (m_endpointHandlers)
             {
+                ThrowIfDisposed();
                 if (m_endpointHandlers.ContainsKey(address))
                 {
                     if (failIfExists)
@@ -167,7 +221,7 @@ namespace SimpleProcessFramework.Runtime.Server
             IProcessEndpointHandler ep;
             lock(m_endpointHandlers)
             {
-                m_endpointHandlers.TryGetValue(callReq.Destination.FinalEndpoint, out ep);
+                m_endpointHandlers.TryGetValue(callReq.Destination.LeafEndpoint, out ep);
             }
 
             if (ep is null)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Utilities
+namespace SimpleProcessFramework.Utilities.Threading
 {
     internal sealed class AsyncQueue<T> : IDisposable
     {

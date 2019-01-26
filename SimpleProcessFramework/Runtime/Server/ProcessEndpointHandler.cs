@@ -1,18 +1,20 @@
 ﻿using SimpleProcessFramework.Reflection;
 using SimpleProcessFramework.Runtime.Exceptions;
 using SimpleProcessFramework.Runtime.Messages;
+using SimpleProcessFramework.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleProcessFramework.Runtime.Server
 {
     [DataContract]
-    public abstract class ProcessEndpointHandler : IProcessEndpointHandler
+    public abstract class ProcessEndpointHandler : AsyncDestroyable, IProcessEndpointHandler
     {
         private object m_realTarget;
         private IProcessEndpoint m_realTargetAsEndpoint;
@@ -29,6 +31,36 @@ namespace SimpleProcessFramework.Runtime.Server
             m_descriptor = descriptor;
             m_methods = m_descriptor.Methods.ToArray();
             m_methodsByName = m_methods.ToDictionary(m => m.Method.GetUniqueName());
+        }
+
+        protected override void OnDispose()
+        {
+            CancelAllCalls();
+            (m_realTarget as IDisposable)?.Dispose();
+            base.OnDispose();
+        }
+
+        protected async override Task OnTeardownAsync(CancellationToken ct)
+        {
+            if (m_realTarget is IAsyncDestroyable d)
+                await d.TeardownAsync(ct).ConfigureAwait(false);
+
+            await base.OnTeardownAsync(ct);
+        }
+
+        private void CancelAllCalls()
+        {
+            List<IInterprocessRequestContext> requests;
+            lock (m_pendingCalls)
+            {
+                requests = m_pendingCalls.Values.ToList();
+                m_pendingCalls.Clear();
+            }
+
+            foreach (var pending in requests)
+            {
+                pending.Cancel();
+            }
         }
 
         protected void PrepareEvent(ReflectedEventInfo evt)

@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static SimpleProcessFramework.Tests.TestUtilities;
 
-namespace SimpleProcessFramework.Tests
+namespace SimpleProcessFramework.Tests.LowLevel
 {
     [TestClass]
     public class InterfaceProxyTests
@@ -168,16 +169,6 @@ namespace SimpleProcessFramework.Tests
             Assert.AreEqual(expectedResult, actualResult);
         }
 
-        private void Unwrap(Task task)
-        {
-            task.Wait();
-        }
-
-        private T Unwrap<T>(Task<T> task)
-        {
-            return task.Result;
-        }
-
         private void AssertArgsEqual(IInterprocessMessage req, object[] expectedArgs)
         {
             var actualArgs = ((RemoteCallRequest)req).GetArgsOrEmpty();
@@ -186,17 +177,6 @@ namespace SimpleProcessFramework.Tests
                 expectedArgs = Array.Empty<object>();
 
             AssertRangeEqual(expectedArgs, actualArgs);
-        }
-
-        private void AssertRangeEqual<T>(IEnumerable<T> expectedValues, IEnumerable<T> actualValues)
-        {
-            var expected = expectedValues.ToArray();
-            var actual = actualValues.ToArray();
-            Assert.AreEqual(expected.Length, actual.Length);
-            for (int i = 0; i < expected.Length; ++i)
-            {
-                Assert.AreEqual(expected[i], actual[i]);
-            }
         }
     }
 }

@@ -1,6 +1,5 @@
-﻿using System;
+﻿using SimpleProcessFramework.Interfaces;
 using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Server;
 
 namespace SimpleProcessFramework
 {
@@ -36,6 +35,8 @@ namespace SimpleProcessFramework
 #if WINDOWS_BUILD
         public string DefaultNetcore32ProcessName { get; set; } = "Subprocess.Netcore";
 #endif
+
+        public ProcessKind DefaultProcessKind { get; set; } = ProcessKind.Netcore;
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

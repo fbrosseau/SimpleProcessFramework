@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Oopi.Utilities
+namespace SimpleProcessFramework.Utilities
 {
     internal class Guard
     {
@@ -10,14 +10,10 @@ namespace Oopi.Utilities
         internal static void ArgumentNotNull(object argValue, string argName)
         {
             if (argValue is null)
+            {
+                Debug.Fail("Argument null! " + argName);
                 throw new ArgumentNullException(argName);
-        }
-
-        [DebuggerStepThrough, DebuggerHidden, MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void ArgumentNotNullAndAssert(object argValue, string argName)
-        {
-            Debug.Assert(argValue != null);
-            ArgumentNotNull(argValue, argName);
+            }
         }
 
         internal static void ArgumentNotNullOrEmpty(string argValue, string argName)

@@ -33,7 +33,7 @@ namespace SimpleProcessFramework.Reflection
         public ReflectedEventInfo(EventInfo e)
         {
             Name = e.Name;
-            Type = ReflectedTypeInfo.Create(e.DeclaringType);
+            Type = e.DeclaringType;
 
             m_resolvedEvent = e;
         }

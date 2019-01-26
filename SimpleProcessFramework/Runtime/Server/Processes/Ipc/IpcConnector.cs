@@ -1,12 +1,13 @@
-﻿using Oopi.Utilities;
+﻿using SimpleProcessFramework.Utilities;
 using SimpleProcessFramework.Io;
 using SimpleProcessFramework.Runtime.Messages;
 using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
-using System;
+using SimpleProcessFramework.Utilities.Threading;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace SimpleProcessFramework.Runtime.Server.Processes
 {
@@ -51,16 +52,23 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             SendCode(InterprocessFrameType.Handshake2);
             await ReceiveCode(InterprocessFrameType.Handshake3);
         }
+
+        protected override async Task OnTeardownAsync(CancellationToken ct)
+        {
+            SendCode(InterprocessFrameType.Teardown1);
+            await Shutdown2ReceivedEvent.WaitAsync(ct);
+            await base.OnTeardownAsync(ct);
+        }
     }
 
     internal interface IIpcConnectorListener
     {
         Task CompleteInitialization();
         void OnMessageReceived(WrappedInterprocessMessage msg);
-        void OnTeardownReceived();
+        void OnTeardownRequestReceived();
     }
 
-    internal abstract class IpcConnector : IDisposable
+    internal abstract class IpcConnector : AsyncDestroyable
     {
         protected enum InterprocessFrameType
         {
@@ -80,10 +88,14 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
 
         protected static readonly IBinarySerializer s_binarySerializer = new DefaultBinarySerializer();
 
+
         protected IIpcConnectorListener Owner { get; }
         protected ILengthPrefixedStreamReader ReadPipe { get; }
         protected ILengthPrefixedStreamWriter WritePipe { get; }
         protected IBinarySerializer BinarySerializer { get; }
+
+        protected AsyncManualResetEvent Shutdown1ReceivedEvent { get; } = new AsyncManualResetEvent();
+        protected AsyncManualResetEvent Shutdown2ReceivedEvent { get; } = new AsyncManualResetEvent();
 
         protected IpcConnector(IIpcConnectorListener owner, ILengthPrefixedStreamReader readPipe, ILengthPrefixedStreamWriter writePipe, IBinarySerializer serializer)
         {
@@ -110,10 +122,25 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             }
         }
 
-        public virtual void Dispose()
+        protected override void OnDispose()
         {
             ReadPipe.Dispose();
             WritePipe.Dispose();
+            Shutdown1ReceivedEvent.Set();
+            Shutdown2ReceivedEvent.Set();
+            base.OnDispose();
+        }
+
+        protected async override Task OnTeardownAsync(CancellationToken ct)
+        {
+            if (Shutdown2ReceivedEvent.IsSet)
+            {
+                Dispose();
+                return;
+            }
+
+            SendCode(InterprocessFrameType.Teardown2);
+            await base.OnTeardownAsync(ct);
         }
 
         protected abstract Task DoInitialize();
@@ -126,24 +153,36 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
 
         private async Task ReadLoop()
         {
-            while (true)
+            try
             {
-                Console.WriteLine("READLOOP");
-
-                using (var frame = await ReadPipe.GetNextFrame())
+                while (true)
                 {
-                    var code = (InterprocessFrameType)frame.Stream.ReadByte();
-                    switch(code)
+                    using (var frame = await ReadPipe.GetNextFrame())
                     {
-                        case InterprocessFrameType.IpcMessage:
-                            var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(frame.Stream);
-                            Owner.OnMessageReceived(msg);
-                            break;
-                        case InterprocessFrameType.Teardown1:
-                            Owner.OnTeardownReceived();
-                            break;
+                        var code = (InterprocessFrameType)frame.Stream.ReadByte();
+                        switch (code)
+                        {
+                            case InterprocessFrameType.IpcMessage:
+                                var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(frame.Stream);
+                                Owner.OnMessageReceived(msg);
+                                break;
+                            case InterprocessFrameType.Teardown1:
+                                Shutdown1ReceivedEvent.Set();
+                                Owner.OnTeardownRequestReceived();
+                                break;
+                            case InterprocessFrameType.Teardown2:
+                                Shutdown2ReceivedEvent.Set();
+                                return;
+                        }
                     }
                 }
+            }
+            catch(Exception)
+            {
+            }
+            finally
+            {
+                Dispose();
             }
         }
 

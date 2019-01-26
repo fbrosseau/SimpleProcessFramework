@@ -21,7 +21,7 @@ namespace SimpleProcessFramework.Serialization
         internal void WriteType(Type actualType)
         {
             WriteMetadata(DataKind.Type);
-            WriteReference(ReflectedTypeInfo.Create(actualType));
+            WriteReference((ReflectedTypeInfo)actualType);
         }
 
         internal void BeginSerialization()

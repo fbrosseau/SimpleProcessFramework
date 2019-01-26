@@ -1,9 +1,6 @@
-﻿using Oopi.Utilities;
-using System;
+﻿using SimpleProcessFramework.Utilities;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 
 namespace SimpleProcessFramework.Io
@@ -21,7 +18,8 @@ namespace SimpleProcessFramework.Io
 
             m_writeThread = new Thread(WriteLoop)
             {
-                Name = name
+                Name = name,
+                IsBackground = true
             };
 
             m_writeThread.Start();
