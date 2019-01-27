@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Runtime.Messages;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IInterprocessRequestContext : IDisposable
     {

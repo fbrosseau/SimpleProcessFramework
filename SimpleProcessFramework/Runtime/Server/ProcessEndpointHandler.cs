@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Exceptions;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Messages;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     [DataContract]
     public abstract class ProcessEndpointHandler : AsyncDestroyable, IProcessEndpointHandler

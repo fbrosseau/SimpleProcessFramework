@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Reflection;
+﻿using Spfx.Reflection;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Interfaces
+namespace Spfx.Interfaces
 {
     public interface IEndpointBroker
     {

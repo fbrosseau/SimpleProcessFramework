@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     [DataContract]
     public class ReflectedMethodInfo : IEquatable<ReflectedMethodInfo>

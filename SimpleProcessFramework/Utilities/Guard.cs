@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal class Guard
     {

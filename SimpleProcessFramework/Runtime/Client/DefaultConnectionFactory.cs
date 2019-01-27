@@ -1,10 +1,10 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Server;
-using SimpleProcessFramework.Serialization;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Server;
+using Spfx.Serialization;
 using System;
 using System.Collections.Generic;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace Spfx.Runtime.Client
 {
     public interface IClientConnectionFactory
     {

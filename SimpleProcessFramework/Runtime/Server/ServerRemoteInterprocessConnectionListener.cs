@@ -1,14 +1,14 @@
-﻿using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public class TcpInterprocessConnectionListener : BaseInterprocessConnectionListener
     {

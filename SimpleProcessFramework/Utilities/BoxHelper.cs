@@ -1,4 +1,4 @@
-﻿using SimpleProcessFramework.Reflection;
+﻿using Spfx.Reflection;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class BoxHelper
     {

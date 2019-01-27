@@ -1,6 +1,6 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Utilities;
+using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +9,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal static class ProcessEndpointHandlerFactory
     {

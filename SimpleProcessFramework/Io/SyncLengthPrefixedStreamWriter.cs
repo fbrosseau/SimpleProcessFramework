@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using Spfx.Utilities;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 
-namespace SimpleProcessFramework.Io
+namespace Spfx.Io
 {
     internal class SyncLengthPrefixedStreamWriter : ILengthPrefixedStreamWriter
     {

@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal interface IProcessEndpointHandler : IAsyncDestroyable
     {

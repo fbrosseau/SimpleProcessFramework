@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class EmitUtilities
     {

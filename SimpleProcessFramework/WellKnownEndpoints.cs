@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework
+﻿namespace Spfx
 {
     public static class WellKnownEndpoints
     {

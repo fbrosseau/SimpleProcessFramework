@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Interfaces;
+﻿using Spfx.Interfaces;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class ProcessUtilities
     {

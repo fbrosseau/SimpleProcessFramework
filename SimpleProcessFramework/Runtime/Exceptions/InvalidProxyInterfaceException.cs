@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Runtime.Exceptions
+namespace Spfx.Runtime.Exceptions
 {
     public class InvalidProxyInterfaceException : Exception
     {

@@ -1,13 +1,13 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities;
+using Spfx.Reflection;
+using Spfx.Runtime.Messages;
+using Spfx.Utilities.Threading;
 using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal class InterprocessRequestContext : IInterprocessRequestContext
     {

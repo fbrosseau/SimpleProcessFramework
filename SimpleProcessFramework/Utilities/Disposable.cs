@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     public class Disposable : IDisposable
     {

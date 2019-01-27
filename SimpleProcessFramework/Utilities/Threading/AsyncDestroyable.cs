@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Utilities.Threading
+namespace Spfx.Utilities.Threading
 {
     public interface IAsyncDestroyable : IDisposable
     {

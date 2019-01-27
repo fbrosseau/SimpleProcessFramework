@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework.Utilities
+﻿namespace Spfx.Utilities
 {
     internal struct VoidType
     {

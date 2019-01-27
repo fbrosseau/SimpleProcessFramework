@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework.Interfaces
+﻿namespace Spfx.Interfaces
 {
     public enum OsKind
     {

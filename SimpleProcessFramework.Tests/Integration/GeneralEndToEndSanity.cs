@@ -1,16 +1,16 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Server.Processes;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Server.Processes;
+using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static SimpleProcessFramework.Tests.TestUtilities;
-using SimpleProcessFramework.Utilities.Threading;
+using static Spfx.Tests.TestUtilities;
 
-namespace SimpleProcessFramework.Tests.Integration
+namespace Spfx.Tests.Integration
 {
     [TestClass]
     public class GeneralEndToEndSanity
@@ -92,7 +92,7 @@ namespace SimpleProcessFramework.Tests.Integration
         [TestMethod]
         public void BasicCustomNameSubprocess()
         {
-            const string customProcessName = "SPFW.UnitTests.CustomProcess_agj90gj09jg0a94jg094jg";
+            const string customProcessName = "Spfx.UnitTests.agj90gj09jg0a94jg094jg";
 
             DeleteFileIfExists(customProcessName + ".exe");
             DeleteFileIfExists(customProcessName + ".dll");

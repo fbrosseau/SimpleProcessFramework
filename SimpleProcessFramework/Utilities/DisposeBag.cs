@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     /// <summary>
     /// If <see cref="ReleaseAll"/> is not called, all the previously added items will get disposed.

@@ -1,13 +1,13 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Utilities;
+using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace Spfx.Runtime.Client
 {
     internal sealed class RemoteCallCompletion<T> : TaskCompletionSource<T>
     {

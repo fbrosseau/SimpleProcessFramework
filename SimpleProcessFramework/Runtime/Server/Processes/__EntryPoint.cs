@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     // Found by reflection!
     public class __EntryPoint
@@ -16,7 +16,6 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
                     container.Run();
                     graceful = true;
                 }
-
             }
             finally
             {

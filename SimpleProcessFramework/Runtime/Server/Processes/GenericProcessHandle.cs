@@ -1,13 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     internal abstract class GenericProcessHandle : AsyncDestroyable, IProcessHandle
     {

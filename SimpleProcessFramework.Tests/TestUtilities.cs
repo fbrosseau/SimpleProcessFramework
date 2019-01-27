@@ -1,13 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SimpleProcessFramework.Utilities;
-using System;
+using Spfx.Utilities;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Tests
+namespace Spfx.Tests
 {
     internal static class TestUtilities
     {

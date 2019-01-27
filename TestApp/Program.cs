@@ -1,14 +1,14 @@
-﻿using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Server;
-using SimpleProcessFramework.Tests.Integration;
+﻿using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Server;
+using Spfx.Tests.Integration;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.TestApp
+namespace Spfx.TestApp
 {
     public interface ITest
     {

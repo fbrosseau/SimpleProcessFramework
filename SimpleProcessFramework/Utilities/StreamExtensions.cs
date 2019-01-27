@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class StreamExtensions
     {

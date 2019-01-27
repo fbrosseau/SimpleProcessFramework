@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using Spfx.Utilities;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Io
+namespace Spfx.Io
 {
     public struct LengthPrefixedStream : IDisposable
     {

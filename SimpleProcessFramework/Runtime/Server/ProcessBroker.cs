@@ -4,15 +4,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Exceptions;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Runtime.Server.Processes;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Utilities;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IInternalProcessBroker : IProcessBroker, IAsyncDestroyable
     {

@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Utilities;
+using Spfx.Interfaces;
+using Spfx.Utilities;
 using System.Collections;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Reflection;
+using Spfx.Serialization;
+using Spfx.Runtime.Messages;
+using Spfx.Reflection;
 using System.Threading;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     internal class GenericChildProcessHandle : GenericProcessHandle, IIpcConnectorListener
     {
@@ -214,7 +214,7 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
 
         protected override void OnDispose()
         {
-            m_ipcConnector.Dispose();
+            m_ipcConnector?.Dispose();
         }
 
         void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)

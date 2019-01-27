@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using Spfx.Utilities;
 using System;
 using System.Net;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework
+namespace Spfx
 {
     [DataContract]
     public class ProcessEndpointAddress : IEquatable<ProcessEndpointAddress>

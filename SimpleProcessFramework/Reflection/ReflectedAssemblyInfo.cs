@@ -1,11 +1,11 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     [DataContract(IsReference = true)]
     public class ReflectedAssemblyInfo : IEquatable<ReflectedAssemblyInfo>

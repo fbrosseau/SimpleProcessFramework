@@ -1,6 +1,6 @@
-﻿using SimpleProcessFramework.Interfaces;
+﻿using Spfx.Interfaces;
 
-namespace SimpleProcessFramework.CoreEndpoints
+namespace Spfx.CoreEndpoints
 {
     internal class ProcessClusterManager : IProcessClusterManager
     {

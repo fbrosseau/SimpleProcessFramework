@@ -1,11 +1,11 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
 
     internal class SerializerReferencesCache

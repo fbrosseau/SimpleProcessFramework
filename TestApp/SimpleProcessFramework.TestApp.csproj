@@ -6,6 +6,8 @@
     <OutputPath>bin\release</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
+    <AssemblyName>Spfx.TestApp</AssemblyName>
+    <RootNamespace>Spfx.TestApp</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

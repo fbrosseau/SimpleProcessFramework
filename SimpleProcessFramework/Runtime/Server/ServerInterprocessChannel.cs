@@ -1,12 +1,12 @@
-﻿using SimpleProcessFramework.Runtime.Common;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
+﻿using Spfx.Runtime.Common;
+using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal class ServerInterprocessChannel : AbstractInterprocessConection, IInterprocessClientChannel
     {

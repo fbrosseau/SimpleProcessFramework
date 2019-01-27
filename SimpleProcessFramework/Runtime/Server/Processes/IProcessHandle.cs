@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Interfaces;
+using Spfx.Runtime.Messages;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     public interface IProcessHandle : IAsyncDestroyable
     {

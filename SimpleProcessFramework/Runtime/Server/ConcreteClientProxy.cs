@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Runtime.Messages;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal class ConcreteClientProxy : IInterprocessClientProxy
     {

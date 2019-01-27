@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Runtime.Messages;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal class ClientConnectionManager : AsyncDestroyable, IClientConnectionManager, IClientRequestHandler
     {

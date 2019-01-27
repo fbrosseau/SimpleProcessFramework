@@ -1,5 +1,5 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Utilities;
+﻿using Spfx.Reflection;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
     internal class DefaultBinarySerializer : IBinarySerializer
     {

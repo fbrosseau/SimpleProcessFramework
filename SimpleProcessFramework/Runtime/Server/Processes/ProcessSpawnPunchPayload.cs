@@ -2,9 +2,9 @@
 using System.IO;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using SimpleProcessFramework.Utilities.Threading;
+using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     public class ProcessSpawnPunchPayload
     {

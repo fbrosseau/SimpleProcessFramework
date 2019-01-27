@@ -1,5 +1,5 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Reflection;
+﻿using Spfx.Utilities;
+using Spfx.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace Spfx.Runtime.Client
 {
     internal static class ProcessProxyFactory
     {

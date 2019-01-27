@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
     internal class ReflectedDataContractSerializer : ITypeSerializer
     {

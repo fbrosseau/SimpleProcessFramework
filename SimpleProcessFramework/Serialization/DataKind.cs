@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework.Serialization
+﻿namespace Spfx.Serialization
 {
     internal enum DataKind : byte
     {

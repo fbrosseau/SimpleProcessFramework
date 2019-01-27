@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     internal class WindowsProcessSpawnPunchHandles : AbstractProcessSpawnPunchHandles
     {

@@ -1,13 +1,13 @@
-﻿using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Server;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Client;
+using Spfx.Runtime.Server;
+using Spfx.Serialization;
+using Spfx.Utilities.Threading;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework
+namespace Spfx
 {
     public class ProcessCluster : AsyncDestroyable
     {

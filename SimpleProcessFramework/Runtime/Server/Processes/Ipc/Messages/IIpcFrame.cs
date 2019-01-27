@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework.Runtime.Server.Processes
+﻿namespace Spfx.Runtime.Server.Processes
 {
     public interface IIpcFrame
     {

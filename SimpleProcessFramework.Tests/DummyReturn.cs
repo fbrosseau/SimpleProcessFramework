@@ -1,8 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Tests
+namespace Spfx.Tests
 {
     [DataContract]
     public class DummyReturn

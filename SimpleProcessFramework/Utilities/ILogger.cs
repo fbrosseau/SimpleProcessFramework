@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public interface ILogger

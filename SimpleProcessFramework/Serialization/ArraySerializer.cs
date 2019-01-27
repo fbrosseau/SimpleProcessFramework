@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Reflection;
+﻿using Spfx.Reflection;
 using System;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
     internal class ArraySerializer
     {

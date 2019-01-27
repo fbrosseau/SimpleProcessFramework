@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     [DataContract]
     public class ReflectedEventInfo : IEquatable<ReflectedEventInfo>

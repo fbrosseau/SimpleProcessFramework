@@ -6,6 +6,8 @@
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
+    <AssemblyName>Spfx.Process.Netfx32</AssemblyName>
+    <RootNamespace>Spfx.Process.Netfx32</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

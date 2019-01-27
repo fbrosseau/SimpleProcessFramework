@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class EndpointHelper
     {

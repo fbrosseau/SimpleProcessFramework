@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     internal static class ReflectionUtilities
     {

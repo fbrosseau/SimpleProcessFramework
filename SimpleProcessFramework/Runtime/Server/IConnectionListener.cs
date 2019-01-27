@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IConnectionListener : IDisposable
     {

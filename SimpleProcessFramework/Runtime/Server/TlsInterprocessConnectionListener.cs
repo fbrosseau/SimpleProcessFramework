@@ -1,5 +1,5 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Serialization;
+﻿using Spfx.Utilities;
+using Spfx.Serialization;
 using System.IO;
 using System.Net;
 using System.Net.Security;
@@ -8,7 +8,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public class TlsInterprocessConnectionListener : TcpInterprocessConnectionListener
     {

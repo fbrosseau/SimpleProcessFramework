@@ -1,11 +1,11 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Io
+namespace Spfx.Io
 {
     internal class SyncLengthPrefixedStreamReader : ILengthPrefixedStreamReader
     {

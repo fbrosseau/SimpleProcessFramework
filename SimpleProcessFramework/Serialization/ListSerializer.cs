@@ -1,8 +1,8 @@
-﻿using SimpleProcessFramework.Reflection;
+﻿using Spfx.Reflection;
 using System;
 using System.Collections.Generic;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
     internal class ListSerializer
     {

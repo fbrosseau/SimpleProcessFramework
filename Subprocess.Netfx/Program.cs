@@ -2,9 +2,8 @@
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Threading;
 
-namespace SimpleProcessFramework
+namespace Spfx
 {
     class Program
     {
@@ -12,10 +11,10 @@ namespace SimpleProcessFramework
         {
             AppDomain.CurrentDomain.FirstChanceException += OnFirstChanceException;
 
-            var asm = Assembly.Load("SimpleProcessFramework");
+            var asm = Assembly.Load("Spfx");
             if (asm is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework");
-            var entryPointType = asm.GetType("SimpleProcessFramework.Runtime.Server.Processes.__EntryPoint");
+            var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint");
             if (entryPointType is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
             entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);

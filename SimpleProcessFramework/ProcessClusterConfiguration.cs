@@ -1,7 +1,7 @@
-﻿using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
+﻿using Spfx.Interfaces;
+using Spfx.Reflection;
 
-namespace SimpleProcessFramework
+namespace Spfx
 {
     public class ProcessClusterConfiguration
     {
@@ -27,13 +27,13 @@ namespace SimpleProcessFramework
         public bool CreateExecutablesIfMissing { get; set; } = true;
 
 #if WINDOWS_BUILD
-        public string DefaultNetfxProcessName { get; set; } = "Subprocess.Netfx";
-        public string DefaultNetfx32ProcessName { get; set; } = "Subprocess.Netfx32";
+        public string DefaultNetfxProcessName { get; set; } = "Spfx.Process.Netfx";
+        public string DefaultNetfx32ProcessName { get; set; } = "Spfx.Process.Netfx32";
 #endif
-        public string DefaultNetcoreProcessName { get; set; } = "Subprocess.Netcore";
+        public string DefaultNetcoreProcessName { get; set; } = "Spfx.Process.Netcore";
 
 #if WINDOWS_BUILD
-        public string DefaultNetcore32ProcessName { get; set; } = "Subprocess.Netcore";
+        public string DefaultNetcore32ProcessName { get; set; } = "Spfx.Process.Netcore";
 #endif
 
         public ProcessKind DefaultProcessKind { get; set; } = ProcessKind.Netcore;

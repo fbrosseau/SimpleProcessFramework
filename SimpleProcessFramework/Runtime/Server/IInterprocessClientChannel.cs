@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using SimpleProcessFramework.Runtime.Messages;
+using Spfx.Runtime.Messages;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IInterprocessClientProxy
     {

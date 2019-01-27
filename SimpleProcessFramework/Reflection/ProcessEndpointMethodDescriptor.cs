@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     [DataContract]
     public class ProcessEndpointMethodDescriptor

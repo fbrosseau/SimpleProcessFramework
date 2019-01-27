@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     internal class DependencyInjectionFactoryProvider
     {

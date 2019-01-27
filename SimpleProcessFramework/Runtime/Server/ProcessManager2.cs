@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
+using Spfx.Interfaces;
+using Spfx.Reflection;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     internal class EndpointBroker : AbstractProcessEndpoint, IEndpointBroker
     {

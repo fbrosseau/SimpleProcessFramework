@@ -1,15 +1,13 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Messages;
+using Spfx.Reflection;
+using Spfx.Runtime.Client;
+using Spfx.Runtime.Messages;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static SimpleProcessFramework.Tests.TestUtilities;
+using static Spfx.Tests.TestUtilities;
 
-namespace SimpleProcessFramework.Tests.LowLevel
+namespace Spfx.Tests.LowLevel
 {
     [TestClass]
     public class InterfaceProxyTests

@@ -1,6 +1,6 @@
-﻿using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities.Threading;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IClientConnectionManager : IAsyncDestroyable
     {

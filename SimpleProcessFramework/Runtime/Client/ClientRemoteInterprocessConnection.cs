@@ -1,10 +1,10 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Common;
-using SimpleProcessFramework.Runtime.Exceptions;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Runtime.Server;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Common;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server;
+using Spfx.Serialization;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +16,7 @@ using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Client
+namespace Spfx.Runtime.Client
 {
     internal class ClientSameClusterInterprocessConnection : IClientInterprocessConnection, IInterprocessClientChannel
     {

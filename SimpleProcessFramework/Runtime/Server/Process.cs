@@ -1,11 +1,11 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Interfaces;
-using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Exceptions;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Runtime.Client;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Server
+namespace Spfx.Runtime.Server
 {
     public interface IProcess
     {

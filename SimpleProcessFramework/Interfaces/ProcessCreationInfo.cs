@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Interfaces
+namespace Spfx.Interfaces
 {
     [DataContract]
     public class ProcessCreationInfo

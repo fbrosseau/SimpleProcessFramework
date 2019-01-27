@@ -1,8 +1,8 @@
-﻿using SimpleProcessFramework.Utilities;
+﻿using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     internal class DefaultTypeResolver : ITypeResolver
     {

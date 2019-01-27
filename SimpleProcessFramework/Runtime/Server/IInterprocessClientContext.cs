@@ -1,4 +1,4 @@
-﻿namespace SimpleProcessFramework.Runtime.Server
+﻿namespace Spfx.Runtime.Server
 {
     public interface IInterprocessClientContext
     {

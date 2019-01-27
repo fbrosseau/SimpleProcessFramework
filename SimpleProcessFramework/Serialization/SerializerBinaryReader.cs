@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SimpleProcessFramework.Serialization
+namespace Spfx.Serialization
 {
     internal class SerializerBinaryReader : BinaryReader
     {

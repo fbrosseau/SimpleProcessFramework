@@ -1,9 +1,9 @@
-﻿using SimpleProcessFramework.Reflection;
+﻿using Spfx.Reflection;
 using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Runtime.Messages
+namespace Spfx.Runtime.Messages
 {
     [DataContract]
     public sealed class RemoteCallRequest : RemoteInvocationRequest

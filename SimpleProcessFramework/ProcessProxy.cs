@@ -1,12 +1,12 @@
-﻿using SimpleProcessFramework.Reflection;
-using SimpleProcessFramework.Runtime.Client;
-using SimpleProcessFramework.Runtime.Messages;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Client;
+using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework
+namespace Spfx
 {
     public class EventRegistrationRequestInfo
     {

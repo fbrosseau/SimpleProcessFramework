@@ -1,15 +1,15 @@
-﻿using SimpleProcessFramework.Utilities;
-using SimpleProcessFramework.Io;
-using SimpleProcessFramework.Runtime.Messages;
-using SimpleProcessFramework.Serialization;
-using SimpleProcessFramework.Utilities.Threading;
+﻿using Spfx.Utilities;
+using Spfx.Io;
+using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities.Threading;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     internal class SubprocessIpcConnector : IpcConnector
     {

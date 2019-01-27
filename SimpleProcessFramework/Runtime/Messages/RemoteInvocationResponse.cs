@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Runtime.Messages
+namespace Spfx.Runtime.Messages
 {
     [DataContract]
     public abstract class RemoteInvocationResponse : IInterprocessRequest

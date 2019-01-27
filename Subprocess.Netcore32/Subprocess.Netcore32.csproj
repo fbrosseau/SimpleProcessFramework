@@ -6,6 +6,8 @@
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
+    <AssemblyName>Spfx.Process.Netcore32</AssemblyName>
+    <RootNamespace>Spfx.Process.Netcore32</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

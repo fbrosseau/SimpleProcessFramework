@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal class SimpleUniqueIdFactory
     {

@@ -3,7 +3,7 @@ using System.IO.Pipes;
 using System;
 using System.Diagnostics;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     internal sealed class GenericProcessSpawnPunchHandles : AbstractProcessSpawnPunchHandles
     {

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes
 {
     [DataContract]
     public class IpcHandshakeRequest : IIpcFrame

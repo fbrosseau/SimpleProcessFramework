@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-namespace SimpleProcessFramework.Interfaces
+namespace Spfx.Interfaces
 {
     public class ProcessClusterHostInformation
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace SimpleProcessFramework.Utilities
+namespace Spfx.Utilities
 {
     internal static class PathHelper
     {

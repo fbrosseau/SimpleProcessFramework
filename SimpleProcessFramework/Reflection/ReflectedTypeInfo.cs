@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Reflection
+namespace Spfx.Reflection
 {
     [DataContract(IsReference = true)]
     public class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>

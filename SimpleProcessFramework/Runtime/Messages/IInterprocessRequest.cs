@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SimpleProcessFramework.Runtime.Messages
+namespace Spfx.Runtime.Messages
 {
     public interface IInterprocessMessage
     {
