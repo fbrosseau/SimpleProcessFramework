@@ -14,10 +14,11 @@
     <AssemblyName>Spfx</AssemblyName>
     <RootNamespace>Spfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../spfx.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
@@ -42,7 +43,7 @@
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx32.exe" Link="Spfx.Process.Netfx32.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <EmbeddedResource Include="..\spfx.snk" Link="Properties\spfx.snk" />
+    <EmbeddedResource Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>

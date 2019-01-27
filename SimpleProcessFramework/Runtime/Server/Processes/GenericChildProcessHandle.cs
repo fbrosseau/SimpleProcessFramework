@@ -193,7 +193,20 @@ namespace Spfx.Runtime.Server.Processes
 
         private void CreateMissingExecutable()
         {
-            File.Copy(GetDefaultExecutable(), TargetExecutable, true);
+            var defaultExe = GetDefaultExecutable();
+
+            try
+            {
+                var existingFile = new FileInfo(defaultExe);
+                var existingFileSecurity = existingFile.GetAccessControl();
+                existingFileSecurity.SetAccessRuleProtection(true, true);
+                var copiedFile = existingFile.CopyTo(TargetExecutable, true);
+                copiedFile.SetAccessControl(existingFileSecurity);
+            }
+            catch
+            {
+                TargetExecutable = defaultExe;
+            }
         }
 
         protected virtual void ComputeExecutablePath()
