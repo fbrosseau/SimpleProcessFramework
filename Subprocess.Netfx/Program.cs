@@ -9,8 +9,6 @@ namespace Spfx
     {
         static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.FirstChanceException += OnFirstChanceException;
-
             var asm = Assembly.Load("Spfx");
             if (asm is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework");
@@ -18,11 +16,6 @@ namespace Spfx
             if (entryPointType is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
             entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);
-        }
-
-        private static void OnFirstChanceException(object sender, FirstChanceExceptionEventArgs e)
-        {
-            Console.WriteLine("!!\t" + e.Exception);
         }
     }
 }
