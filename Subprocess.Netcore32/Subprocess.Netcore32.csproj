@@ -9,7 +9,7 @@
     <AssemblyName>Spfx.Process.Netcore32</AssemblyName>
     <RootNamespace>Spfx.Process.Netcore32</RootNamespace>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/spfx.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
