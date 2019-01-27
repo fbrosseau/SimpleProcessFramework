@@ -7,14 +7,16 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netcore</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
+    <Folder Include="Properties\" />
+    <None Include="..\spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>

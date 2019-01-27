@@ -13,6 +13,8 @@
     <Version>0.0.2</Version>
     <AssemblyName>Spfx</AssemblyName>
     <RootNamespace>Spfx</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +42,7 @@
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx32.exe" Link="Spfx.Process.Netfx32.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <EmbeddedResource Include="..\spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>

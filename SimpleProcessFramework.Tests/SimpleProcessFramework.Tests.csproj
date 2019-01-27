@@ -6,6 +6,8 @@
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Tests</AssemblyName>
     <RootNamespace>Spfx.Tests</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
@@ -26,4 +28,12 @@
     <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\spfx.snk" Link="Properties\spfx.snk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  
 </Project>

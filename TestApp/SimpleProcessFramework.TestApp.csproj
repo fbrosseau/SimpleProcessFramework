@@ -8,11 +8,17 @@
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.TestApp</AssemblyName>
     <RootNamespace>Spfx.TestApp</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleProcessFramework.Tests\SimpleProcessFramework.Tests.csproj" />
     <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\spfx.snk" Link="spfx.snk" />
   </ItemGroup>
 
 </Project>

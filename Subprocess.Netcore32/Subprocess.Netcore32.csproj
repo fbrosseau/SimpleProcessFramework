@@ -8,18 +8,15 @@
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netcore32</AssemblyName>
     <RootNamespace>Spfx.Process.Netcore32</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
+    <Folder Include="Properties\" />
+    <None Include="..\spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>

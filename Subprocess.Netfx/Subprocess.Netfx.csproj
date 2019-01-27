@@ -8,6 +8,8 @@
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netfx</AssemblyName>
     <RootNamespace>Spfx.Process.Netfx</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -20,6 +22,7 @@
 
   <ItemGroup>
     <Folder Include="Properties\" />
+    <None Include="..\spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>
