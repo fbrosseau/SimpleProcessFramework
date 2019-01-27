@@ -29,11 +29,19 @@ jobs:
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
 
-  - task: CopyFiles@2
+  - task: VSTest@2
     inputs:
-      sourceFolder: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)'
-      contents: '**/*'
-      targetFolder: $(Build.ArtifactStagingDirectory)
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+
+
+
+
+#  - task: CopyFiles@2
+#    inputs:
+#      sourceFolder: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)'
+#      contents: '**/*'
+#      targetFolder: $(Build.ArtifactStagingDirectory)
 
   #- task: NuGetCommand@2
   #  displayName: 'Nuget Pack'
@@ -51,18 +59,18 @@ jobs:
   #    versionEnvVar: Version
   #    packagesToPush: nuspec/**.nupkg
 
-- job: Windows_Test
-  displayName: 'Windows Tests'
-  dependsOn: Windows_Build
-  pool:
-    vmImage: 'vs2017-win2016'
-  steps:
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadPath: '$(System.ArtifactsDirectory)' 
+#- job: Windows_Test
+#  displayName: 'Windows Tests'
+#  dependsOn: Windows_Build
+#  pool:
+#    vmImage: 'vs2017-win2016'
+#  steps:
+#  - task: DownloadBuildArtifacts@0
+#    inputs:
+#      buildType: 'current'
+#      downloadPath: '$(System.ArtifactsDirectory)' 
 
-  - task: VSTest@2
-    inputs:
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
+#- task: VSTest@2
+#    inputs:
+#      platform: '$(buildPlatform)'
+#      configuration: '$(buildConfiguration)'
