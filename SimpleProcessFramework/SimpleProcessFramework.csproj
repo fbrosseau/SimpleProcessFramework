@@ -9,6 +9,8 @@
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <LangVersion>7.2</LangVersion>
     <DefineConstants>$(DefineConstants);WINDOWS_BUILD;SUPPORTS_NETFX;SUPPORTS_NETCORE</DefineConstants>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>0.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,11 +18,26 @@
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Codegen\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\bin\$(Configuration)\Subprocess.Netcore.dll" Link="Subprocess.Netcore.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\bin\$(Configuration)\Subprocess.Netcore32.dll" Link="Subprocess.Netcore32.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\bin\$(Configuration)\Subprocess.Netfx.exe" Link="Subprocess.Netfx.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\bin\$(Configuration)\Subprocess.Netfx32.exe" Link="Subprocess.Netfx32.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

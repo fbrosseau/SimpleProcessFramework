@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net472</TargetFrameworks>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
+    <OutputPath>bin\release</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>

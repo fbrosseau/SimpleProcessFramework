@@ -2,13 +2,19 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>SimpleProcessFramework</id>
-    <version>0.0.1</version>
-    <description>A library to easily spawn subprocesses across multiple machines, .Net frameworks or operating systems</description>
+    <version>0.0.4</version>
+    <description>A library to easily spawn subprocesses across multiple machines, multiple .Net frameworks and multiple operating systems</description>
     <authors>francis@malagauche.com</authors>
+
+    <references>
+      <reference file="SimpleProcessFramework.dll" />
+    </references>    
   </metadata>
   <files>
-    <file src="../bin/$configuration$/**.exe" exclude="**/*Test*.exe" target="tool" />
-    <file src="../bin/$configuration$/**.dll" exclude="**/SimpleProcessFramework.dll,**/*Test*.dll" target="tool" />
     <file src="../bin/$configuration$/SimpleProcessFramework.dll" target="lib/netstandard2.0" />
+    <file src="../bin/$configuration$/Subprocess.Netfx.exe" target="runtimes/win/native" />
+    <file src="../bin/$configuration$/Subprocess.Netfx32.exe" target="runtimes/win/native" />
+    <file src="../bin/$configuration$/Subprocess.Netcore.dll" target="runtimes/win/native" />
+    <file src="../bin/$configuration$/Subprocess.Netcore32.dll" target="runtimes/win/native" />
   </files>
 </package>

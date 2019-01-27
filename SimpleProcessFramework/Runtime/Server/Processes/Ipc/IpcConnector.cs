@@ -52,13 +52,6 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
             SendCode(InterprocessFrameType.Handshake2);
             await ReceiveCode(InterprocessFrameType.Handshake3);
         }
-
-        protected override async Task OnTeardownAsync(CancellationToken ct)
-        {
-            SendCode(InterprocessFrameType.Teardown1);
-            await Shutdown2ReceivedEvent.WaitAsync(ct);
-            await base.OnTeardownAsync(ct);
-        }
     }
 
     internal interface IIpcConnectorListener
@@ -133,6 +126,13 @@ namespace SimpleProcessFramework.Runtime.Server.Processes
 
         protected async override Task OnTeardownAsync(CancellationToken ct)
         {
+            if (!Shutdown1ReceivedEvent.IsSet)
+            {
+                SendCode(InterprocessFrameType.Teardown1);
+                await Shutdown2ReceivedEvent.WaitAsync(ct);
+                await base.OnTeardownAsync(ct);
+            }
+
             if (Shutdown2ReceivedEvent.IsSet)
             {
                 Dispose();
