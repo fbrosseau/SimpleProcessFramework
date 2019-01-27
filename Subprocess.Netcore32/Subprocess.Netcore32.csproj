@@ -9,14 +9,14 @@
     <AssemblyName>Spfx.Process.Netcore32</AssemblyName>
     <RootNamespace>Spfx.Process.Netcore32</RootNamespace>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\spfx.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/spfx.snk</AssemblyOriginatorKeyFile>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
     <Folder Include="Properties\" />
-    <None Include="..\spfx.snk" Link="Properties\spfx.snk" />
+    <None Include="../SimpleProcessFramework/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>
