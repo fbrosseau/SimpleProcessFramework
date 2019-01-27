@@ -16,7 +16,7 @@
   <ItemGroup>
     <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
     <Folder Include="Properties\" />
-    <None Include="../SimpleProcessFramework/spfx.snk" Link="Properties\spfx.snk" />
+    <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>
