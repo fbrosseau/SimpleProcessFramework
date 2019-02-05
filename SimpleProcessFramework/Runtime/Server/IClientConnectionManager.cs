@@ -8,6 +8,6 @@ namespace Spfx.Runtime.Server
         void RemoveListener(IConnectionListener listener);
 
         void RegisterClientChannel(IInterprocessClientChannel channel);
-        IInterprocessClientChannel GetClientChannel(long connectionId, bool mustExist);
+        IInterprocessClientChannel GetClientChannel(string connectionId, bool mustExist);
     }
 }

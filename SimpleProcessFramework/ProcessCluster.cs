@@ -4,6 +4,7 @@ using Spfx.Runtime.Client;
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
 using Spfx.Utilities.Threading;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,7 +20,7 @@ namespace Spfx
             DefaultTypeResolver.RegisterSingleton<IBinarySerializer>(new DefaultBinarySerializer());
             DefaultTypeResolver.RegisterFactory<IInternalProcessBroker>(r => new ProcessBroker(r.GetSingleton<ProcessCluster>()));
             DefaultTypeResolver.RegisterFactory<IClientConnectionFactory>(r => new DefaultClientConnectionFactory(r.GetSingleton<IBinarySerializer>()));
-            DefaultTypeResolver.RegisterFactory<IClientConnectionManager>(r => new ClientConnectionManager(r.GetSingleton<IInternalProcessBroker>()));
+            DefaultTypeResolver.RegisterFactory<IClientConnectionManager>(r => new ClientConnectionManager(r.GetSingleton<IIncomingClientMessagesHandler>()));
             DefaultTypeResolver.RegisterFactory<IEndpointBroker>(r => new EndpointBroker());
             DefaultTypeResolver.RegisterFactory<IInternalRequestsHandler>(r => new NullInternalRequestsHandler());
         }
@@ -47,7 +48,7 @@ namespace Spfx
             TypeResolver.RegisterSingleton(m_config);
             TypeResolver.RegisterSingleton(this);
             m_processBroker = TypeResolver.CreateSingleton<IInternalProcessBroker>();
-            m_connectionsManager = TypeResolver.CreateSingleton<IClientConnectionManager>();
+            m_connectionsManager = TypeResolver.GetSingleton<IClientConnectionManager>();
 
             MasterProcess.InitializeEndpointAsync<IProcessBroker>(WellKnownEndpoints.ProcessBroker, m_processBroker)
                 .ExpectAlreadyCompleted();

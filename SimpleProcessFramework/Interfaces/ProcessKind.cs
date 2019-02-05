@@ -7,5 +7,26 @@
         Netfx32,
         Netcore,
         Netcore32,
+        DirectlyInRootProcess,
+        AppDomain,
+        Wsl
+    }
+
+    public static class ProcessKindExtensions
+    {
+        public static bool IsNetcore(this ProcessKind k)
+        {
+            return k == ProcessKind.Netcore || k == ProcessKind.Netcore32 || k == ProcessKind.Wsl;
+        }
+
+        public static bool IsFakeProcess(this ProcessKind k)
+        {
+            return k == ProcessKind.AppDomain || k == ProcessKind.DirectlyInRootProcess;
+        }
+
+        public static bool Is32Bit(this ProcessKind k)
+        {
+            return k == ProcessKind.Netfx32 || k == ProcessKind.Netcore32;
+        }
     }
 }

@@ -5,13 +5,18 @@ using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {
+    public interface IIncomingClientMessagesHandler
+    {
+        void ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
+    }
+
     internal class ClientConnectionManager : AsyncDestroyable, IClientConnectionManager, IClientRequestHandler
     {
-        private readonly Dictionary<long, IInterprocessClientChannel> m_activeChannels = new Dictionary<long, IInterprocessClientChannel>();
+        private readonly Dictionary<string, IInterprocessClientChannel> m_activeChannels = new Dictionary<string, IInterprocessClientChannel>();
         private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
-        private readonly IInternalProcessBroker m_processManager;
+        private readonly IIncomingClientMessagesHandler m_processManager;
 
-        public ClientConnectionManager(IInternalProcessBroker processManager)
+        public ClientConnectionManager(IIncomingClientMessagesHandler processManager)
         {
             m_processManager = processManager;
         }
@@ -66,7 +71,7 @@ namespace Spfx.Runtime.Server
             m_processManager.ForwardMessage(source.GetWrapperProxy(), wrappedMessage);
         }
 
-        public IInterprocessClientChannel GetClientChannel(long connectionId, bool mustExist)
+        public IInterprocessClientChannel GetClientChannel(string connectionId, bool mustExist)
         {
             IInterprocessClientChannel c;
             lock (m_activeChannels)

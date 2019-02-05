@@ -57,7 +57,9 @@ namespace Spfx.Runtime.Client
             ilgen.Emit(OpCodes.Ret);
 
             var methodInfoFieldNames = new Dictionary<MethodInfo, string>();
-            var methods = type.GetMethods().Where(m => !m.IsSpecialName).ToList();
+
+            var allInterfaces = new[] { type }.Concat(type.GetInterfaces()).Distinct();
+            var methods = allInterfaces.SelectMany(i => i.GetMethods()).Where(m => !m.IsSpecialName).ToList();
             foreach (var m in methods)
             {
                 var parameters = m.GetParameters();
@@ -168,9 +170,8 @@ namespace Spfx.Runtime.Client
                 return "FieldInfo__" + evt.Name;
             }
 
-            var events = type.GetEvents();
-
-            if (events.Length > 0)
+            var events = allInterfaces.SelectMany(i => i.GetEvents()).ToList();
+            if (events.Count > 0)
             {
                 var eventBackingFields = new Dictionary<EventInfo, FieldBuilder>();
                 foreach (var evt in events)

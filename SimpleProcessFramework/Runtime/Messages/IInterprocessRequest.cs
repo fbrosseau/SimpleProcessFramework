@@ -7,11 +7,14 @@ namespace Spfx.Runtime.Messages
         ProcessEndpointAddress Destination { get; set; }
     }
 
-    public interface IInterprocessRequest : IInterprocessMessage
+    public interface IStatefulInterprocessMessage : IInterprocessMessage
     {
         [DataMember]
         long CallId { get; set; }
+    }
 
+    public interface IInterprocessRequest : IStatefulInterprocessMessage
+    {
         bool ExpectResponse { get; }
     }
 }

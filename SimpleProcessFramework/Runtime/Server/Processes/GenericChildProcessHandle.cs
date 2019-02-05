@@ -16,6 +16,9 @@ namespace Spfx.Runtime.Server.Processes
 {
     internal class GenericChildProcessHandle : GenericProcessHandle, IIpcConnectorListener
     {
+        private static Lazy<string> s_wslRootBinPath = new Lazy<string>(() => WslUtilities.GetWslPath(PathHelper.BinFolder.FullName), false);
+        private static string EscapeArg(string a) => ProcessUtilities.EscapeArg(a);
+
         private Process m_targetProcess;
 
         public string ProcessName => ProcessCreationInfo.ProcessName;
@@ -26,39 +29,19 @@ namespace Spfx.Runtime.Server.Processes
 
         private TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private MasterProcessIpcConnector m_ipcConnector;
-        private readonly IClientConnectionManager m_clientManager;
 
         public GenericChildProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
-            m_clientManager = typeResolver.GetSingleton<IClientConnectionManager>();
         }
 
         public override async Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
         {
             RemotePunchPayload = punchPayload;
 
-            CommandLine = $"{ProcessCreationInfo.ProcessUniqueId} {Process.GetCurrentProcess().Id}";
-
-            ComputeExecutablePath();
-
-            if (string.IsNullOrWhiteSpace(TargetExecutable))
-                TargetExecutable = GetDefaultExecutable();
-
-            TargetExecutable = Path.GetFullPath(TargetExecutable);
-
-            if(!File.Exists(TargetExecutable))
-            {
-                if (!Config.CreateExecutablesIfMissing)
-                    throw new InvalidProcessParametersException("The target executable does not exist");
-
-                CreateMissingExecutable();
-            }
-
             using (var disposeBag = new DisposeBag())
             {
-                var remoteProcessHandles = await SpawnProcess();
-                disposeBag.Add(remoteProcessHandles);
+                var remoteProcessHandles = disposeBag.Add(await SpawnProcess());
 
                 var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, new DefaultBinarySerializer());
                 disposeBag.Add(connector);
@@ -75,14 +58,15 @@ namespace Spfx.Runtime.Server.Processes
         {
             switch (processKind)
             {
+                case ProcessKind.Default:
                 case ProcessKind.Netfx:
                     return config.DefaultNetfxProcessName;
                 case ProcessKind.Netfx32:
                     return config.DefaultNetfx32ProcessName;
                 case ProcessKind.Netcore:
-                    return config.DefaultNetcoreProcessName;
                 case ProcessKind.Netcore32:
-                    return config.DefaultNetcore32ProcessName;
+                case ProcessKind.Wsl:
+                    return config.DefaultNetcoreProcessName;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(processKind));
             }
@@ -112,15 +96,42 @@ namespace Spfx.Runtime.Server.Processes
                 baseFilename += ext;
             }
 
+            if (ProcessKind == ProcessKind.Wsl)
+            {
+                return s_wslRootBinPath.Value + baseFilename;
+            }
+
             return PathHelper.GetFileRelativeToBin(baseFilename).FullName;
         }
 
-        protected virtual async Task<AbstractProcessSpawnPunchHandles> SpawnProcess()
+        protected virtual async Task<IProcessSpawnPunchHandles> SpawnProcess()
         {
-            var startInfo = new ProcessStartInfo
+            CommandLine = $"{EscapeArg(ProcessCreationInfo.ProcessUniqueId)} {EscapeArg(Process.GetCurrentProcess().Id.ToString())}";
+
+            ComputeExecutablePath();
+
+            if (string.IsNullOrWhiteSpace(TargetExecutable))
+                TargetExecutable = GetDefaultExecutable();
+
+            if (ProcessKind != ProcessKind.Wsl)
             {
-                FileName = TargetExecutable,
-                Arguments = CommandLine,
+                TargetExecutable = Path.GetFullPath(TargetExecutable);
+
+                if (!File.Exists(TargetExecutable))
+                {
+                    if (!Config.CreateExecutablesIfMissing)
+                        throw new InvalidProcessParametersException("The target executable does not exist");
+
+                    CreateMissingExecutable();
+                }
+            }
+
+            //var combinedCommandLine = $"\"calc\" {GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
+            var combinedCommandLine = $"{GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
+            combinedCommandLine.Trim();
+
+            var startInfo = new ProcessStartInfo(combinedCommandLine)
+            {
                 RedirectStandardInput = true,
                 WorkingDirectory = WorkingDirectory,
                 UseShellExecute = false,
@@ -132,17 +143,21 @@ namespace Spfx.Runtime.Server.Processes
                 startInfo.Environment[kvp.Key] = kvp.Value;
             }
 
-            AbstractProcessSpawnPunchHandles punchHandles = null;
+            IProcessSpawnPunchHandles punchHandles = null;
             string serializedPayloadForOtherProcess;
 
             try
             {
+                punchHandles = ProcessKind != ProcessKind.Wsl ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles() : new WslProcessSpawnPunchHandles();
+
                 lock (ProcessCreationUtilities.ProcessCreationLock)
                 {
-                    punchHandles = new WindowsProcessSpawnPunchHandles();
+                    punchHandles.InitializeInLock();
                     m_targetProcess = Process.Start(startInfo) ?? throw new InvalidOperationException("Unable to start process");
-                    serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);
+                    punchHandles.HandleProcessCreatedInLock(m_targetProcess, RemotePunchPayload);
                 }
+
+                serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);            
 
                 m_targetProcess.EnableRaisingEvents = true;
                 m_targetProcess.Exited += (sender, args) => OnProcessLost("The process has exited");
@@ -154,6 +169,7 @@ namespace Spfx.Runtime.Server.Processes
 
                 await m_targetProcess.StandardInput.WriteLineAsync(serializedPayloadForOtherProcess);
                 await m_targetProcess.StandardInput.FlushAsync();
+                await punchHandles.CompleteHandshakeAsync();
 
                 return punchHandles;
             }
@@ -163,6 +179,23 @@ namespace Spfx.Runtime.Server.Processes
                 punchHandles?.DisposeAllHandles();
                 m_targetProcess?.TryKill();
                 throw;
+            }
+        }
+
+        protected virtual string GetExecutablePrefix()
+        {
+            switch(ProcessKind)
+            {
+                case ProcessKind.Netcore:
+                    return EscapeArg(Path.GetFullPath(Config.DefaultNetcoreHost));
+                case ProcessKind.Netcore32:
+                    return EscapeArg(Path.GetFullPath(Config.DefaultNetcoreHost32));
+                case ProcessKind.Wsl:
+                    return EscapeArg(WslUtilities.WslExeFullPath) + " " + EscapeArg(Config.DefaultWslNetcoreHost);
+                case ProcessKind.Netfx:
+                case ProcessKind.Netfx32:
+                default:
+                    return "";
             }
         }
 
@@ -222,7 +255,8 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override async Task OnTeardownAsync(CancellationToken ct)
         {
-            await m_ipcConnector.TeardownAsync(ct).ConfigureAwait(false);
+            if (m_ipcConnector != null)
+                await m_ipcConnector.TeardownAsync(ct).ConfigureAwait(false);
         }
 
         protected override void OnDispose()
@@ -230,26 +264,25 @@ namespace Spfx.Runtime.Server.Processes
             m_ipcConnector?.Dispose();
         }
 
-        void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)
-        {
-            var origin = m_clientManager.GetClientChannel(msg.SourceConnectionId, mustExist: true);
-            origin.SendMessage(msg);
-        }
-
         void IIpcConnectorListener.OnTeardownRequestReceived()
         {
             throw new NotImplementedException();
         }
 
-        protected override void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
+        protected override void HandleMessage(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
         {
-            wrappedMessage.SourceConnectionId = source.UniqueId;
+            wrappedMessage.SourceConnectionId = sourceConnectionId;
             m_ipcConnector.ForwardMessage(wrappedMessage);
         }
 
         Task IIpcConnectorListener.CompleteInitialization()
         {
             return Task.CompletedTask;
+        }
+
+        void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)
+        {
+            OnMessageReceivedFromProcess(msg);
         }
     }
 }

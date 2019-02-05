@@ -21,9 +21,9 @@ namespace Spfx.Runtime.Client
     internal abstract class AbstractClientInterprocessConnection : AbstractInterprocessConection, IClientInterprocessConnection
     {
         private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
-        private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingResponses = new SimpleUniqueIdFactory<PendingOperation>();
+        private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();
         private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
-        
+
         protected AbstractClientInterprocessConnection(IBinarySerializer serializer)
             : base(serializer)
         {
@@ -35,7 +35,7 @@ namespace Spfx.Runtime.Client
             switch (msg)
             {
                 case RemoteInvocationResponse callResponse:
-                    PendingOperation op = m_pendingResponses.RemoveById(callResponse.CallId);
+                    PendingOperation op = m_pendingRequests.RemoveById(callResponse.CallId);
                     callResponse.ForwardResult(op.Completion);
                     break;
                 case EventRaisedMessage eventMsg:
@@ -58,7 +58,7 @@ namespace Spfx.Runtime.Client
 
                 op.Completion.Task.ContinueWith(t =>
                 {
-                    m_pendingResponses.RemoveById(req.CallId);
+                    m_pendingRequests.RemoveById(req.CallId);
                 }).FireAndForget();
             }
 
@@ -73,10 +73,12 @@ namespace Spfx.Runtime.Client
 
         public override Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
+            ct.ThrowIfCancellationRequested();
+
             var op = new PendingOperation(msg, ct);
             if (msg is IInterprocessRequest req)
             {
-                req.CallId = m_pendingResponses.GetNextId(op);
+                req.CallId = m_pendingRequests.GetNextId(op);
             }
 
             return EnqueueOperation(op);

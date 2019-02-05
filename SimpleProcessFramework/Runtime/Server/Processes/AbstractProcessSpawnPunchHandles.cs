@@ -2,45 +2,29 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class WindowsProcessSpawnPunchHandles : AbstractProcessSpawnPunchHandles
-    {
-        [DllImport("api-ms-win-core-handle-l1-1-0", SetLastError = true)]
-        private static extern bool DuplicateHandle(IntPtr srcProcess, SafeHandle srcHandle, IntPtr targetProcess, out IntPtr targetHandle, uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwOptions);
-        [DllImport("api-ms-win-core-handle-l1-1-0", SetLastError = true)]
-        private static extern bool DuplicateHandle(IntPtr srcProcess, IntPtr srcHandle, SafeHandle targetProcess, out IntPtr targetHandle, uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwOptions);
-        [DllImport("api-ms-win-core-handle-l1-1-0", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr handle);
-
-        public WindowsProcessSpawnPunchHandles()
-        {
-            ReadPipe = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
-            WritePipe = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
-        }
-
-        protected override IntPtr GetShutdownHandleForOtherProcess(Process remoteProcess)
-        {
-            const int SYNCHRONIZE = 0x00100000;
-            DuplicateHandle((IntPtr)(-1), (IntPtr)(-1), remoteProcess.SafeHandle, out var result, SYNCHRONIZE, false, 0);
-            return result;
-        }
-    }
-
-    internal abstract class AbstractProcessSpawnPunchHandles : IDisposable
+    internal abstract class AbstractProcessSpawnPunchHandles : IProcessSpawnPunchHandles
     {
         public AnonymousPipeServerStream ReadPipe { get; protected set; }
         public AnonymousPipeServerStream WritePipe { get; protected set; }
         public Process RemoteProcess { get; private set; }
+
+        Stream IProcessSpawnPunchHandles.ReadStream => ReadPipe;
+        Stream IProcessSpawnPunchHandles.WriteStream => WritePipe;
 
         public void Dispose()
         {
             DisposeAllHandles();
         }
 
-        internal virtual void DisposeAllHandles()
+        public virtual void InitializeInLock()
+        {
+        }
+               
+        public virtual void DisposeAllHandles()
         {
             ReleaseRemoteProcessHandles();
             ReadPipe.Dispose();
@@ -53,12 +37,16 @@ namespace Spfx.Runtime.Server.Processes
             WritePipe.DisposeLocalCopyOfClientHandle();
         }
 
-        internal virtual string FinalizeInitDataAndSerialize(Process remoteProcess, ProcessSpawnPunchPayload initData)
+        public void HandleProcessCreatedInLock(Process targetProcess, ProcessSpawnPunchPayload initData)
         {
             // those are inverted on purpose.
             initData.WritePipe = CreateHandleForOtherProcess(ReadPipe);
             initData.ReadPipe = CreateHandleForOtherProcess(WritePipe);
-            initData.ShutdownEvent = ProcessSpawnPunchPayload.SerializeHandle(GetShutdownHandleForOtherProcess(remoteProcess));
+            initData.ShutdownEvent = ProcessSpawnPunchPayload.SerializeHandle(GetShutdownHandleForOtherProcess(targetProcess));
+        }
+
+        public virtual string FinalizeInitDataAndSerialize(Process remoteProcess, ProcessSpawnPunchPayload initData)
+        {
             return initData.SerializeToString();
         }
 
@@ -69,6 +57,11 @@ namespace Spfx.Runtime.Server.Processes
             string handle = stream.GetClientHandleAsString();
             stream.DisposeLocalCopyOfClientHandle();
             return handle;
+        }
+
+        Task IProcessSpawnPunchHandles.CompleteHandshakeAsync()
+        {
+            return Task.CompletedTask;
         }
     }
 }

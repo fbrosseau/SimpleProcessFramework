@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -137,33 +139,39 @@ namespace Spfx.Serialization
                 s_knownSerializers.Add(t, s);
             }
 
-            AddSerializer(typeof(byte), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((byte)o),
-                br => BoxHelper.Box(br.Reader.ReadByte())));
-            AddSerializer(typeof(int), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((int)o),
-                br => BoxHelper.Box(br.Reader.ReadInt32())));
-            AddSerializer(typeof(long), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((long)o),
-                br => BoxHelper.Box(br.Reader.ReadInt64())));
-            AddSerializer(typeof(DateTime), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write(((DateTime)o).ToUniversalTime().Ticks),
-                br => BoxHelper.Box(new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc))));
-            AddSerializer(typeof(TimeSpan), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write(((TimeSpan)o).Ticks),
-                br => BoxHelper.Box(new TimeSpan(br.Reader.ReadInt64()))));
-            AddSerializer(typeof(string), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((string)o),
-                br => br.Reader.ReadString()));
-            AddSerializer(typeof(bool), new SimpleTypeSerializer(
-                (bw, o) => bw.Writer.Write((bool)o ? (byte)1 : (byte)0),
-                br => BoxHelper.Box(br.Reader.ReadByte() != 0)));
-            AddSerializer(typeof(CancellationToken), new SimpleTypeSerializer(
-                (bw, o) => { },
-                br => BoxHelper.BoxedCancellationToken));
-            AddSerializer(typeof(EventArgs), new SimpleTypeSerializer(
-                (bw, o) => { },
-                br => EventArgs.Empty));
+            void AddSerializer2<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession,T> deserializer)
+            {
+                AddSerializer(typeof(T), new SimpleTypeSerializer(
+                    (bw, o) => serializer(bw, (T)o),
+                    br => BoxHelper.Box(deserializer(br))));
+            }
+
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadByte());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt32());
+            AddSerializer2((bw, o) => bw.Writer.Write(o),br => br.Reader.ReadInt64());
+            AddSerializer2((bw, o) => bw.Writer.Write(o.ToUniversalTime().Ticks), br => new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc));
+            AddSerializer2((bw, o) => bw.Writer.Write(o.Ticks), br => new TimeSpan(br.Reader.ReadInt64()));
+            AddSerializer2((bw, o) => bw.Writer.Write(o),br => br.Reader.ReadString());
+            AddSerializer2((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0),br => br.Reader.ReadByte() != 0);
+            AddSerializer2((bw, o) => { }, br => CancellationToken.None);
+            AddSerializer2((bw, o) => { },br => EventArgs.Empty);
+            AddSerializer2(WriteIPAddres, ReadIPAddress);
+        }
+
+        private static void WriteIPAddres(SerializerSession session, IPAddress val)
+        {
+            session.Writer.Write((byte)val.AddressFamily);
+            session.Writer.Write(val.GetAddressBytes());
+        }
+
+        private static IPAddress ReadIPAddress(DeserializerSession session)
+        {
+            var af = (AddressFamily)session.Reader.ReadByte();
+            if (af == AddressFamily.InterNetwork)
+                return new IPAddress(session.Reader.ReadBytes(4));
+            if (af == AddressFamily.InterNetworkV6)
+                return new IPAddress(session.Reader.ReadBytes(16));
+            throw new SerializationException("Only IPv4 and IPv6 are supported");
         }
 
         internal static ITypeSerializer GetSerializer(Type actualType)

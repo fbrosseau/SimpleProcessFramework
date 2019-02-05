@@ -89,7 +89,25 @@ namespace Spfx.Runtime.Server
                 return "EventInfo__" + evt.Name;
             }
 
-            foreach (var evt in type.GetEvents())
+            EventInfo FindEvent(Type t, string name)
+            {
+                var evt = t.GetEvent(name);
+                if (evt != null)
+                    return evt;
+
+                return t.GetInterfaces().Select(iface => FindEvent(iface, name)).FirstOrDefault(e => e != null);
+            }
+
+            var typeDescriptor = ProcessEndpointDescriptor.CreateFromCurrentProcess(type);
+
+
+            var allEventsToImplement = new List<EventInfo>();
+            foreach(var evtName in typeDescriptor.Events)
+            {
+                allEventsToImplement.Add(FindEvent(type, evtName));
+            }
+
+            foreach (var evt in allEventsToImplement)
             {
                 var staticField = typeBuilder.DefineField(GetFieldNameForEvent(evt), typeof(ReflectedEventInfo), FieldAttributes.Private | FieldAttributes.Static);
 
@@ -99,8 +117,6 @@ namespace Spfx.Runtime.Server
             }
 
             ilgen.Emit(OpCodes.Ret);
-
-            var typeDescriptor = ProcessEndpointDescriptor.CreateFromCurrentProcess(type);
 
             var allMethods = typeDescriptor.Methods.Select(m => m.Method.ResolvedMethod).ToArray();
 
@@ -231,7 +247,7 @@ namespace Spfx.Runtime.Server
             var finalMetadataField = finalType.GetField(metadataFieldName, BindingFlags.NonPublic | BindingFlags.Static);
             finalMetadataField.SetValue(null, typeDescriptor);
 
-            foreach (var evt in type.GetEvents())
+            foreach (var evt in allEventsToImplement)
             {
                 var staticField = finalType.GetField(GetFieldNameForEvent(evt), BindingFlags.NonPublic | BindingFlags.Static);
                 staticField.SetValue(null, new ReflectedEventInfo(evt));

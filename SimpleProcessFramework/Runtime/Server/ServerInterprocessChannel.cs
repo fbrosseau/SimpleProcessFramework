@@ -10,7 +10,7 @@ namespace Spfx.Runtime.Server
 {
     internal class ServerInterprocessChannel : AbstractInterprocessConection, IInterprocessClientChannel
     {
-        public long UniqueId { get; }
+        public string UniqueId { get; }
 
         private readonly Stream m_readStream;
         private readonly Stream m_writeStream;
@@ -28,7 +28,7 @@ namespace Spfx.Runtime.Server
         public ServerInterprocessChannel(IBinarySerializer serializer, Stream readStream, Stream writeStream, string localEndpoint, string remoteEndpoint)
             : base(serializer)
         {
-            UniqueId = s_idFactory.GetNextId(this);
+            UniqueId = "<out>/" + s_idFactory.GetNextId(this);
             m_readStream = readStream;
             m_writeStream = writeStream;
             m_localEndpoint = localEndpoint;

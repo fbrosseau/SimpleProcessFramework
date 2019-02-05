@@ -113,12 +113,6 @@ namespace Spfx.Runtime.Server
 
         private void DoRemoteCall(IInterprocessRequestContext req, RemoteCallRequest remoteCall)
         {
-            var key = new PendingCallKey(req);
-            lock (m_pendingCalls)
-            {
-                m_pendingCalls.Add(key, req);
-            }
-
             if(remoteCall.MethodName != null)
             {
                 if (!m_methodsByName.TryGetValue(remoteCall.MethodName, out var m))
@@ -135,6 +129,12 @@ namespace Spfx.Runtime.Server
 
             if (args.Length != method.Method.GetArgumentCount())
                 ThrowBadInvocation($"Expected {method.Method.GetArgumentCount()} parameters - {args.Length} provided");
+
+            var key = new PendingCallKey(req);
+            lock (m_pendingCalls)
+            {
+                m_pendingCalls.Add(key, req);
+            }
 
             if (method.IsCancellable)
                 req.SetupCancellationToken();
@@ -227,7 +227,7 @@ namespace Spfx.Runtime.Server
                 foreach (var e in evt.AddedEvents)
                 {
                     if (!m_eventsByName.TryGetValue(e.EventName, out var eventInfo))
-                        ThrowBadInvocation("Event does not exist: " + e);
+                        ThrowBadInvocation("Event does not exist: " + e.EventName);
 
                     eventInfo.AddConsumer(req.Client, e.RegistrationId);
                 }

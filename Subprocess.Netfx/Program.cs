@@ -5,9 +5,9 @@ using System.Runtime.ExceptionServices;
 
 namespace Spfx
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             var asm = Assembly.Load("Spfx");
             if (asm is null)

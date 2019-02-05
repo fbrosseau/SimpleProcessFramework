@@ -7,7 +7,7 @@ namespace Spfx.Runtime.Server
     {
         private IInterprocessClientChannel m_actualChannel;
 
-        public long UniqueId => m_actualChannel.UniqueId;
+        public string UniqueId => m_actualChannel.UniqueId;
 
         public ConcreteClientProxy(IInterprocessClientChannel actualChannel)
         {

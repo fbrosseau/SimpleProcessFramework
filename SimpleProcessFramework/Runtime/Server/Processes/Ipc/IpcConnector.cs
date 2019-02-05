@@ -11,11 +11,16 @@ using System;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class SubprocessIpcConnector : IpcConnector
+    internal class SubprocessIpcConnector : IpcConnector, ISubprocessConnector
     {
         public SubprocessIpcConnector(ProcessContainer owner, ILengthPrefixedStreamReader readStream, ILengthPrefixedStreamWriter writeStream, IBinarySerializer serializer)
             : base(owner, readStream, writeStream, serializer)
         {
+        }
+
+        public Task<IInterprocessClientChannel> GetClientInfo(string uniqueId)
+        {
+            throw new NotImplementedException();
         }
 
         protected override async Task DoInitialize()
@@ -26,7 +31,7 @@ namespace Spfx.Runtime.Server.Processes
             SendCode(InterprocessFrameType.Handshake3);
         }
 
-        internal void SendBackMessage(long connectionId, IInterprocessMessage msg)
+        void IMessageCallbackChannel.SendBackMessage(string connectionId, IInterprocessMessage msg)
         {
             var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
             wrapped.SourceConnectionId = connectionId;
@@ -36,11 +41,11 @@ namespace Spfx.Runtime.Server.Processes
 
     internal class MasterProcessIpcConnector : IpcConnector
     {
-        public MasterProcessIpcConnector(GenericChildProcessHandle owner, AbstractProcessSpawnPunchHandles remoteProcessHandles, IBinarySerializer serializer)
+        public MasterProcessIpcConnector(GenericChildProcessHandle owner, IProcessSpawnPunchHandles remoteProcessHandles, IBinarySerializer serializer)
             : base(
                   owner,
-                  new SyncLengthPrefixedStreamReader(remoteProcessHandles.ReadPipe, owner.ProcessUniqueId + " - Read"),
-                  new SyncLengthPrefixedStreamWriter(remoteProcessHandles.WritePipe, owner.ProcessUniqueId + " - Write"),
+                  new SyncLengthPrefixedStreamReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
+                  new SyncLengthPrefixedStreamWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
                   serializer)
         {
         }

@@ -20,8 +20,12 @@ namespace Spfx.Runtime.Messages
 
         [DataMember]
         public long CallId { get; set; }
+
         [DataMember]
-        public long SourceConnectionId { get; set; }
+        public string SourceConnectionId { get; set; }
+
+        [DataMember]
+        public bool IsRequest { get; set; }
 
         public static WrappedInterprocessMessage Wrap(IInterprocessMessage msg, IBinarySerializer serializer)
         {
@@ -45,7 +49,8 @@ namespace Spfx.Runtime.Messages
                 Destination = dest,
                 PayloadType = msg.GetType(),
                 Payload = payload,
-                CallId = callId
+                CallId = callId,
+                IsRequest = msg is IInterprocessRequest
             };
         }
 
@@ -56,7 +61,7 @@ namespace Spfx.Runtime.Messages
 
             if (CallId != SimpleUniqueIdFactory.InvalidId)
             {
-                ((IInterprocessRequest)msg).CallId = CallId;
+                ((IStatefulInterprocessMessage)msg).CallId = CallId;
             }
 
             return msg;

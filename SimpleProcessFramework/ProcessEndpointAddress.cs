@@ -11,7 +11,12 @@ namespace Spfx
         public static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
         public static readonly StringComparison StringComparison = StringComparison.OrdinalIgnoreCase;
 
-        public const string Scheme = "SPFW";
+        public const string Scheme = "spfx";
+
+        public ProcessEndpointAddress ClusterAddress
+        {
+            get { return new ProcessEndpointAddress(HostAuthority); }
+        }
 
         [DataMember]
         private string m_originalString;
@@ -108,7 +113,12 @@ namespace Spfx
             m_leafEndpoint = targetEndpoint;
         }
 
-        internal ProcessEndpointAddress Combine(string rightPart)
+        public ProcessEndpointAddress Combine(string part1, string part2)
+        {
+            return Combine($"{part1}/{part2}");
+        }
+
+        public ProcessEndpointAddress Combine(string rightPart)
         {
             Guard.ArgumentNotNullOrEmpty(rightPart, nameof(rightPart));
 

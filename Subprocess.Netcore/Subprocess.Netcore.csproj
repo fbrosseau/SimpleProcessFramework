@@ -11,12 +11,21 @@
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <ApplicationIcon />
+    <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
     <Folder Include="Properties\" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System">
+      <HintPath>System</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

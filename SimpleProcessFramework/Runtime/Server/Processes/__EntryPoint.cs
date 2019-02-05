@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -7,20 +8,45 @@ namespace Spfx.Runtime.Server.Processes
     {
         public static void Run()
         {
+            Run(Console.In, isStandaloneProcess: true);
+        }
+
+        public static void Run(TextReader input, bool isStandaloneProcess)
+        {
             bool graceful = false;
+            ProcessContainer container = null;
             try
             {
-                using (var container = new ProcessContainer())
-                {
-                    container.Initialize();
+                container = new ProcessContainer();
+                container.Initialize(input);
+                container.InitializeConnector();
+                if (isStandaloneProcess)
                     container.Run();
-                    graceful = true;
-                }
+                graceful = true;
+            }
+            catch(Exception ex)
+            {
+                TraceFatalException(ex);
             }
             finally
             {
-                Environment.Exit(graceful ? 0 : -1);
+                if (isStandaloneProcess)
+                {
+                    try
+                    {
+                        container?.Dispose();
+                    }
+                    finally
+                    {
+                        Environment.Exit(graceful ? 0 : -1);
+                    }
+                }
             }
+        }
+
+        private static void TraceFatalException(Exception ex)
+        {
+            Console.Error.WriteLine($"FATAL EXCEPTION -------{Environment.NewLine}{ex}");
         }
     }
 }

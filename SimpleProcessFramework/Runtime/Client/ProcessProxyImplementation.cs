@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Client
 {
@@ -24,15 +25,15 @@ namespace Spfx.Runtime.Client
     public abstract class ProcessProxyImplementation
     {
         private IClientInterprocessConnection m_connection;
-        private ProcessEndpointAddress m_remoteAddress;
         internal TimeSpan CallTimeout { get; set; }
 
         protected Dictionary<string, ProcessProxyEventSubscriptionInfo> EventDispatchMethods { get; } = new Dictionary<string, ProcessProxyEventSubscriptionInfo>();
+        internal ProcessEndpointAddress RemoteAddress { get; set; }
 
         internal void Initialize(IClientInterprocessConnection connection, ProcessEndpointAddress remoteAddress)
         {
             m_connection = connection;
-            m_remoteAddress = remoteAddress;
+            RemoteAddress = remoteAddress;
         }
 
         protected void InitEventInfo(ProcessProxyEventSubscriptionInfo evt)
@@ -65,7 +66,7 @@ namespace Spfx.Runtime.Client
 
         private async Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteInvocationRequest remoteCallRequest, CancellationToken ct)
         {
-            remoteCallRequest.Destination = m_remoteAddress;
+            remoteCallRequest.Destination = RemoteAddress;
             remoteCallRequest.AbsoluteTimeout = CallTimeout;
             remoteCallRequest.Cancellable = ct.CanBeCanceled || remoteCallRequest.HasTimeout;
 
@@ -107,7 +108,7 @@ namespace Spfx.Runtime.Client
             if (!add)
                 return;
 
-            m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(m_remoteAddress)
+            m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(RemoteAddress)
             {
                 NewEvents = { new EventRegistrationRequestInfo.NewEventRegistration(eventInfo.Event.Name, RaiseEvent)}
             }).Wait();
@@ -126,10 +127,16 @@ namespace Spfx.Runtime.Client
             if (!delete)
                 return;
 
-            m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(m_remoteAddress)
+            try
             {
-                RemovedEvents = { eventInfo.Event.Name }
-            }).Wait();
+                m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(RemoteAddress)
+                {
+                    RemovedEvents = { eventInfo.Event.Name }
+                }).FireAndForget();
+            }
+            catch
+            {
+            }
         }
 
         internal static class Reflection

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Spfx.Utilities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,11 +12,13 @@ namespace Spfx.Tests
     {
         public static void Unwrap(Task task)
         {
-            task.Wait();
+            if (!task.Wait(TimeSpan.FromSeconds(30)))
+                throw new TimeoutException();
         }
 
         public static T Unwrap<T>(Task<T> task)
         {
+            Unwrap((Task)task);
             return task.Result;
         }
 

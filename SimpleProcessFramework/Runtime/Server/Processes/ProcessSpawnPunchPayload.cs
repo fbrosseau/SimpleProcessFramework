@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Spfx.Utilities.Threading;
+using Spfx.Interfaces;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -10,7 +11,7 @@ namespace Spfx.Runtime.Server.Processes
     {
         public string HostAuthority { get; set; }
         public string ProcessUniqueId { get; set; }
-        public string ProcessKind { get; set; }
+        public ProcessKind ProcessKind { get; set; }
         public string IntegrityLevel { get; set; }
         public string WritePipe { get; set; }
         public string ReadPipe { get; set; }
@@ -44,7 +45,7 @@ namespace Spfx.Runtime.Server.Processes
                 {
                     HostAuthority = reader.ReadLine(),
                     ProcessUniqueId = reader.ReadLine(),
-                    ProcessKind = reader.ReadLine(),
+                    ProcessKind = (ProcessKind)Enum.Parse(typeof(ProcessKind), reader.ReadLine()),
                     IntegrityLevel = reader.ReadLine(),
                     WritePipe = reader.ReadLine(),
                     ReadPipe = reader.ReadLine(),
@@ -54,7 +55,15 @@ namespace Spfx.Runtime.Server.Processes
                 return output;
             });
 
-            return readTask.WaitOrTimeout(TimeSpan.FromSeconds(5));
+            try
+            {
+                return readTask.WaitOrTimeout(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+                Console.Error.WriteLine("Timeout waiting for parent process input");
+                throw;
+            }
         }
 
         public static string SerializeHandle(SafeHandle safeHandle)

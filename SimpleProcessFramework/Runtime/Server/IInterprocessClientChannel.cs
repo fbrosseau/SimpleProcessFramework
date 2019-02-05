@@ -6,7 +6,7 @@ namespace Spfx.Runtime.Server
 {
     public interface IInterprocessClientProxy
     {
-        long UniqueId { get; }
+        string UniqueId { get; }
 
         Task<IInterprocessClientChannel> GetClientInfo();
 
@@ -15,7 +15,7 @@ namespace Spfx.Runtime.Server
 
     public interface IInterprocessClientChannel
     {
-        long UniqueId { get; }
+        string UniqueId { get; }
 
         event EventHandler ConnectionLost;
         void Initialize(IClientRequestHandler clientConnectionsManager);

@@ -11,7 +11,7 @@ namespace Spfx.Runtime.Server.Processes
         ProcessKind ProcessKind { get; }
 
         void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
-        Task<object> ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage req);
+        void ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage req);
 
         Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
     }

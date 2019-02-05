@@ -1,14 +1,17 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Spfx.Interfaces;
-using Spfx.Reflection;
 
 namespace Spfx.Runtime.Server
 {
     internal class EndpointBroker : AbstractProcessEndpoint, IEndpointBroker
     {
-        public Task<bool> CreateEndpoint(string uniqueId, ReflectedTypeInfo endpointType, ReflectedTypeInfo implementationType, bool failIfExists)
+        public event EventHandler<EndpointEventArgs> EndpointOpened;
+        public event EventHandler<EndpointEventArgs> EndpointClosed;
+
+        public Task<ProcessCreationOutcome> CreateEndpoint(EndpointCreationRequest req)
         {
-            return ParentProcess.InitializeEndpointAsync(uniqueId, endpointType.ResolvedType, implementationType.ResolvedType, failIfExists);
+            return ParentProcess.InitializeEndpointAsync(req.EndpointId, req.EndpointType.ResolvedType, req.ImplementationType.ResolvedType, req.FailIfExists);
         }
 
         public Task<bool> DestroyEndpoint(string uniqueId)

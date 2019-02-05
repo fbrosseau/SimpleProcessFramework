@@ -1,6 +1,7 @@
 ﻿using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Messages;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -70,6 +71,30 @@ namespace Spfx
         }
     }
 
+    internal class ClusterProxy : IClusterProxy
+    {
+        private readonly ProcessEndpointAddress m_address;
+
+        public ClusterProxy(string hostAuthority)
+        {
+            m_address = new ProcessEndpointAddress(hostAuthority);
+        }
+
+        public event EventHandler ConnectionLost;
+
+        public Task<bool> IsAlive()
+        {
+            return Task.FromResult(true);
+        }
+    }
+
+    public interface IClusterProxy
+    {
+        event EventHandler ConnectionLost;
+
+        Task<bool> IsAlive();
+    }
+
     public class ProcessProxy
     {
         private readonly IClientConnectionFactory m_connectionFactory;
@@ -86,6 +111,11 @@ namespace Spfx
             m_connectionFactory = m_typeResolver.GetSingleton<IClientConnectionFactory>();
         }
 
+        public T CreateInterface<T>(string address)
+        {
+            return CreateInterface<T>(ProcessEndpointAddress.Parse(address));
+        }
+
         public T CreateInterface<T>(ProcessEndpointAddress address)
         {
             address = NormalizeAddress(address);
@@ -98,5 +128,17 @@ namespace Spfx
         {
             return m_connectionFactory.NormalizeAddress(address);
         }
+
+        public static ProcessEndpointAddress GetEndpointAddress(object proxyObject)
+        {
+            Guard.ArgumentNotNull(proxyObject, nameof(proxyObject));
+            if (!(proxyObject is ProcessProxyImplementation impl))
+                throw new ArgumentException("This must be a valid proxy object");
+
+            return impl.RemoteAddress;
+        }
+
+        public IClusterProxy CreateClusterProxy(ProcessEndpointAddress addr) => CreateClusterProxy(addr.HostAuthority);
+        public IClusterProxy CreateClusterProxy(string hostAuthority) => new ClusterProxy(hostAuthority);
     }
 }

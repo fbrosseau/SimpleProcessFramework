@@ -43,6 +43,8 @@ namespace Spfx.Utilities
                 return ((BoxHelperImpl<T>)(object)TimeSpanBoxHelper.Instance).Box(val);
             if (typeof(T) == typeof(bool))
                 return ((BoxHelperImpl<T>)(object)BoolBoxHelper.Instance).Box(val);
+            if (typeof(T) == typeof(CancellationToken))
+                return ((BoxHelperImpl<T>)(object)CancellationTokenHelper.Instance).Box(val);
             return val;
         }
 
@@ -57,6 +59,17 @@ namespace Spfx.Utilities
             public override object Box(bool val)
             {
                 return val ? s_true : s_false;
+            }
+        }
+
+        private sealed class CancellationTokenHelper : BoxHelperImpl<CancellationToken>
+        {
+            public static readonly CancellationTokenHelper Instance = new CancellationTokenHelper();
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override object Box(CancellationToken val)
+            {
+                return val.CanBeCanceled ? val : BoxedCancellationToken;
             }
         }
 
@@ -93,7 +106,7 @@ namespace Spfx.Utilities
         {
             private const short s_min = -10;
             private const short s_max = 100;
-            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)(short)i).ToArray();
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max + 1 - s_min).Select(i => (object)(short)i).ToArray();
 
             public static readonly Int16BoxHelper Instance = new Int16BoxHelper();
 
@@ -111,7 +124,7 @@ namespace Spfx.Utilities
         {
             private const int s_min = -10;
             private const int s_max = 100;
-            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)i).ToArray();
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max + 1 - s_min).Select(i => (object)i).ToArray();
 
             public static readonly Int32BoxHelper Instance = new Int32BoxHelper();
 
@@ -129,7 +142,7 @@ namespace Spfx.Utilities
         {
             private const int s_min = -10;
             private const int s_max = 100;
-            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max - s_min).Select(i => (object)(long)i).ToArray();
+            private static readonly object[] s_boxedInts = Enumerable.Range(s_min, s_max + 1 - s_min).Select(i => (object)(long)i).ToArray();
 
             public static readonly Int64BoxHelper Instance = new Int64BoxHelper();
 

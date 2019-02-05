@@ -3,6 +3,7 @@ using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 
 namespace Spfx.Serialization
@@ -59,6 +60,7 @@ namespace Spfx.Serialization
                 typeof(double),
                 typeof(decimal),
                 typeof(object),
+                typeof(IPAddress)
             };
 
             var criticalInternalTypes = new[]

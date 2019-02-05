@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Reflection;
+using System;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -27,17 +28,28 @@ namespace Spfx.Interfaces
             if (s_current != null)
                 return s_current;
 
+            OsKind osKind;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                osKind = OsKind.Windows;
+            }
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                osKind = OsKind.Linux;
+            }
+            else
+            {
+                osKind = OsKind.Other;
+            }
+
             s_current = new ProcessClusterHostInformation
             {
                 MachineName = Environment.MachineName,
                 DnsName = Dns.GetHostEntry("").HostName,
                 CoreCount = Environment.ProcessorCount,
                 OSDescription = RuntimeInformation.OSDescription,
-#if WINDOWS_BUILD
-                OSKind = OsKind.Windows,
-#else
-                OSKind = OsKind.Other,
-#endif
+                OSKind = osKind,
                 FrameworkDescription = RuntimeInformation.FrameworkDescription,
             };
 
@@ -45,11 +57,53 @@ namespace Spfx.Interfaces
         }
     }
 
+    public enum ProcessCreationOutcome
+    {
+        CreatedNew,
+        ProcessAlreadyExists,
+        EndpointAlreadyExists
+    }
+
+    [DataContract]
+    public class EndpointCreationRequest
+    {
+        [DataMember]
+        public string EndpointId { get; set; }
+        [DataMember]
+        public ReflectedTypeInfo EndpointType { get; set; }
+        [DataMember]
+        public ReflectedTypeInfo ImplementationType { get; set; }
+        [DataMember]
+        public bool FailIfExists { get; set; } = true;
+
+        internal void EnsureIsValid()
+        {
+            //throw new NotImplementedException();
+        }
+    }
+
+    [DataContract]
+    public class ProcessEventArgs : EventArgs
+    {
+        [DataMember]
+        public string ProcessUniqueId { get; }
+
+        public ProcessEventArgs(string uniqueId)
+        {
+            ProcessUniqueId = uniqueId;
+        }
+    }
+
     public interface IProcessBroker
     {
+        event EventHandler<ProcessEventArgs> ProcessCreated;
+        event EventHandler<ProcessEventArgs> ProcessLost;
+
         Task<ProcessClusterHostInformation> GetHostInformation();
 
-        Task<bool> CreateProcess(ProcessCreationRequest req);
-        Task<bool> DestroyProcess(string processName);
+        Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req);
+        Task<ProcessCreationOutcome> CreateEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
+
+        Task<bool> DestroyProcess(string processName, bool onlyIfEmpty = true);
     }
 }

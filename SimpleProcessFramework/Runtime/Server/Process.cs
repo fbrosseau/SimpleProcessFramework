@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Spfx.Runtime.Server
 {
@@ -21,20 +22,28 @@ namespace Spfx.Runtime.Server
         ProcessProxy ClusterProxy { get; }
         string HostAuthority { get; }
         string UniqueId { get; }
+
+        IProcessBroker ProcessBroker { get; }
+        IEndpointBroker LocalEndpointBroker { get; }
         ITypeResolver DefaultTypeResolver { get; }
+        WaitHandle TerminateEvent { get; }
+
+        X509Certificate2 DefaultServerCertificate { get; }
 
         ProcessEndpointAddress UniqueAddress { get; }
 
-        Task<bool> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists = true);
-        Task<bool> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true);
-        Task<bool> InitializeEndpointAsync<T>(string address, bool failIfExists = true);
-        Task<bool> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists = true);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, bool failIfExists = true);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true);
         Task<bool> DestroyEndpoint(string uniqueId);
+
+        Task AutoDestroyAsync();
 
         ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null);
     }
 
-    internal interface IProcessInternal : IProcess, IAsyncDestroyable
+    internal interface IProcessInternal : IProcess, IIncomingClientMessagesHandler, IAsyncDestroyable
     {
         Task InitializeAsync();
 
@@ -43,7 +52,10 @@ namespace Spfx.Runtime.Server
 
     internal class Process2 : AsyncDestroyable, IProcessInternal
     {
-        public const string MasterProcessUniqueId = "Master";
+        internal const string MasterProcessUniqueId = WellKnownEndpoints.MasterProcessUniqueId;
+
+        public IProcessBroker ProcessBroker => GetLazyEndpoint($"/{MasterProcessUniqueId}/{WellKnownEndpoints.ProcessBroker}", ref m_processBroker);
+        public IEndpointBroker LocalEndpointBroker => GetLazyEndpoint($"/{UniqueId}/{WellKnownEndpoints.EndpointBroker}", ref m_localEndpointBroker);
 
         public ProcessProxy ClusterProxy { get; }
 
@@ -52,11 +64,16 @@ namespace Spfx.Runtime.Server
         public ProcessEndpointAddress UniqueAddress { get; }
         public ProcessCreationInfo ProcessCreationInfo { get; }
         public ITypeResolver DefaultTypeResolver { get; }
+        public X509Certificate2 DefaultServerCertificate { get; }
+        public WaitHandle TerminateEvent => m_terminateEvent;
+        private ManualResetEvent m_terminateEvent = new ManualResetEvent(false);
 
         private readonly IBinarySerializer m_binarySerializer;
         private readonly IInternalMessageDispatcher m_outgoingMessageDispatcher;
         private readonly Dictionary<string, IProcessEndpointHandler> m_endpointHandlers = new Dictionary<string, IProcessEndpointHandler>(ProcessEndpointAddress.StringComparer);
-        private IEndpointBroker m_endpointBroker;
+        private readonly IClientConnectionManager m_connectionManager;
+        private IProcessBroker m_processBroker;
+        private IEndpointBroker m_localEndpointBroker;
 
         internal Process2(ProcessCluster root)
             : this("localhost", MasterProcessUniqueId, root.TypeResolver)
@@ -77,7 +94,7 @@ namespace Spfx.Runtime.Server
             Guard.ArgumentNotNullOrEmpty(uniqueId, nameof(uniqueId));
             Guard.ArgumentNotNull(typeResolver, nameof(typeResolver));
 
-            DefaultTypeResolver = typeResolver.CreateNewScope();
+            DefaultTypeResolver = typeResolver;
 
             UniqueId = uniqueId;
             HostAuthority = hostAuthority;
@@ -87,7 +104,10 @@ namespace Spfx.Runtime.Server
             DefaultTypeResolver.RegisterSingleton<IInternalRequestsHandler>(new InternalRequestsHandler(hostAuthority));
             DefaultTypeResolver.RegisterSingleton<IProcess>(this);
             DefaultTypeResolver.RegisterSingleton<IProcessInternal>(this);
+            DefaultTypeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
             DefaultTypeResolver.RegisterSingleton<IClientConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
+            m_connectionManager = DefaultTypeResolver.CreateSingleton<IClientConnectionManager>();
+
             ClusterProxy = new ProcessProxy(DefaultTypeResolver);
 
             m_outgoingMessageDispatcher = DefaultTypeResolver.GetSingleton<IInternalMessageDispatcher>();
@@ -95,16 +115,23 @@ namespace Spfx.Runtime.Server
 
         protected override void OnDispose()
         {
-            List<IProcessEndpointHandler> endpoints;
-            lock (m_endpointHandlers)
+            try
             {
-                endpoints = m_endpointHandlers.Values.ToList();
-                m_endpointHandlers.Clear();
-            }
+                List<IProcessEndpointHandler> endpoints;
+                lock (m_endpointHandlers)
+                {
+                    endpoints = m_endpointHandlers.Values.ToList();
+                    m_endpointHandlers.Clear();
+                }
 
-            foreach (var ep in endpoints)
+                foreach (var ep in endpoints)
+                {
+                    ep.Dispose();
+                }
+            }
+            finally
             {
-                ep.Dispose();
+                m_terminateEvent.Set();
             }
         }
 
@@ -140,12 +167,26 @@ namespace Spfx.Runtime.Server
             return CreateRelativeAddressInternal(endpointAddress);
         }
 
-        void IProcessInternal.ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req)
+        void IIncomingClientMessagesHandler.ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {
-            if (req is WrappedInterprocessMessage wrappedMessage)
-                req = wrappedMessage.Unwrap(m_binarySerializer);
+            ((IProcessInternal)this).ProcessIncomingMessage(source, wrappedMessage);
+        }
+               
+        void IProcessInternal.ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage msg)
+        {
+            if (msg is WrappedInterprocessMessage wrappedMessage)
+            {
+                if (!wrappedMessage.IsRequest)
+                {
+                    var answerChannel = m_connectionManager.GetClientChannel(wrappedMessage.SourceConnectionId, mustExist: true);
+                    answerChannel.SendMessage(wrappedMessage);
+                    return;
+                }
 
-            switch(req)
+                msg = wrappedMessage.Unwrap(m_binarySerializer);
+            }
+
+            switch (msg)
             {
                 case IInterprocessRequest callReq:
                     InvokeEndpoint(source, callReq);
@@ -155,22 +196,22 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public Task<bool> InitializeEndpointAsync<T>(string address, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, bool failIfExists = true)
         {
             return InitializeEndpointAsync(address, DefaultTypeResolver.CreateSingleton<T>());
         }
 
-        public Task<bool> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true)
         {
             return InitializeEndpointAsync(address, typeof(T), impl, failIfExists);
         }
 
-        public Task<bool> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true)
         {
             return InitializeEndpointAsync(address, typeof(T), handler, failIfExists);
         }
 
-        public Task<bool> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists)
         {
             var instance = DefaultTypeResolver.CreateInstance(endpointType, implementationType);
             try
@@ -184,7 +225,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public async Task<bool> InitializeEndpointAsync(string address, Type interfaceType, object handler, bool failIfExists)
+        public async Task<ProcessCreationOutcome> InitializeEndpointAsync(string address, Type interfaceType, object handler, bool failIfExists)
         {
             var wrapper = ProcessEndpointHandlerFactory.Create(handler, interfaceType);
 
@@ -195,7 +236,7 @@ namespace Spfx.Runtime.Server
                 {
                     if (failIfExists)
                         throw new EndpointAlreadyExistsException(address);
-                    return false;
+                    return ProcessCreationOutcome.EndpointAlreadyExists;
                 }
                 m_endpointHandlers.Add(address, wrapper);
             }
@@ -203,7 +244,7 @@ namespace Spfx.Runtime.Server
             try
             {
                 await wrapper.InitializeAsync(this);
-                return true;
+                return ProcessCreationOutcome.CreatedNew;
             }
             catch
             {
@@ -239,6 +280,20 @@ namespace Spfx.Runtime.Server
         public Task<bool> DestroyEndpoint(string uniqueId)
         {
             throw new NotImplementedException();
+        }
+
+        public Task AutoDestroyAsync()
+        {
+            return TeardownAsync();
+        }
+
+        private T GetLazyEndpoint<T>(string addr, ref T cacheField)
+        {
+            if (cacheField != null)
+                return cacheField;
+
+            cacheField = ClusterProxy.CreateInterface<T>(addr);
+            return cacheField;
         }
     }
 }

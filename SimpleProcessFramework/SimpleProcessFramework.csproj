@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <LangVersion>7.2</LangVersion>
@@ -19,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.5.0" />
-    <PackageReference Include="System.Memory" Version="4.5.1" />
+    <PackageReference Include="System.Memory" Version="4.5.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
@@ -32,9 +29,6 @@
 
   <ItemGroup>
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.dll" Link="Spfx.Process.Netcore.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore32.dll" Link="Spfx.Process.Netcore32.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx.exe" Link="Spfx.Process.Netfx.exe">

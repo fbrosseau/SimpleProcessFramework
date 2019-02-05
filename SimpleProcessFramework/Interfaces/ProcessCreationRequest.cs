@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 namespace Spfx.Interfaces
 {
@@ -10,5 +11,13 @@ namespace Spfx.Interfaces
 
         [DataMember]
         public ProcessCreationInfo ProcessInfo { get; set; }
+
+        internal void EnsureIsValid()
+        {
+            if (ProcessInfo is null)
+                throw new InvalidOperationException("ProcessInfo cannot be null");
+
+            ProcessInfo.EnsureIsValid();
+        }
     }
 }

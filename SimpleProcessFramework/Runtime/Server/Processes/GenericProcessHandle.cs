@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
@@ -9,21 +10,24 @@ using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal abstract class GenericProcessHandle : AsyncDestroyable, IProcessHandle
+    internal abstract class GenericProcessHandle : AsyncDestroyable, IProcessHandle, IMessageCallbackChannel
     {
         public ProcessKind ProcessKind => ProcessCreationInfo.ProcessKind;
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
         protected ProcessClusterConfiguration Config { get; }
-        private readonly SimpleUniqueIdFactory<TaskCompletionSource<object>> m_pendingRequests = new SimpleUniqueIdFactory<TaskCompletionSource<object>>();
+        private readonly IClientConnectionManager m_clientManager;
+        private readonly IInternalProcessBroker m_processBroker;
 
-        private readonly IBinarySerializer m_binarySerializer;
+        protected IBinarySerializer BinarySerializer { get; }
 
         protected GenericProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
         {
             ProcessCreationInfo = info;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
-            m_binarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            m_clientManager = typeResolver.GetSingleton<IClientConnectionManager>();
+            m_processBroker = typeResolver.GetSingleton<IInternalProcessBroker>();
         }
 
         public abstract Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
@@ -32,26 +36,31 @@ namespace Spfx.Runtime.Server.Processes
 
         void IProcessHandle.HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {
-            HandleMessage(source, wrappedMessage);
+            HandleMessage(source.UniqueId, wrappedMessage);
         }
         
-        Task<object> IProcessHandle.ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage msg)
+        void IProcessHandle.ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage msg)
         {
-            Task<object> completion = BoxHelper.GetDefaultSuccessTask<object>();
-
-            if (msg is IInterprocessRequest req && req.ExpectResponse)
-            {
-                var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-                req.CallId = m_pendingRequests.GetNextId(tcs);
-                completion = tcs.Task;
-            }
-
-            var wrapped = WrappedInterprocessMessage.Wrap(msg, m_binarySerializer);
-
-            HandleMessage(source, wrapped);
-            return completion;
+            SendBackMessage(source.UniqueId, msg);
         }
 
-        protected abstract void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
+        public void SendBackMessage(string connectionId, IInterprocessMessage msg)
+        {
+            var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
+            wrapped.SourceConnectionId = connectionId;
+            HandleMessage(connectionId, wrapped);
+        }
+
+        protected abstract void HandleMessage(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage);
+
+        protected void OnMessageReceivedFromProcess(WrappedInterprocessMessage msg)
+        {
+            m_processBroker.ForwardMessage(new ShallowConnectionProxy(this, msg.SourceConnectionId), msg);
+        }
+
+        Task<IInterprocessClientChannel> IMessageCallbackChannel.GetClientInfo(string uniqueId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

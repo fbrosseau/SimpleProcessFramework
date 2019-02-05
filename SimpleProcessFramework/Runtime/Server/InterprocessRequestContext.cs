@@ -11,6 +11,7 @@ namespace Spfx.Runtime.Server
 {
     internal class InterprocessRequestContext : IInterprocessRequestContext
     {
+        private static readonly Action<Task<object>, object> s_rawOnRequestCompleted = RawOnRequestCompleted;
         private readonly IProcessEndpointHandler m_handler;
         private CancellationTokenSource m_cts;
         private readonly TaskCompletionSource<object> m_tcs;
@@ -30,7 +31,13 @@ namespace Spfx.Runtime.Server
             Request = req;
             m_handler = endpointHandler;
             m_tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            m_tcs.Task.ContinueWith((t, s) => ((InterprocessRequestContext)s).MarkAsCompleted(), this, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+            m_tcs.Task.ContinueWith(s_rawOnRequestCompleted, this, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        private static void RawOnRequestCompleted(Task<object> t, object s)
+        {
+            ((InterprocessRequestContext)s).MarkAsCompleted();
         }
 
         public void Cancel()

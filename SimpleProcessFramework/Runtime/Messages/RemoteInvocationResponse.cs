@@ -4,12 +4,10 @@ using System.Threading.Tasks;
 namespace Spfx.Runtime.Messages
 {
     [DataContract]
-    public abstract class RemoteInvocationResponse : IInterprocessRequest
+    public abstract class RemoteInvocationResponse : IStatefulInterprocessMessage
     {
         [DataMember]
         public long CallId { get; set; }
-
-        public bool ExpectResponse => false;
 
         public ProcessEndpointAddress Destination { get; set; }
 
