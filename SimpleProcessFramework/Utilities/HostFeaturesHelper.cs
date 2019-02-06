@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Spfx.Interfaces;
@@ -9,12 +10,21 @@ namespace Spfx.Utilities
     {
 #if WINDOWS_BUILD
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
+        public static bool IsNetCoreSupported { get; } = NetCoreExists(true);
+        public static bool IsNetCore32Supported { get; } = NetCoreExists(false);
+
+        private static bool NetCoreExists(bool anyCpu)
+        {
+            var folder = anyCpu || !Environment.Is64BitOperatingSystem ? Environment.SpecialFolder.ProgramFiles : Environment.SpecialFolder.ProgramFilesX86;
+            return new FileInfo(Path.Combine(Environment.GetFolderPath(folder), "dotnet\\dotnet.exe")).Exists;
+        }
 #else
         public static bool IsWslSupported => false;
         public static bool IsNetFxSupported => false;
+        public static bool IsNetCoreSupported => true;
+        public static bool IsNetCore32Supported => false;
 #endif
 
-        public static bool IsNetCoreSupported => true;
         public static bool IsNetFxSupported { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
         public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
@@ -54,7 +64,7 @@ namespace Spfx.Utilities
                 case ProcessKind.Netcore:
                     return IsNetCoreSupported;
                 case ProcessKind.Netcore32:
-                    return IsNetCoreSupported && IsNetFxSupported;
+                    return IsNetCore32Supported;
                 case ProcessKind.DirectlyInRootProcess:
                 case ProcessKind.Default:
                     return true;
