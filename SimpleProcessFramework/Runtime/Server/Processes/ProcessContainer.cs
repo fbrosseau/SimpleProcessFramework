@@ -13,7 +13,7 @@ using System.IO;
 using System.Collections.Generic;
 using Spfx.Interfaces;
 using System.Net.Sockets;
-using System.Net;
+using Spfx.Runtime.Server.Processes.Ipc;
 
 namespace Spfx.Runtime.Server.Processes
 {

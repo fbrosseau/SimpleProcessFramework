@@ -66,10 +66,9 @@ namespace Spfx.Runtime.Server
         public ITypeResolver DefaultTypeResolver { get; }
         public X509Certificate2 DefaultServerCertificate { get; }
         public WaitHandle TerminateEvent => m_terminateEvent;
-        private ManualResetEvent m_terminateEvent = new ManualResetEvent(false);
+        private readonly ManualResetEvent m_terminateEvent = new ManualResetEvent(false);
 
         private readonly IBinarySerializer m_binarySerializer;
-        private readonly IInternalMessageDispatcher m_outgoingMessageDispatcher;
         private readonly Dictionary<string, IProcessEndpointHandler> m_endpointHandlers = new Dictionary<string, IProcessEndpointHandler>(ProcessEndpointAddress.StringComparer);
         private readonly IClientConnectionManager m_connectionManager;
         private IProcessBroker m_processBroker;
@@ -109,8 +108,6 @@ namespace Spfx.Runtime.Server
             m_connectionManager = DefaultTypeResolver.CreateSingleton<IClientConnectionManager>();
 
             ClusterProxy = new ProcessProxy(DefaultTypeResolver);
-
-            m_outgoingMessageDispatcher = DefaultTypeResolver.GetSingleton<IInternalMessageDispatcher>();
         }
 
         protected override void OnDispose()
@@ -220,7 +217,7 @@ namespace Spfx.Runtime.Server
             }
             catch
             {
-                (instance as IDisposable).Dispose();
+                (instance as IDisposable)?.Dispose();
                 throw;
             }
         }

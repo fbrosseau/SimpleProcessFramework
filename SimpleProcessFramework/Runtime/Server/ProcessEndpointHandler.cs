@@ -16,13 +16,13 @@ namespace Spfx.Runtime.Server
     [DataContract]
     public abstract class ProcessEndpointHandler : AsyncDestroyable, IProcessEndpointHandler
     {
-        private object m_realTarget;
-        private IProcessEndpoint m_realTargetAsEndpoint;
-        private ProcessEndpointDescriptor m_descriptor;
+        private readonly object m_realTarget;
+        private readonly IProcessEndpoint m_realTargetAsEndpoint;
+        private readonly ProcessEndpointDescriptor m_descriptor;
         private readonly Dictionary<PendingCallKey, IInterprocessRequestContext> m_pendingCalls = new Dictionary<PendingCallKey, IInterprocessRequestContext>();
         private readonly ProcessEndpointMethodDescriptor[] m_methods;
         private readonly Dictionary<string, ProcessEndpointMethodDescriptor> m_methodsByName;
-        private Dictionary<string, EventSubscriptionInfo> m_eventsByName = new Dictionary<string, EventSubscriptionInfo>();
+        private readonly Dictionary<string, EventSubscriptionInfo> m_eventsByName = new Dictionary<string, EventSubscriptionInfo>();
 
         protected ProcessEndpointHandler(object realTarget, ProcessEndpointDescriptor descriptor)
         {
@@ -154,7 +154,7 @@ namespace Spfx.Runtime.Server
             private List<ClientEventRegistration> m_listeners = new List<ClientEventRegistration>();
             private Delegate m_eventHandler;
 
-            private static MethodInfo s_eventHandlerMethod = typeof(EventSubscriptionInfo).FindUniqueMethod(nameof(OnEventRaised));
+            private static readonly MethodInfo s_eventHandlerMethod = typeof(EventSubscriptionInfo).FindUniqueMethod(nameof(OnEventRaised));
             private readonly object m_target;
 
             private Delegate CreateEventHandler()

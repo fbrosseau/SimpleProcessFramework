@@ -106,7 +106,7 @@ namespace Spfx.Serialization
             serializer.WriteObject(bw, graph);
         }
 
-        private static Dictionary<Type, ITypeSerializer> s_knownSerializers;
+        private static readonly Dictionary<Type, ITypeSerializer> s_knownSerializers;
 
         internal class SimpleTypeSerializer : ITypeSerializer
         {

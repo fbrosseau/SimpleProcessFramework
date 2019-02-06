@@ -25,7 +25,7 @@ namespace Spfx.Runtime.Server
         void ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct);
     }
 
-    internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IProcessBroker, IInternalMessageDispatcher
+    internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IInternalMessageDispatcher
     {
         private readonly Dictionary<string, IProcessHandle> m_subprocesses = new Dictionary<string, IProcessHandle>(ProcessEndpointAddress.StringComparer);
         private readonly ProcessCluster m_owner;
@@ -36,7 +36,7 @@ namespace Spfx.Runtime.Server
 
         public string LocalProcessUniqueId => WellKnownEndpoints.MasterProcessUniqueId;
 
-        private IProcessInternal m_masterProcess;
+        private readonly IProcessInternal m_masterProcess;
 
         public event EventHandler<ProcessEventArgs> ProcessCreated;
         public event EventHandler<ProcessEventArgs> ProcessLost;
@@ -193,7 +193,7 @@ namespace Spfx.Runtime.Server
 
             try
             {
-                var procResult = await CreateProcess(processReq);
+                processOutcome = await CreateProcess(processReq);
                 var addr = $"/{processReq.ProcessInfo.ProcessUniqueId}/{WellKnownEndpoints.EndpointBroker}";
                 var processBroker = MasterProcess.ClusterProxy.CreateInterface<IEndpointBroker>(addr);
                 return await processBroker.CreateEndpoint(endpointReq);
@@ -259,9 +259,10 @@ namespace Spfx.Runtime.Server
                     break;
                 case ProcessKind.Default:
                     break;
-                default:
-                    throw new PlatformNotSupportedException("This platform does not support ProcessKind " + info.ProcessKind);
             }
+
+            if (!HostFeaturesHelper.IsProcessKindSupported(info.ProcessKind))
+                throw new PlatformNotSupportedException("This platform does not support ProcessKind " + info.ProcessKind);
 
 #if WINDOWS_BUILD
             if (!m_config.UseGenericProcessSpawnOnWindows)

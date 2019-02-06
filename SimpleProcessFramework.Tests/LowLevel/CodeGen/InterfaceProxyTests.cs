@@ -1,13 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Messages;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using static Spfx.Tests.TestUtilities;
 
-namespace Spfx.Tests.LowLevel
+namespace Spfx.Tests.LowLevel.CodeGen
 {
     [TestClass]
     public class InterfaceProxyTests
@@ -83,7 +82,7 @@ namespace Spfx.Tests.LowLevel
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface1)rawInterface;
 
-            Unwrap(iface.Test());
+            TestUtilities.Unwrap(iface.Test());
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -110,7 +109,7 @@ namespace Spfx.Tests.LowLevel
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface3)rawInterface;
 
-            Unwrap(iface.Test(longval));
+            TestUtilities.Unwrap(iface.Test(longval));
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -137,7 +136,7 @@ namespace Spfx.Tests.LowLevel
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface4)rawInterface;
 
-            Unwrap(iface.Test(longval));
+            TestUtilities.Unwrap(iface.Test(longval));
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -161,7 +160,7 @@ namespace Spfx.Tests.LowLevel
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface2)rawInterface;
 
-            var actualResult = Unwrap(iface.Test());
+            var actualResult = TestUtilities.Unwrap(iface.Test());
 
             Assert.AreEqual(expectedAddress, actualAddress);
             Assert.AreEqual(expectedResult, actualResult);
@@ -174,7 +173,7 @@ namespace Spfx.Tests.LowLevel
             if (expectedArgs is null)
                 expectedArgs = Array.Empty<object>();
 
-            AssertRangeEqual(expectedArgs, actualArgs);
+            TestUtilities.AssertRangeEqual(expectedArgs, actualArgs);
         }
     }
 }

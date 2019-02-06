@@ -10,7 +10,6 @@ namespace Spfx.Runtime.Server.Processes
     {
         public AnonymousPipeServerStream ReadPipe { get; protected set; }
         public AnonymousPipeServerStream WritePipe { get; protected set; }
-        public Process RemoteProcess { get; private set; }
 
         Stream IProcessSpawnPunchHandles.ReadStream => ReadPipe;
         Stream IProcessSpawnPunchHandles.WriteStream => WritePipe;

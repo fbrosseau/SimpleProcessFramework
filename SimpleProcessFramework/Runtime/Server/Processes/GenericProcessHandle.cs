@@ -5,7 +5,6 @@ using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
-using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
@@ -16,7 +15,6 @@ namespace Spfx.Runtime.Server.Processes
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
         protected ProcessClusterConfiguration Config { get; }
-        private readonly IClientConnectionManager m_clientManager;
         private readonly IInternalProcessBroker m_processBroker;
 
         protected IBinarySerializer BinarySerializer { get; }
@@ -26,7 +24,6 @@ namespace Spfx.Runtime.Server.Processes
             ProcessCreationInfo = info;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
             BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
-            m_clientManager = typeResolver.GetSingleton<IClientConnectionManager>();
             m_processBroker = typeResolver.GetSingleton<IInternalProcessBroker>();
         }
 

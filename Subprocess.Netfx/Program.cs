@@ -1,9 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 
-namespace Spfx
+namespace Spfx.Process.Netfx
 {
     public class Program
     {

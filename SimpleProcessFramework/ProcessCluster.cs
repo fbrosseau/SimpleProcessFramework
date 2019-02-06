@@ -4,7 +4,6 @@ using Spfx.Runtime.Client;
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
 using Spfx.Utilities.Threading;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,7 +27,7 @@ namespace Spfx
         public const int DefaultRemotePort = 41412;
 
         internal ITypeResolver TypeResolver { get; }
-        private ProcessClusterConfiguration m_config;
+        private readonly ProcessClusterConfiguration m_config;
         private readonly IInternalProcessBroker m_processBroker;
         private readonly IClientConnectionManager m_connectionsManager;
 

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Folder Include="Codegen\" />
+    <Folder Include="CoreEndpoints\" />
   </ItemGroup>
 
   <ItemGroup>

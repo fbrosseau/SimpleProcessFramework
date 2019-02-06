@@ -12,10 +12,12 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
     <OutputPath>..\bin\debug</OutputPath>
+    <DefineConstants>TRACE;WINDOWS_BUILD</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
     <OutputPath>..\bin\release</OutputPath>
+    <DefineConstants>TRACE;WINDOWS_BUILD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

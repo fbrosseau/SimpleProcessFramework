@@ -5,7 +5,7 @@ namespace Spfx.Runtime.Server
 {
     internal class ConcreteClientProxy : IInterprocessClientProxy
     {
-        private IInterprocessClientChannel m_actualChannel;
+        private readonly IInterprocessClientChannel m_actualChannel;
 
         public string UniqueId => m_actualChannel.UniqueId;
 

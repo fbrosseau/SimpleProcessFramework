@@ -1,10 +1,10 @@
 ﻿using System.IO;
-using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Ipc;
 
 namespace Spfx.Runtime.Server.Processes
 {

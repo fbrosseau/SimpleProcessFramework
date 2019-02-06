@@ -4,10 +4,10 @@ using Spfx.Reflection;
 using Spfx.Runtime.Server;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities;
-using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using static Spfx.Tests.TestUtilities;
@@ -212,6 +212,9 @@ namespace Spfx.Tests.Integration
             };
 
             requestCustomization?.Invoke(req.ProcessInfo);
+
+            if (!HostFeaturesHelper.IsProcessKindSupported(req.ProcessInfo.ProcessKind))
+                Assert.Inconclusive("ProcessKind " + req.ProcessInfo.ProcessKind + " is not supported by this host");
 
             var expectedProcessKind = req.ProcessInfo.ProcessKind;
 

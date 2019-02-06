@@ -1,22 +1,24 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
-using Spfx.Utilities;
-using System.Collections;
-using Spfx.Serialization;
-using Spfx.Runtime.Messages;
 using Spfx.Reflection;
-using System.Threading;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Serialization;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
     internal class GenericChildProcessHandle : GenericProcessHandle, IIpcConnectorListener
     {
-        private static Lazy<string> s_wslRootBinPath = new Lazy<string>(() => WslUtilities.GetWslPath(PathHelper.BinFolder.FullName), false);
+        private static readonly Lazy<string> s_wslRootBinPath = new Lazy<string>(() => WslUtilities.GetLinuxPath(PathHelper.BinFolder.FullName), false);
         private static string EscapeArg(string a) => ProcessUtilities.EscapeArg(a);
 
         private Process m_targetProcess;
@@ -27,7 +29,7 @@ namespace Spfx.Runtime.Server.Processes
         protected string WorkingDirectory { get; set; } = PathHelper.BinFolder.FullName;
         public ProcessSpawnPunchPayload RemotePunchPayload { get; private set; }
 
-        private TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private MasterProcessIpcConnector m_ipcConnector;
 
         public GenericChildProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
@@ -128,7 +130,7 @@ namespace Spfx.Runtime.Server.Processes
 
             //var combinedCommandLine = $"\"calc\" {GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
             var combinedCommandLine = $"{GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
-            combinedCommandLine.Trim();
+            combinedCommandLine = combinedCommandLine.Trim();
 
             var startInfo = new ProcessStartInfo(combinedCommandLine)
             {
@@ -192,8 +194,6 @@ namespace Spfx.Runtime.Server.Processes
                     return EscapeArg(Path.GetFullPath(Config.DefaultNetcoreHost32));
                 case ProcessKind.Wsl:
                     return EscapeArg(WslUtilities.WslExeFullPath) + " " + EscapeArg(Config.DefaultWslNetcoreHost);
-                case ProcessKind.Netfx:
-                case ProcessKind.Netfx32:
                 default:
                     return "";
             }

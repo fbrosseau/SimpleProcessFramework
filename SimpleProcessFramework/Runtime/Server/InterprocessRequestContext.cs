@@ -104,17 +104,17 @@ namespace Spfx.Runtime.Server
         internal static class Reflection
         {
             public static MethodInfo CompleteWithTaskMethod => typeof(IInterprocessRequestContext)
-                .FindUniqueMethod(nameof(CompleteWithTask));
+                .FindUniqueMethod(nameof(IInterprocessRequestContext.CompleteWithTask));
             public static MethodInfo CompleteWithValueTaskMethod => typeof(IInterprocessRequestContext)
-                .FindUniqueMethod(nameof(CompleteWithValueTask));
+                .FindUniqueMethod(nameof(IInterprocessRequestContext.CompleteWithValueTask));
             public static MethodInfo GetCompleteWithTaskOfTMethod(Type resultType) => typeof(IInterprocessRequestContext)
-                .FindUniqueMethod(nameof(CompleteWithTaskOfT)).MakeGenericMethod(resultType);
+                .FindUniqueMethod(nameof(IInterprocessRequestContext.CompleteWithTaskOfT)).MakeGenericMethod(resultType);
             public static MethodInfo GetCompleteWithValueTaskOfTMethod(Type resultType) => typeof(IInterprocessRequestContext)
-                .FindUniqueMethod(nameof(CompleteWithValueTaskOfT)).MakeGenericMethod(resultType);
+                .FindUniqueMethod(nameof(IInterprocessRequestContext.CompleteWithValueTaskOfT)).MakeGenericMethod(resultType);
             public static MethodInfo Get_RequestMethod => typeof(IInterprocessRequestContext)
-                .GetProperty(nameof(Request)).GetGetMethod();
+                .GetProperty(nameof(IInterprocessRequestContext.Request)).GetGetMethod();
             public static MethodInfo Get_CancellationMethod => typeof(IInterprocessRequestContext)
-                .GetProperty(nameof(Cancellation)).GetGetMethod();
+                .GetProperty(nameof(IInterprocessRequestContext.Cancellation)).GetGetMethod();
         }
     }
 }

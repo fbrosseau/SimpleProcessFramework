@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Runtime.Loader;
 
-namespace Spfx
+namespace Subprocess.Netcore
 {
     public class Program
     {

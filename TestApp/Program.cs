@@ -3,7 +3,6 @@ using Spfx.Reflection;
 using Spfx.Runtime.Server;
 using Spfx.Tests.Integration;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;

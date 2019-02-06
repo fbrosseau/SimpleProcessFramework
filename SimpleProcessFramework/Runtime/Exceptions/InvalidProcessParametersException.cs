@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Spfx.Runtime.Server
+namespace Spfx.Runtime.Exceptions
 {
     public class InvalidProcessParametersException : Exception
     {

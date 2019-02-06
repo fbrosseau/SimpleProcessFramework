@@ -1,15 +1,15 @@
-﻿using Spfx.Utilities;
-using Spfx.Io;
-using Spfx.Runtime.Messages;
-using Spfx.Serialization;
-using Spfx.Utilities.Threading;
+﻿using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
+using Spfx.Io;
+using Spfx.Runtime.Messages;
+using Spfx.Serialization;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 
-namespace Spfx.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes.Ipc
 {
     internal class SubprocessIpcConnector : IpcConnector, ISubprocessConnector
     {
@@ -105,19 +105,6 @@ namespace Spfx.Runtime.Server.Processes
             ReadPipe = readPipe;
             WritePipe = writePipe;
             BinarySerializer = serializer;
-        }
-
-        protected async Task<T> ReceiveMessage<T>()
-            where T : IIpcFrame
-        {
-            using (var rawFrame = await ReadPipe.GetNextFrame())
-            {
-                var rawMsg = s_binarySerializer.Deserialize<IIpcFrame>(rawFrame.Stream);
-                if (!(rawMsg is T t))
-                    throw new SerializationException("Unexpected frame when waiting for " + typeof(T).FullName);
-
-                return t;
-            }
         }
 
         protected override void OnDispose()

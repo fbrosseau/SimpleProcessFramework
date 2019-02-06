@@ -17,7 +17,9 @@ namespace Spfx.Runtime.Server
         void SetupCancellationToken();
 
         void CompleteWithTask(Task t);
+        void CompleteWithValueTask(ValueTask t);
         void CompleteWithTaskOfT<T>(Task<T> t);
+        void CompleteWithValueTaskOfT<T>(ValueTask<T> t);
 
         void Respond(object o);
         void Fail(Exception ex);
