@@ -1,15 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Net.Sockets;
 
 namespace Spfx.Utilities
 {
     internal static class WslUtilities
     {
-        internal static readonly string WslExeFullPath = Path.Combine(Environment.SystemDirectory, "wsl.exe");
+        private static readonly Lazy<bool> s_isWslSupported = new Lazy<bool>(() =>
+        {
+            try
+            {
+                using (new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP))
+                {
+                    // this will throw
+                }
 
-        internal static string GetWslPath(string fullName)
+                return new FileInfo(WslExeFullPath).Exists;
+            }
+            catch
+            {
+                return false;
+            }
+        }, false);
+
+        public static readonly string WslExeFullPath = Path.Combine(PathHelper.RealSystem32Folder, "wsl.exe");
+
+        public static bool IsWslSupported => s_isWslSupported.Value;
+
+        internal static string GetLinuxPath(string fullName)
         {
             if (fullName.EndsWith("\\"))
                 fullName = fullName.Substring(0, fullName.Length - 1);

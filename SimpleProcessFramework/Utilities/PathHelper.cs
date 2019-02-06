@@ -11,5 +11,10 @@ namespace Spfx.Utilities
         {
             return new FileInfo(Path.Combine(BinFolder.FullName, filePath));
         }
+
+        public static string RealSystem32Folder { get; } =
+            Environment.Is64BitProcess || !Environment.Is64BitOperatingSystem
+                ? Environment.SystemDirectory 
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative");
     }
 }
