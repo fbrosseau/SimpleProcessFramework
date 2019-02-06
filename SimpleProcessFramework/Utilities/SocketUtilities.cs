@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Interfaces;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -56,9 +57,12 @@ namespace Spfx.Utilities
 
         public static EndPoint CreateUnixEndpoint(string addr)
         {
-            Type t = Type.GetType("System.Net.Sockets.UnixDomainSocketEndPoint, System.Net.Sockets");
-            if (t != null)
-                return (EndPoint)Activator.CreateInstance(t, new [] { addr });
+            if (HostFeaturesHelper.LocalProcessKind.IsNetcore())
+            {
+                Type t = Type.GetType("System.Net.Sockets.UnixDomainSocketEndPoint, System.Net.Sockets");
+                if (t != null)
+                    return (EndPoint)Activator.CreateInstance(t, new[] { addr });
+            }
 
             return new UnixEndpoint(addr);
         }

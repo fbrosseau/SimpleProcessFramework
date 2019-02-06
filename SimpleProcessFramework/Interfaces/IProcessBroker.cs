@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Utilities;
 using System;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -28,28 +29,13 @@ namespace Spfx.Interfaces
             if (s_current != null)
                 return s_current;
 
-            OsKind osKind;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                osKind = OsKind.Windows;
-            }
-            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                osKind = OsKind.Linux;
-            }
-            else
-            {
-                osKind = OsKind.Other;
-            }
-
             s_current = new ProcessClusterHostInformation
             {
                 MachineName = Environment.MachineName,
                 DnsName = Dns.GetHostEntry("").HostName,
                 CoreCount = Environment.ProcessorCount,
                 OSDescription = RuntimeInformation.OSDescription,
-                OSKind = osKind,
+                OSKind = HostFeaturesHelper.LocalMachineOsKind,
                 FrameworkDescription = RuntimeInformation.FrameworkDescription,
             };
 

@@ -8,11 +8,16 @@ namespace Spfx.Utilities
     {
         private static readonly Lazy<bool> s_isWslSupported = new Lazy<bool>(() =>
         {
+            bool tryCleanupFile = false;
+            var tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+
             try
             {
-                using (new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP))
+                using (var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP))
                 {
-                    // this will throw
+                    s.Bind(SocketUtilities.CreateUnixEndpoint(tempFile));
+                    tryCleanupFile = true;
+                    // this will throw when not supported
                 }
 
                 return new FileInfo(WslExeFullPath).Exists;
@@ -20,6 +25,20 @@ namespace Spfx.Utilities
             catch
             {
                 return false;
+            }
+            finally
+            {
+                if (tryCleanupFile)
+                {
+                    try
+                    {
+                        File.Delete(tempFile);
+                    }
+                    catch
+                    {
+                        // it's just best effort, we're using %tmp% anyway.
+                    }
+                }
             }
         }, false);
 

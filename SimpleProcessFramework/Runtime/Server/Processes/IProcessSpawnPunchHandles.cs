@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
@@ -14,6 +15,6 @@ namespace Spfx.Runtime.Server.Processes
         void DisposeAllHandles();
         void InitializeInLock();
         void HandleProcessCreatedInLock(Process targetProcess, ProcessSpawnPunchPayload initData);
-        Task CompleteHandshakeAsync();
+        Task CompleteHandshakeAsync(CancellationToken ct);
     }
 }

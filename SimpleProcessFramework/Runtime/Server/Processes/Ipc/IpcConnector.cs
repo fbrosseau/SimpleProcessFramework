@@ -137,7 +137,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         protected abstract Task DoInitialize();
 
-        internal async Task InitializeAsync()
+        internal async Task InitializeAsync(CancellationToken ct)
         {
             await DoInitialize();
             ReadLoop().FireAndForget();

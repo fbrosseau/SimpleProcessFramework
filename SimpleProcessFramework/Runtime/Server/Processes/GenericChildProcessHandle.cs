@@ -42,14 +42,20 @@ namespace Spfx.Runtime.Server.Processes
             RemotePunchPayload = punchPayload;
 
             using (var disposeBag = new DisposeBag())
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
             {
-                var remoteProcessHandles = disposeBag.Add(await SpawnProcess());
+                var ct = cts.Token;
+                var remoteProcessHandles = ProcessKind != ProcessKind.Wsl ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles() : new WslProcessSpawnPunchHandles();
+                disposeBag.Add(remoteProcessHandles);
+
+                var spawnTask = SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
+                await TaskEx.ExpectFirstTask(spawnTask, m_processExitEvent.Task);
 
                 var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, new DefaultBinarySerializer());
                 disposeBag.Add(connector);
 
-                if (!await connector.InitializeAsync().WaitAsync(TimeSpan.FromSeconds(30)))
-                    throw new TimeoutException();
+                var initTask = connector.InitializeAsync(ct).WithCancellation(ct);
+                await TaskEx.ExpectFirstTask(initTask, m_processExitEvent.Task);
 
                 m_ipcConnector = connector;
                 disposeBag.ReleaseAll();
@@ -106,9 +112,11 @@ namespace Spfx.Runtime.Server.Processes
             return PathHelper.GetFileRelativeToBin(baseFilename).FullName;
         }
 
-        protected virtual async Task<IProcessSpawnPunchHandles> SpawnProcess()
+        protected virtual async Task SpawnProcess(IProcessSpawnPunchHandles punchHandles, CancellationToken ct)
         {
             CommandLine = $"{EscapeArg(ProcessCreationInfo.ProcessUniqueId)} {EscapeArg(Process.GetCurrentProcess().Id.ToString())}";
+
+            ct.ThrowIfCancellationRequested();
 
             ComputeExecutablePath();
 
@@ -145,13 +153,10 @@ namespace Spfx.Runtime.Server.Processes
                 startInfo.Environment[kvp.Key] = kvp.Value;
             }
 
-            IProcessSpawnPunchHandles punchHandles = null;
             string serializedPayloadForOtherProcess;
 
             try
             {
-                punchHandles = ProcessKind != ProcessKind.Wsl ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles() : new WslProcessSpawnPunchHandles();
-
                 lock (ProcessCreationUtilities.ProcessCreationLock)
                 {
                     punchHandles.InitializeInLock();
@@ -169,11 +174,12 @@ namespace Spfx.Runtime.Server.Processes
                     OnProcessLost("The process has exited during initialization");
                 }
 
+                ct.ThrowIfCancellationRequested();
                 await m_targetProcess.StandardInput.WriteLineAsync(serializedPayloadForOtherProcess);
+                ct.ThrowIfCancellationRequested();
                 await m_targetProcess.StandardInput.FlushAsync();
-                await punchHandles.CompleteHandshakeAsync();
-
-                return punchHandles;
+                ct.ThrowIfCancellationRequested();
+                await punchHandles.CompleteHandshakeAsync(ct);
             }
             catch(Exception ex)
             {

@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal sealed class GenericProcessSpawnPunchHandles : AbstractProcessSpawnPunchHandles
+    internal sealed class GenericProcessSpawnPunchHandles : PipeBasedProcessSpawnPunchHandles
     {
         public GenericProcessSpawnPunchHandles()
         {
@@ -13,7 +13,7 @@ namespace Spfx.Runtime.Server.Processes
             WritePipe = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
         }
 
-        protected override IntPtr GetShutdownHandleForOtherProcess(Process remoteProcess)
+        protected override IntPtr GetShutdownHandleForOtherProcess()
         {
             return default;
         }

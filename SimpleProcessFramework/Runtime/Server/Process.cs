@@ -81,7 +81,7 @@ namespace Spfx.Runtime.Server
             {
                 ProcessUniqueId = MasterProcessUniqueId,
                 ProcessName = Process.GetCurrentProcess().ProcessName,
-                ProcessKind = ProcessUtilities.GetCurrentProcessKind()
+                ProcessKind = HostFeaturesHelper.LocalProcessKind
             };
 
             InitializeAsync().ExpectAlreadyCompleted();

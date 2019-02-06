@@ -16,6 +16,30 @@ namespace Spfx.Utilities
 
         public static bool IsNetCoreSupported => true;
         public static bool IsNetFxSupported { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
+        public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
+
+        private static ProcessKind GetLocalProcessKind()
+        {
+            var desc = RuntimeInformation.FrameworkDescription;
+            if (desc.StartsWith(".net framework", StringComparison.OrdinalIgnoreCase))
+            {
+                return Environment.Is64BitProcess ? ProcessKind.Netfx : ProcessKind.Netfx32;
+            }
+
+            return Environment.Is64BitProcess ? ProcessKind.Netcore : ProcessKind.Netcore32;
+        }
+
+        private static OsKind GetLocalOs()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return OsKind.Windows;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return OsKind.Linux;
+
+            return OsKind.Other;
+        }
 
         public static bool IsProcessKindSupported(ProcessKind processKind)
         {
@@ -26,7 +50,7 @@ namespace Spfx.Utilities
                 case ProcessKind.Netfx:
                 case ProcessKind.Netfx32:
                 case ProcessKind.AppDomain:
-                    return IsNetFxSupported && ProcessUtilities.GetCurrentProcessKind().IsNetfx();
+                    return IsNetFxSupported && LocalProcessKind.IsNetfx();
                 case ProcessKind.Netcore:
                     return IsNetCoreSupported;
                 case ProcessKind.Netcore32:

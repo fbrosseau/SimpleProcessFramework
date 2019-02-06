@@ -24,17 +24,6 @@ namespace Spfx.Utilities
             }
         }
 
-        public static ProcessKind GetCurrentProcessKind()
-        {
-            var desc = RuntimeInformation.FrameworkDescription;
-            if (desc.StartsWith(".net framework", StringComparison.OrdinalIgnoreCase))
-            {
-                return Environment.Is64BitProcess ? ProcessKind.Netfx : ProcessKind.Netfx32;
-            }
-
-            return Environment.Is64BitProcess ? ProcessKind.Netcore : ProcessKind.Netcore32;
-        }
-
         internal static string ExecAndGetConsoleOutput(string commandLine, TimeSpan timeout)
         {
             var procInfo = new ProcessStartInfo(commandLine)

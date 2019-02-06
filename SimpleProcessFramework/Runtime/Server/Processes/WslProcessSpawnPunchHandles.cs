@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
@@ -27,8 +28,9 @@ namespace Spfx.Runtime.Server.Processes
         public Stream ReadStream { get; private set; }
         public Stream WriteStream { get; private set; }
 
-        public async Task CompleteHandshakeAsync()
+        public async Task CompleteHandshakeAsync(CancellationToken ct)
         {
+            ct.ThrowIfCancellationRequested();
             m_acceptedSocket = await Task.Factory.FromAsync((cb, s) => m_listenSocket.BeginAccept(cb, s), m_listenSocket.EndAccept, null);
             WriteStream = ReadStream = new NetworkStream(m_acceptedSocket);
         }

@@ -1,11 +1,22 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Runtime.Server.Processes;
 
 namespace Spfx.Utilities.Threading
 {
-    internal static class TaskExtensions
+    internal static class TaskEx
     {
+        public static Task WithCancellation(this Task t, CancellationToken ct)
+        {
+            return t.ContinueWith(inner => inner, ct, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).Unwrap();
+        }
+
+        public static Task<T> WithCancellation<T>(this Task<T> t, CancellationToken ct)
+        {
+            return t.ContinueWith(inner => inner, ct, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).Unwrap();
+        }
+
         public static void SafeCancel(this CancellationTokenSource cts)
         {
             try
@@ -75,6 +86,16 @@ namespace Spfx.Utilities.Threading
                     innerTcs.TrySetException(innerTask.Exception);
                 }
             }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        internal static async ValueTask ExpectFirstTask(Task taskExpectedToComplete, Task taskNotExpectedToWin)
+        {
+            var winner = await Task.WhenAny(taskExpectedToComplete, taskNotExpectedToWin).ConfigureAwait(false);
+            await winner.ConfigureAwait(false);
+            if (ReferenceEquals(winner, taskExpectedToComplete))
+                return;
+
+            throw new TaskCanceledException("The expected task did not complete first");
         }
 
         public static void FireAndForget(this Task t)

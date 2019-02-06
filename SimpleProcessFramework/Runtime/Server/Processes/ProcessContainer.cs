@@ -93,7 +93,9 @@ namespace Spfx.Runtime.Server.Processes
         internal void InitializeConnector()
         {
             using (var disposeBag = new DisposeBag())
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
             {
+                var ct = cts.Token;
                 Stream readStream, writeStream;
                 if (m_inputPayload.ProcessKind != ProcessKind.Wsl)
                 {
@@ -112,7 +114,7 @@ namespace Spfx.Runtime.Server.Processes
 
                 var connector = disposeBag.Add(new SubprocessIpcConnector(this, streamReader, streamWriter, new DefaultBinarySerializer()));
                 SetConnector(connector);
-                connector.InitializeAsync().WaitOrTimeout(TimeSpan.FromSeconds(30));
+                connector.InitializeAsync(ct).WaitOrTimeout(TimeSpan.FromSeconds(30));
                 disposeBag.ReleaseAll();
             }
         }

@@ -98,7 +98,7 @@ namespace Spfx.Tests.Integration
 
             public Task<ProcessKind> GetRealProcessKind()
             {
-                return Task.FromResult(ProcessUtilities.GetCurrentProcessKind());
+                return Task.FromResult(HostFeaturesHelper.LocalProcessKind);
             }
         }
 
@@ -249,7 +249,7 @@ namespace Spfx.Tests.Integration
             if (expectedProcessKind.IsFakeProcess())
             {
                 expectedPtrSize = IntPtr.Size;
-                expectedProcessKind = ProcessUtilities.GetCurrentProcessKind();
+                expectedProcessKind = HostFeaturesHelper.LocalProcessKind;
             }
             else
             {

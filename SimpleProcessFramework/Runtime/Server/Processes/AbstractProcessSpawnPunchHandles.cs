@@ -2,12 +2,17 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal abstract class AbstractProcessSpawnPunchHandles : IProcessSpawnPunchHandles
+    internal abstract class PipeBasedProcessSpawnPunchHandles : IProcessSpawnPunchHandles
     {
+        protected Process TargetProcess { get; private set; }
+
+        private bool m_disposeClientHandles;
+
         public AnonymousPipeServerStream ReadPipe { get; protected set; }
         public AnonymousPipeServerStream WritePipe { get; protected set; }
 
@@ -26,22 +31,25 @@ namespace Spfx.Runtime.Server.Processes
         public virtual void DisposeAllHandles()
         {
             ReleaseRemoteProcessHandles();
-            ReadPipe.Dispose();
-            WritePipe.Dispose();
+            ReadPipe?.Dispose();
+            WritePipe?.Dispose();
         }
 
         internal virtual void ReleaseRemoteProcessHandles()
         {
-            ReadPipe.DisposeLocalCopyOfClientHandle();
-            WritePipe.DisposeLocalCopyOfClientHandle();
+            DisposeClientHandle(ReadPipe);
+            DisposeClientHandle(WritePipe);
         }
 
         public void HandleProcessCreatedInLock(Process targetProcess, ProcessSpawnPunchPayload initData)
         {
+            TargetProcess = targetProcess;
+            m_disposeClientHandles = targetProcess.Id != Process.GetCurrentProcess().Id;
+
             // those are inverted on purpose.
             initData.WritePipe = CreateHandleForOtherProcess(ReadPipe);
             initData.ReadPipe = CreateHandleForOtherProcess(WritePipe);
-            initData.ShutdownEvent = ProcessSpawnPunchPayload.SerializeHandle(GetShutdownHandleForOtherProcess(targetProcess));
+            initData.ShutdownEvent = ProcessSpawnPunchPayload.SerializeHandle(GetShutdownHandleForOtherProcess());
         }
 
         public virtual string FinalizeInitDataAndSerialize(Process remoteProcess, ProcessSpawnPunchPayload initData)
@@ -49,16 +57,22 @@ namespace Spfx.Runtime.Server.Processes
             return initData.SerializeToString();
         }
 
-        protected abstract IntPtr GetShutdownHandleForOtherProcess(Process remoteProcess);
+        protected abstract IntPtr GetShutdownHandleForOtherProcess();
 
         private string CreateHandleForOtherProcess(AnonymousPipeServerStream stream)
         {
             string handle = stream.GetClientHandleAsString();
-            stream.DisposeLocalCopyOfClientHandle();
+            DisposeClientHandle(stream);
             return handle;
         }
 
-        Task IProcessSpawnPunchHandles.CompleteHandshakeAsync()
+        private void DisposeClientHandle(AnonymousPipeServerStream stream)
+        {
+            if (m_disposeClientHandles)
+                stream?.DisposeLocalCopyOfClientHandle();
+        }
+
+        Task IProcessSpawnPunchHandles.CompleteHandshakeAsync(CancellationToken ct)
         {
             return Task.CompletedTask;
         }

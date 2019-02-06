@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class WindowsProcessSpawnPunchHandles : AbstractProcessSpawnPunchHandles
+    internal class WindowsProcessSpawnPunchHandles : PipeBasedProcessSpawnPunchHandles
     {
         [DllImport("api-ms-win-core-handle-l1-1-0", SetLastError = true)]
         private static extern bool DuplicateHandle(IntPtr srcProcess, SafeHandle srcHandle, IntPtr targetProcess, out IntPtr targetHandle, uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwOptions);
@@ -22,10 +22,10 @@ namespace Spfx.Runtime.Server.Processes
             base.InitializeInLock();
         }
 
-        protected override IntPtr GetShutdownHandleForOtherProcess(Process remoteProcess)
+        protected override IntPtr GetShutdownHandleForOtherProcess()
         {
             const int SYNCHRONIZE = 0x00100000;
-            DuplicateHandle((IntPtr)(-1), (IntPtr)(-1), remoteProcess.SafeHandle, out var result, SYNCHRONIZE, false, 0);
+            DuplicateHandle((IntPtr)(-1), (IntPtr)(-1), TargetProcess.SafeHandle, out var result, SYNCHRONIZE, false, 0);
             return result;
         }
     }
