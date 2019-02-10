@@ -36,8 +36,6 @@ namespace Spfx
 
         public ProcessKind DefaultProcessKind { get; set; } = ProcessKind.Netcore;
         public bool SupportFakeProcesses { get; set; }
-        public string DefaultNetcoreHost { get; set; } = @"C:\Program Files\dotnet\dotnet.exe";
-        public string DefaultNetcoreHost32 { get; set; } = @"C:\Program Files (x86)\dotnet\dotnet.exe";
         public string DefaultWslNetcoreHost { get; set; } = "dotnet";
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)

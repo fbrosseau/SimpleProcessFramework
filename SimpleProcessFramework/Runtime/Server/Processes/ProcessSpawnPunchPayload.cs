@@ -17,6 +17,7 @@ namespace Spfx.Runtime.Server.Processes
         public string ReadPipe { get; set; }
         public string ShutdownEvent { get; set; }
         public int ParentProcessId { get; set; }
+        public int HandshakeTimeout { get; set; }
 
         public string SerializeToString()
         {
@@ -29,6 +30,7 @@ namespace Spfx.Runtime.Server.Processes
             sw.WriteLine(ReadPipe);
             sw.WriteLine(ShutdownEvent);
             sw.WriteLine(ParentProcessId);
+            sw.WriteLine(HandshakeTimeout);
             return sw.ToString();
         }
 
@@ -50,14 +52,15 @@ namespace Spfx.Runtime.Server.Processes
                     WritePipe = reader.ReadLine(),
                     ReadPipe = reader.ReadLine(),
                     ShutdownEvent = reader.ReadLine(),
-                    ParentProcessId = int.Parse(reader.ReadLine())
+                    ParentProcessId = int.Parse(reader.ReadLine()),
+                    HandshakeTimeout = int.Parse(reader.ReadLine())
                 };
                 return output;
             });
 
             try
             {
-                return readTask.WaitOrTimeout(TimeSpan.FromSeconds(5));
+                return readTask.WaitOrTimeout(TimeSpan.FromSeconds(15));
             }
             catch
             {

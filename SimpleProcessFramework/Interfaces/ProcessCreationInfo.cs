@@ -22,6 +22,13 @@ namespace Spfx.Interfaces
         [DataMember]
         public string ProcessUniqueId { get; set; }
 
+        [DataMember]
+        // TODO - sanitize
+        public string SpecificRuntimeVersion { get; set; }
+
+        [DataMember]
+        public bool ManuallyRedirectConsole { get; set; }
+
         public void EnsureIsValid()
         {
             if (string.IsNullOrWhiteSpace(ProcessUniqueId))

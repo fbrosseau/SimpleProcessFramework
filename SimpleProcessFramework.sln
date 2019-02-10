@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.28527.54
+VisualStudioVersion = 16.0.28531.58
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netfx", "Subprocess.Netfx\Subprocess.Netfx.csproj", "{24F00FF0-ED19-4550-9071-78A90CB8FC12}"
 EndProject
@@ -20,13 +20,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		spfx.snk = spfx.snk
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.Tests", "SimpleProcessFramework.Tests\SimpleProcessFramework.Tests.csproj", "{D72AAFE1-683B-4962-A0BD-2A8E4A7F71E9}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.TestApp", "TestApp\SimpleProcessFramework.TestApp.csproj", "{D7479E63-7C01-46FD-ABFB-3C021ED39BB2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netfx32", "Subprocess.Netfx32\Subprocess.Netfx32.csproj", "{7D0D10C8-503C-499E-A1D2-A2096661325E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp234", "TestApp2\TestApp234\TestApp234.csproj", "{E3D53546-E948-4A2B-A982-F036E3113192}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp234", "TestApp2\TestApp234\TestApp234.csproj", "{E3D53546-E948-4A2B-A982-F036E3113192}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Main Programs", "Main Programs", "{BF6B0415-E65E-4386-8102-966676D3B405}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4F437425-524F-41B3-857A-D5D47D496994}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.Tests.Netcore", "SimpleProcessFramework.Tests\SimpleProcessFramework.Tests.Netcore.csproj", "{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.Tests.Netfx", "SimpleProcessFramework.Tests\csproj\Netfx\SimpleProcessFramework.Tests.Netfx.csproj", "{A56F55FD-D498-4CA7-AADE-0575A6068386}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,10 +52,6 @@ Global
 		{5B8DC953-43AA-4AF4-A485-91501F1A7CDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B8DC953-43AA-4AF4-A485-91501F1A7CDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B8DC953-43AA-4AF4-A485-91501F1A7CDD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D72AAFE1-683B-4962-A0BD-2A8E4A7F71E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D72AAFE1-683B-4962-A0BD-2A8E4A7F71E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D72AAFE1-683B-4962-A0BD-2A8E4A7F71E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D72AAFE1-683B-4962-A0BD-2A8E4A7F71E9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D7479E63-7C01-46FD-ABFB-3C021ED39BB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D7479E63-7C01-46FD-ABFB-3C021ED39BB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7479E63-7C01-46FD-ABFB-3C021ED39BB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -62,9 +64,26 @@ Global
 		{E3D53546-E948-4A2B-A982-F036E3113192}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3D53546-E948-4A2B-A982-F036E3113192}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3D53546-E948-4A2B-A982-F036E3113192}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A56F55FD-D498-4CA7-AADE-0575A6068386}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A56F55FD-D498-4CA7-AADE-0575A6068386}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A56F55FD-D498-4CA7-AADE-0575A6068386}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A56F55FD-D498-4CA7-AADE-0575A6068386}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{24F00FF0-ED19-4550-9071-78A90CB8FC12} = {BF6B0415-E65E-4386-8102-966676D3B405}
+		{5B8DC953-43AA-4AF4-A485-91501F1A7CDD} = {BF6B0415-E65E-4386-8102-966676D3B405}
+		{D7479E63-7C01-46FD-ABFB-3C021ED39BB2} = {4F437425-524F-41B3-857A-D5D47D496994}
+		{7D0D10C8-503C-499E-A1D2-A2096661325E} = {BF6B0415-E65E-4386-8102-966676D3B405}
+		{E3D53546-E948-4A2B-A982-F036E3113192} = {4F437425-524F-41B3-857A-D5D47D496994}
+		{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF} = {4F437425-524F-41B3-857A-D5D47D496994}
+		{A56F55FD-D498-4CA7-AADE-0575A6068386} = {4F437425-524F-41B3-857A-D5D47D496994}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FE2F11E8-E6A5-4B94-BEA9-CD4D6BBA5D83}

@@ -22,6 +22,8 @@ namespace Spfx.Interfaces
         public OsKind OSKind { get; private set; }
         [DataMember]
         public int CoreCount { get; private set; }
+        [DataMember]
+        public string[] AvailableNetcoreRuntimes { get; private set; }
 
         private static ProcessClusterHostInformation s_current;
         public static ProcessClusterHostInformation GetCurrent()
@@ -37,6 +39,7 @@ namespace Spfx.Interfaces
                 OSDescription = RuntimeInformation.OSDescription,
                 OSKind = HostFeaturesHelper.LocalMachineOsKind,
                 FrameworkDescription = RuntimeInformation.FrameworkDescription,
+                AvailableNetcoreRuntimes = HostFeaturesHelper.GetInstalledNetcoreRuntimes()
             };
 
             return s_current;

@@ -8,7 +8,7 @@ namespace Spfx.Reflection
     internal static class DynamicCodeGenModule
     {
         public const string DynamicModuleName = "Spfx.DynamicAssembly";
-        public const string DynamicModuleAssemblyIdentity = DynamicModuleName + SimpleProcessFrameworkPublicKey.Value;
+        public const string DynamicModuleAssemblyIdentity = DynamicModuleName + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix;
 
         public static ModuleBuilder DynamicModule { get; }
 
@@ -21,7 +21,7 @@ namespace Spfx.Reflection
             }
 
             var asmName = new AssemblyName(DynamicModuleName);
-            asmName.KeyPair = new StrongNameKeyPair(ms.ToArray());
+            asmName.SetPublicKey(SimpleProcessFrameworkPublicKey.PublicKeyBytes);
             AssemblyBuilder asm = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
             DynamicModule = asm.DefineDynamicModule(DynamicModuleName);
         }

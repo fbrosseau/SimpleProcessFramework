@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Messages;
 
 namespace Spfx.Tests.LowLevel.CodeGen
 {
-    [TestClass]
-    public class InterfaceProxyTests
+    [TestFixture]
+    public class InterfaceProxyTests : CommonTestClass
     {
         public interface ITestInterface1
         {
@@ -63,7 +63,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             }
         }
 
-        [TestMethod]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void Test_ProxyIntercept_NoArgs_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface1>();
@@ -87,7 +87,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [TestMethod]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void Test_ProxyIntercept_1ArgLong_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface3>();
@@ -114,7 +114,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [TestMethod]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void Test_ProxyIntercept_1ArgRefInLong_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface4>();
@@ -141,7 +141,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [TestMethod]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void Test_ProxyIntercept_NoArgs_IntReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface2>();

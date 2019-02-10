@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Spfx.Utilities
 {
@@ -42,12 +43,22 @@ namespace Spfx.Utilities
             }
 
             var output = new StringBuilder();
+            int nullsReceivedCount = 0;
+            var completionEvent = new ManualResetEventSlim();
 
             DataReceivedEventHandler handler = (sender, e) =>
             {
                 lock (output)
                 {
-                    output.AppendLine(e.Data);
+                    if (e.Data is null)
+                    {
+                        if (++nullsReceivedCount == 2)
+                            completionEvent.Set();
+                    }
+                    else
+                    {
+                        output.AppendLine(e.Data);
+                    }
                 }
             };
 
@@ -58,6 +69,8 @@ namespace Spfx.Utilities
             proc.BeginOutputReadLine();
 
             if (!proc.WaitForExit((int)timeout.TotalMilliseconds))
+                throw new TimeoutException();
+            if (!completionEvent.Wait(timeout))
                 throw new TimeoutException();
 
             return output.ToString();

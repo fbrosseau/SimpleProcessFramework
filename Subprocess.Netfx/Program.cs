@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
 
-namespace Spfx.Process.Netfx
+namespace Spfx.Process
 {
     public class Program
     {

@@ -127,7 +127,7 @@ namespace Spfx.TestApp
 
             var t = new GeneralEndToEndSanity();
             t.Init();
-            t.BasicDefaultNameSubprocess_Wsl();
+            t.BasicDefaultNameSubprocess_NetCore();
             t.Cleanup();
 
             var cts = new CancellationTokenSource();

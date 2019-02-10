@@ -89,11 +89,15 @@ namespace Spfx.Runtime.Server.Processes
                 disposeBag.ReleaseAll();
             }
         }
-            
+
         internal void InitializeConnector()
         {
+            var timeout = TimeSpan.FromMilliseconds(m_inputPayload.HandshakeTimeout);
+            if (timeout == TimeSpan.Zero)
+                timeout = TimeSpan.FromSeconds(30);
+
             using (var disposeBag = new DisposeBag())
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            using (var cts = new CancellationTokenSource(timeout))
             {
                 var ct = cts.Token;
                 Stream readStream, writeStream;

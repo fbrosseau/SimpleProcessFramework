@@ -2,8 +2,9 @@
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading;
 
-namespace Subprocess.Netcore
+namespace Spfx.Process
 {
     public class Program
     {
@@ -13,8 +14,6 @@ namespace Subprocess.Netcore
         {
             try
             {
-                Console.WriteLine("Main");
-
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
                 AssemblyLoadContext.Default.Resolving += OnResolvingAssembly;

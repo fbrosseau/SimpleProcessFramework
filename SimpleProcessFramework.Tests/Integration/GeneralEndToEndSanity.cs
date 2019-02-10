@@ -1,27 +1,26 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Server;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
 {
-    [TestClass]
-    public class GeneralEndToEndSanity
+    [TestFixture]
+    public class GeneralEndToEndSanity : CommonTestClass
     {
-#if DEBUG
-        private const int DefaultTestTimeout = 120000;
-#else
-        private const int DefaultTestTimeout = 30000;
-#endif
+        public static bool IsInMsTest { get; set; } = true;
 
         private const ProcessKind DefaultProcessKind = ProcessKind.Netfx;
 
@@ -36,6 +35,7 @@ namespace Spfx.Tests.Integration
             Task<int> Callback(string uri, int num);
             Task<ProcessKind> GetRealProcessKind();
             Task<OsKind> GetOsKind();
+            Task<string> GetActualRuntime();
         }
 
         public interface ICallbackInterface
@@ -63,6 +63,11 @@ namespace Spfx.Tests.Integration
                 return Task.FromResult(Process.GetCurrentProcess().ProcessName);
             }
 
+            public Task<string> GetActualRuntime()
+            {
+                return Task.FromResult(HostFeaturesHelper.CurrentProcessRuntimeDescription);
+            }
+
             public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct)
             {
                 if (delay > TimeSpan.Zero)
@@ -88,7 +93,7 @@ namespace Spfx.Tests.Integration
 
             public Task<OsKind> GetOsKind()
             {
-                return Task.FromResult(ProcessClusterHostInformation.GetCurrent().OSKind);
+                return Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);
             }
 
             public Task<int> GetPointerSize()
@@ -102,7 +107,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [TestInitialize]
+        [SetUp]
         public void Init()
         {
             m_cluster = new ProcessCluster(new ProcessClusterConfiguration
@@ -111,39 +116,54 @@ namespace Spfx.Tests.Integration
             });
         }
 
-        [TestCleanup, Timeout(DefaultTestTimeout)]
+        [TearDown]
         public void Cleanup()
         {
             if (m_cluster is null)
                 return;
 
-            Unwrap(m_cluster.TeardownAsync());
+            Log("Invoking cleanup now");
+            Unwrap(m_cluster.TeardownAsync(TimeSpan.FromSeconds(30)));
         }
 
-        [TestMethod, Timeout(DefaultTestTimeout)]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicDefaultNameSubprocess() => CreateSuccessfulSubprocess();
-        [TestMethod, Timeout(DefaultTestTimeout)]
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicDefaultNameSubprocess_Netfx() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx);
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicDefaultNameSubprocess_Netfx32() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx32);
-        [TestMethod, Timeout(DefaultTestTimeout)]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicDefaultNameSubprocess_NetCore() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_Wsl() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
-        [TestMethod, Timeout(DefaultTestTimeout)]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicDefaultNameSubprocess_NetCore32() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore32);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void BasicTestInMasterProcess() => CreateAndValidateTestInterface(m_cluster.MasterProcess.UniqueAddress);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void AppDomainCallbackToOtherProcess() => TestCallback(ProcessKind.AppDomain, callbackInMaster: false);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
-        [TestMethod, Timeout(DefaultTestTimeout)]
-        public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
 
-        [TestMethod, Timeout(DefaultTestTimeout)]
+#if WINDOWS_BUILD
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicDefaultNameSubprocess_Wsl() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
+#endif
+
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicTestInMasterProcess() => CreateAndValidateTestInterface(m_cluster.MasterProcess.UniqueAddress);
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
+
+#if WINDOWS_BUILD && NETFX_BUILD
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void AppDomainCallbackToOtherProcess() => TestCallback(ProcessKind.AppDomain, callbackInMaster: false);
+#endif
+
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicNetcore_Runtime21() => CreateSuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void BasicNetcore_Runtime30() => CreateSuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
+
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicEnvironmentVariableSubprocess()
         {
             var envVar = "AWGJIEAJWIGJIAWE";
@@ -156,7 +176,7 @@ namespace Spfx.Tests.Integration
             Assert.AreEqual(envValue, Unwrap(iface.GetEnvironmentVariable(envVar)));
         }
 
-        [TestMethod, Timeout(DefaultTestTimeout)]
+        [Test, MaxTime(DefaultTestTimeout)]
         public void BasicCustomNameSubprocess()
         {
             const string customProcessName = "Spfx.UnitTests.agj90gj09jg0a94jg094jg";
@@ -166,6 +186,7 @@ namespace Spfx.Tests.Integration
 
             CreateSuccessfulSubprocess(procInfo =>
             {
+                procInfo.ProcessKind = ProcessKind.Netfx;
                 procInfo.ProcessName = customProcessName;
             });
         }
@@ -207,11 +228,14 @@ namespace Spfx.Tests.Integration
                 ProcessInfo = new ProcessCreationInfo
                 {
                     ProcessUniqueId = procId,
-                    ProcessKind = DefaultProcessKind
+                    ProcessKind = DefaultProcessKind,
+                    ManuallyRedirectConsole = IsInMsTest
                 }
             };
 
             requestCustomization?.Invoke(req.ProcessInfo);
+
+            //var requestedRuntime = req.ProcessInfo.SpecificRuntimeVersion;
 
             if (!HostFeaturesHelper.IsProcessKindSupported(req.ProcessInfo.ProcessKind))
                 Assert.Inconclusive("ProcessKind " + req.ProcessInfo.ProcessKind + " is not supported by this host");
@@ -224,10 +248,13 @@ namespace Spfx.Tests.Integration
                 && !expectedProcessKind.IsNetcore())
                 expectedProcessName = GenericChildProcessHandle.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
 
+            Log("CreateProcess...");
             var createdNew = Unwrap(m_cluster.ProcessBroker.CreateProcess(req));
             Assert.AreEqual(ProcessCreationOutcome.CreatedNew, createdNew);
 
             var iface = CreateAndValidateTestInterface(ProcessEndpointAddress.Parse($"/{procId}/"));
+
+            Log("Doing basic validation on target process..");
 
             if (expectedProcessName != null)
                 Assert.AreEqual(expectedProcessName, Unwrap(iface.GetActualProcessName()));
@@ -243,7 +270,7 @@ namespace Spfx.Tests.Integration
             }
             else
             {
-                expectedOsKind = ProcessClusterHostInformation.GetCurrent().OSKind;
+                expectedOsKind = HostFeaturesHelper.LocalMachineOsKind;
             }
 
             if (expectedProcessKind.IsFakeProcess())
@@ -256,9 +283,22 @@ namespace Spfx.Tests.Integration
                 expectedPtrSize = expectedProcessKind.Is32Bit() ? 4 : 8;
             }
 
+            Log("GetRealProcessKind");
             Assert.AreEqual(expectedProcessKind, Unwrap(iface.GetRealProcessKind()));
+            Log("GetOsKind");
             Assert.AreEqual(expectedOsKind, Unwrap(iface.GetOsKind()));
+            Log("GetPointerSize");
             Assert.AreEqual(expectedPtrSize, Unwrap(iface.GetPointerSize()));
+
+            /*
+             * TODO - 3.0 preview returns 2.1 :/
+             * 
+             * if (!string.IsNullOrWhiteSpace(requestedRuntime))
+            {
+                var m = Regex.Match(Unwrap(iface.GetActualRuntime()), @"v(?<v>(\d|\.)+)");
+                var ver = m.Groups["v"].Value;
+                Assert.IsTrue(ver.Contains(requestedRuntime) || requestedRuntime.Contains(ver), $"Expected runtime version {requestedRuntime} actual {ver}");
+            }*/
 
             return iface;
         }
@@ -266,12 +306,15 @@ namespace Spfx.Tests.Integration
         private ITestInterface CreateAndValidateTestInterface(ProcessEndpointAddress processEndpointAddress)
         {
             var testEndpoint = Guid.NewGuid().ToString("N");
+
             var endpointBroker = m_cluster.PrimaryProxy.CreateInterface<IEndpointBroker>(processEndpointAddress.Combine(WellKnownEndpoints.EndpointBroker));
             endpointBroker.CreateEndpoint(testEndpoint, typeof(ITestInterface), typeof(TestInterface));
+            Log("Create Endpoint " + testEndpoint);
 
             var testInterface = m_cluster.PrimaryProxy.CreateInterface<ITestInterface>(processEndpointAddress.Combine(testEndpoint));
             var res = Unwrap(testInterface.GetDummyValue());
             DummyReturn.Verify(res);
+            Log("Validated Endpoint " + testEndpoint);
 
             return testInterface;
         }

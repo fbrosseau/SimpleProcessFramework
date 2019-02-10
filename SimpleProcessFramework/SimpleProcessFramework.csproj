@@ -32,6 +32,12 @@
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.dll" Link="Spfx.Process.Netcore.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.deps.json" Link="Spfx.Process.Netcore.deps.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.runtimeconfig.json" Link="Spfx.Process.Netcore.runtimeconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx.exe" Link="Spfx.Process.Netfx.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

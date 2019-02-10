@@ -48,8 +48,16 @@ namespace Spfx.Runtime.Server.Processes
                 var remoteProcessHandles = ProcessKind != ProcessKind.Wsl ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles() : new WslProcessSpawnPunchHandles();
                 disposeBag.Add(remoteProcessHandles);
 
-                var spawnTask = SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
-                await TaskEx.ExpectFirstTask(spawnTask, m_processExitEvent.Task);
+                try
+                {
+                    var spawnTask = SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
+                    await TaskEx.ExpectFirstTask(spawnTask, m_processExitEvent.Task);
+                }
+                catch(Exception ex)
+                {
+                    OnProcessLost("SpawnProcess failed: " + ex.Message);
+                    throw;
+                }
 
                 var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, new DefaultBinarySerializer());
                 disposeBag.Add(connector);
@@ -136,13 +144,25 @@ namespace Spfx.Runtime.Server.Processes
                 }
             }
 
-            //var combinedCommandLine = $"\"calc\" {GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
-            var combinedCommandLine = $"{GetExecutablePrefix()} {EscapeArg(TargetExecutable)} {CommandLine}";
+            var commandLinePreArguments = "";
+            // TODO sanitize
+            if (!string.IsNullOrWhiteSpace(ProcessCreationInfo.SpecificRuntimeVersion))
+            {
+                var selectedVersion = HostFeaturesHelper.GetBestNetcoreRuntime(ProcessCreationInfo.SpecificRuntimeVersion, !ProcessKind.Is32Bit());
+                if (string.IsNullOrWhiteSpace(selectedVersion))
+                    throw new InvalidOperationException("There is no installed runtime matching " + ProcessCreationInfo.SpecificRuntimeVersion);
+
+                commandLinePreArguments = " \"--fx-version\" " + EscapeArg(selectedVersion);
+            }
+
+            var combinedCommandLine = $"{GetExecutablePrefix()}{commandLinePreArguments} {EscapeArg(TargetExecutable)} {CommandLine}";
             combinedCommandLine = combinedCommandLine.Trim();
 
             var startInfo = new ProcessStartInfo(combinedCommandLine)
             {
                 RedirectStandardInput = true,
+                RedirectStandardOutput = ProcessCreationInfo.ManuallyRedirectConsole,
+                RedirectStandardError = ProcessCreationInfo.ManuallyRedirectConsole,
                 WorkingDirectory = WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = false
@@ -157,6 +177,8 @@ namespace Spfx.Runtime.Server.Processes
 
             try
             {
+                RemotePunchPayload.HandshakeTimeout = 120000;
+
                 lock (ProcessCreationUtilities.ProcessCreationLock)
                 {
                     punchHandles.InitializeInLock();
@@ -164,14 +186,33 @@ namespace Spfx.Runtime.Server.Processes
                     punchHandles.HandleProcessCreatedInLock(m_targetProcess, RemotePunchPayload);
                 }
 
+                if(ProcessCreationInfo.ManuallyRedirectConsole)
+                {
+                    DataReceivedEventHandler GetLogHandler(TextWriter w)
+                    {
+                        var idStr = m_targetProcess.Id.ToString();
+                        return (sender, e) =>
+                        {
+                            if (e.Data != null)
+                                w.WriteLine("{0}>{1}", idStr, e.Data);
+                        };
+                    }
+
+                    m_targetProcess.OutputDataReceived += GetLogHandler(Console.Out);
+                    m_targetProcess.ErrorDataReceived += GetLogHandler(Console.Error);
+
+                    m_targetProcess.BeginErrorReadLine();
+                    m_targetProcess.BeginOutputReadLine();
+                }
+
                 serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);            
 
                 m_targetProcess.EnableRaisingEvents = true;
-                m_targetProcess.Exited += (sender, args) => OnProcessLost("The process has exited");
+                m_targetProcess.Exited += (sender, args) => OnProcessLost("The process has exited with code " + ((Process)sender).ExitCode);
 
                 if (m_targetProcess.HasExited)
                 {
-                    OnProcessLost("The process has exited during initialization");
+                    throw new InvalidOperationException("The process has exited during initialization");
                 }
 
                 ct.ThrowIfCancellationRequested();
@@ -195,9 +236,9 @@ namespace Spfx.Runtime.Server.Processes
             switch(ProcessKind)
             {
                 case ProcessKind.Netcore:
-                    return EscapeArg(Path.GetFullPath(Config.DefaultNetcoreHost));
+                    return EscapeArg(Path.GetFullPath(HostFeaturesHelper.GetNetCoreHostPath(true)));
                 case ProcessKind.Netcore32:
-                    return EscapeArg(Path.GetFullPath(Config.DefaultNetcoreHost32));
+                    return EscapeArg(Path.GetFullPath(HostFeaturesHelper.GetNetCoreHostPath(false)));
                 case ProcessKind.Wsl:
                     return EscapeArg(WslUtilities.WslExeFullPath) + " " + EscapeArg(Config.DefaultWslNetcoreHost);
                 default:
