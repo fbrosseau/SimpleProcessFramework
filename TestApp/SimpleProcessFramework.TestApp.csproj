@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472</TargetFrameworks>
     <OutputPath>bin/$(Configuration)</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SimpleProcessFramework.Tests\SimpleProcessFramework.Tests.csproj" />
+    <ProjectReference Include="..\SimpleProcessFramework.Tests\csproj\Netfx\SimpleProcessFramework.Tests.csproj" />
     <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />
   </ItemGroup>
 
