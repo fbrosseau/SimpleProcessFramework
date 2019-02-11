@@ -15,18 +15,19 @@ jobs:
   - task: NuGetToolInstaller@0
 
   - task: DotNetCoreInstaller@0
+	displayName: 'Install .net core 2.1.x'
     inputs:
       version: '2.1.300'
 
   - task: DotNetCoreInstaller@0
     inputs:
-      version: '3.0.0-preview2'
+	displayName: 'Install .net core 3.0.x'
+      version: '3.0.100-preview-010184'
 
   - task: NuGetCommand@2
     displayName: 'Nuget Restore'
     inputs:
       restoreSolution: '$(solution)'
-
 
   - task: VSBuild@1
     inputs:
@@ -38,9 +39,6 @@ jobs:
     inputs:
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
-
-
-
 
 #  - task: CopyFiles@2
 #    inputs:
