@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SimpleProcessFramework.Tests\csproj\Netfx\SimpleProcessFramework.Tests.csproj" />
+    <ProjectReference Include="..\SimpleProcessFramework.Tests\csproj\Netfx\SimpleProcessFramework.Tests.Netfx.csproj" />
     <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />
   </ItemGroup>
 
