@@ -18,10 +18,15 @@ jobs:
     inputs:
       version: '2.1.300'
 
+  - task: DotNetCoreInstaller@0
+    inputs:
+      version: '3.0.0-preview2'
+
   - task: NuGetCommand@2
     displayName: 'Nuget Restore'
     inputs:
       restoreSolution: '$(solution)'
+
 
   - task: VSBuild@1
     inputs:
