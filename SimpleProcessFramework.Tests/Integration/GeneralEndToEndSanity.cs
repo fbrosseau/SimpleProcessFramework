@@ -235,7 +235,12 @@ namespace Spfx.Tests.Integration
 
             requestCustomization?.Invoke(req.ProcessInfo);
 
-            //var requestedRuntime = req.ProcessInfo.SpecificRuntimeVersion;
+            var requestedRuntime = req.ProcessInfo.SpecificRuntimeVersion;
+            if (!string.IsNullOrWhiteSpace(requestedRuntime))
+            {
+                if (HostFeaturesHelper.GetBestNetcoreRuntime(requestedRuntime) == null)
+                    Assert.Inconclusive(".net core runtime " + requestedRuntime + " is not supported by this host");
+            }
 
             if (!HostFeaturesHelper.IsProcessKindSupported(req.ProcessInfo.ProcessKind))
                 Assert.Inconclusive("ProcessKind " + req.ProcessInfo.ProcessKind + " is not supported by this host");
