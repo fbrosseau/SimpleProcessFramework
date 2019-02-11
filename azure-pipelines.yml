@@ -20,9 +20,9 @@ jobs:
       version: '2.1.300'
 
   - task: DotNetCoreInstaller@0
-    inputs:
     displayName: 'Install .net core 3.0.x'
-    version: '3.0.100-preview-010184'
+    inputs:
+      version: '3.0.100-preview-010184'
 
   - task: NuGetCommand@2
     displayName: 'Nuget Restore'
