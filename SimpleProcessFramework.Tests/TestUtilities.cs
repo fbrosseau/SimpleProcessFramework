@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +21,27 @@ namespace Spfx.Tests
         {
             Unwrap((Task)task);
             return task.Result;
+        }
+
+        public static void UnwrapException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null)
+        {
+            if (!task.Wrap().Wait(TimeSpan.FromSeconds(30)))
+                throw new TimeoutException();
+
+            Assert.AreEqual(TaskStatus.Faulted, task.Status);
+            var ex = task.ExtractException();
+            if (!expectedExceptionType.IsAssignableFrom(ex.GetType()))
+                Assert.Fail("Expected an exception of type " + expectedExceptionType.FullName + ", got " + ex.GetType().FullName);
+
+            if (!string.IsNullOrWhiteSpace(expectedText))
+            {
+                Assert.IsTrue(ex.Message.Contains(expectedText));
+            }
+
+            if (!string.IsNullOrWhiteSpace(expectedStackFrame))
+            {
+                Assert.IsTrue(ex.StackTrace?.Contains(expectedStackFrame));
+            }
         }
 
         public static void AssertRangeEqual<T>(IEnumerable<T> expectedValues, IEnumerable<T> actualValues)

@@ -15,6 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Properties\spfx.snk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\spfx.snk" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
@@ -26,25 +34,6 @@
   <ItemGroup>
     <Folder Include="Codegen\" />
     <Folder Include="CoreEndpoints\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.dll" Link="Spfx.Process.Netcore.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.deps.json" Link="Spfx.Process.Netcore.deps.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netcore.runtimeconfig.json" Link="Spfx.Process.Netcore.runtimeconfig.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx.exe" Link="Spfx.Process.Netfx.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\bin\$(Configuration)\Spfx.Process.Netfx32.exe" Link="Spfx.Process.Netfx32.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <EmbeddedResource Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
 </Project>

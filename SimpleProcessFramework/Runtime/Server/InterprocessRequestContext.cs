@@ -6,6 +6,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Serialization;
 
 namespace Spfx.Runtime.Server
 {
@@ -90,7 +91,7 @@ namespace Spfx.Runtime.Server
                 Client.SendMessage(new RemoteCallFailureResponse
                 {
                     CallId = Request.CallId,
-                    Error = Completion.GetFriendlyException()
+                    Error = new RemoteExceptionInfo(Completion.ExtractException())
                 });
             }
         }

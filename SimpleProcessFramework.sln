@@ -14,12 +14,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework", "S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netcore", "Subprocess.Netcore\Subprocess.Netcore.csproj", "{5B8DC953-43AA-4AF4-A485-91501F1A7CDD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{15D0A8E4-9E8C-434B-B839-D18B46D8CB37}"
-	ProjectSection(SolutionItems) = preProject
-		nuspec\SimpleProcessFramework.nuspec = nuspec\SimpleProcessFramework.nuspec
-		spfx.snk = spfx.snk
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.TestApp", "TestApp\SimpleProcessFramework.TestApp.csproj", "{D7479E63-7C01-46FD-ABFB-3C021ED39BB2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Subprocess.Netfx32", "Subprocess.Netfx32\Subprocess.Netfx32.csproj", "{7D0D10C8-503C-499E-A1D2-A2096661325E}"
@@ -33,6 +27,13 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.Tests.Netcore", "SimpleProcessFramework.Tests\SimpleProcessFramework.Tests.Netcore.csproj", "{AA06B1F1-9620-4FA8-BBBA-7734551E6BFF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProcessFramework.Tests.Netfx", "SimpleProcessFramework.Tests\csproj\Netfx\SimpleProcessFramework.Tests.Netfx.csproj", "{A56F55FD-D498-4CA7-AADE-0575A6068386}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuget", "Nuget", "{E4052715-734A-4669-8638-D943553F640A}"
+	ProjectSection(SolutionItems) = preProject
+		nuspec\BuildNuget.bat = nuspec\BuildNuget.bat
+		nuspec\SimpleProcessFramework.nuspec = nuspec\SimpleProcessFramework.nuspec
+		nuspec\SimpleProcessFramework.targets = nuspec\SimpleProcessFramework.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

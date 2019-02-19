@@ -18,7 +18,7 @@ namespace Spfx.Process
 
                 AssemblyLoadContext.Default.Resolving += OnResolvingAssembly;
 
-                var asm = Assembly.Load("Spfx");
+                var asm = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName("Spfx"));
                 if (asm is null)
                     throw new FileNotFoundException("Could not load SimpleProcessFramework");
                 var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint");
@@ -52,7 +52,7 @@ namespace Spfx.Process
                 if (!new FileInfo(file).Exists)
                     return null;
 
-                var a = Assembly.LoadFrom(file);
+                var a = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
                 if (a != null)
                     Console.WriteLine("Resolved " + name);
                 return a;

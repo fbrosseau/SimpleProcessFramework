@@ -5,7 +5,7 @@ namespace Spfx.Utilities
 {
     internal static class PathHelper
     {
-        public static readonly DirectoryInfo BinFolder = new FileInfo(new Uri(typeof(PathHelper).Assembly.Location, UriKind.Absolute).LocalPath).Directory;
+        public static readonly DirectoryInfo BinFolder = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); // new FileInfo(new Uri(typeof(PathHelper).Assembly.Location, UriKind.Absolute).LocalPath).Directory;
 
         public static FileInfo GetFileRelativeToBin(string filePath)
         {

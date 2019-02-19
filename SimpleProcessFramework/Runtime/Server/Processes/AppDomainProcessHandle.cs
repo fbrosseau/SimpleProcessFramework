@@ -68,7 +68,7 @@ namespace Spfx.Runtime.Server.Processes
                     null,
                     dom,
                     new object[] { typedCallback });
-            }).ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.GetFriendlyException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            }).ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.ExtractException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 
             return Task.CompletedTask;
         }

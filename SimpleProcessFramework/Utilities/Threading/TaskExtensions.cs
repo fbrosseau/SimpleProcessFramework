@@ -7,6 +7,15 @@ namespace Spfx.Utilities.Threading
 {
     internal static class TaskEx
     {
+        public static Task<Task> Wrap(this Task t)
+        {
+            return t.ContinueWith(innerT => innerT, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+        public static Task<Task<T>> Wrap<T>(this Task<T> t)
+        {
+            return t.ContinueWith(innerT => innerT, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
         public static Task WithCancellation(this Task t, CancellationToken ct)
         {
             return t.ContinueWith(inner => inner, ct, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).Unwrap();
@@ -146,9 +155,12 @@ namespace Spfx.Utilities.Threading
                 throw new InvalidOperationException("This task was supposed to be already completed");
         }
 
-        public static Exception GetFriendlyException(this Task t)
+        public static Exception ExtractException(this Task t)
         {
-            return t.Exception;
+            Exception ex = t.Exception;
+            while (ex is AggregateException && ex.InnerException != null)
+                ex = ex.InnerException;
+            return ex;
         }
     }
 }

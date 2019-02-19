@@ -3,13 +3,17 @@ using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Server;
 using Spfx.Runtime.Server.Processes;
+using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +32,7 @@ namespace Spfx.Tests.Integration
 
         public interface ITestInterface
         {
-            Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default);
+            Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default, string exceptionText = null);
             Task<string> GetActualProcessName();
             Task<int> GetPointerSize();
             Task<string> GetEnvironmentVariable(string key);
@@ -36,6 +40,7 @@ namespace Spfx.Tests.Integration
             Task<ProcessKind> GetRealProcessKind();
             Task<OsKind> GetOsKind();
             Task<string> GetActualRuntime();
+            Task<int> GetProcessId();
         }
 
         public interface ICallbackInterface
@@ -68,7 +73,7 @@ namespace Spfx.Tests.Integration
                 return Task.FromResult(HostFeaturesHelper.CurrentProcessRuntimeDescription);
             }
 
-            public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct)
+            public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
             {
                 if (delay > TimeSpan.Zero)
                 {
@@ -77,7 +82,7 @@ namespace Spfx.Tests.Integration
 
                 if (exceptionToThrow != null)
                 {
-                    throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType);
+                    ThrowException_AGgj9a322gj932jyg9a3w4j9(exceptionToThrow, exceptionText);
                 }
 
                 return new DummyReturn
@@ -86,25 +91,19 @@ namespace Spfx.Tests.Integration
                 };
             }
 
-            public Task<string> GetEnvironmentVariable(string key)
+            public static readonly string ThrowingMethodName = nameof(ThrowException_AGgj9a322gj932jyg9a3w4j9);
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private void ThrowException_AGgj9a322gj932jyg9a3w4j9(ReflectedTypeInfo exceptionToThrow, string exceptionText)
             {
-                return Task.FromResult(Environment.GetEnvironmentVariable(key));
+                throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, new object[] { exceptionText ?? "<no exception text>" });
             }
 
-            public Task<OsKind> GetOsKind()
-            {
-                return Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);
-            }
-
-            public Task<int> GetPointerSize()
-            {
-                return Task.FromResult(IntPtr.Size);
-            }
-
-            public Task<ProcessKind> GetRealProcessKind()
-            {
-                return Task.FromResult(HostFeaturesHelper.LocalProcessKind);
-            }
+            public Task<string> GetEnvironmentVariable(string key) => Task.FromResult(Environment.GetEnvironmentVariable(key));
+            public Task<OsKind> GetOsKind() => Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);
+            public Task<int> GetPointerSize() => Task.FromResult(IntPtr.Size);
+            public Task<ProcessKind> GetRealProcessKind() => Task.FromResult(HostFeaturesHelper.LocalProcessKind);
+            public Task<int> GetProcessId() => Task.FromResult(Process.GetCurrentProcess().Id);
         }
 
         [SetUp]
@@ -127,19 +126,19 @@ namespace Spfx.Tests.Integration
         }
 
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess() => CreateSuccessfulSubprocess();
+        public void BasicDefaultNameSubprocess() => CreateAndDestroySuccessfulSubprocess();
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_Netfx() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx);
+        public void BasicDefaultNameSubprocess_Netfx() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx);
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_Netfx32() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx32);
+        public void BasicDefaultNameSubprocess_Netfx32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx32);
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_NetCore() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore);
+        public void BasicDefaultNameSubprocess_NetCore() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore);
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_NetCore32() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore32);
+        public void BasicDefaultNameSubprocess_NetCore32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore32);
 
 #if WINDOWS_BUILD
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicDefaultNameSubprocess_Wsl() => CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
+        public void BasicDefaultNameSubprocess_Wsl() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
 #endif
 
         [Test, MaxTime(DefaultTestTimeout)]
@@ -159,21 +158,24 @@ namespace Spfx.Tests.Integration
         [Test, MaxTime(DefaultTestTimeout)]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicNetcore_Runtime21() => CreateSuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
+        public void BasicNetcore_Runtime21() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
         [Test, MaxTime(DefaultTestTimeout)]
-        public void BasicNetcore_Runtime30() => CreateSuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
+        public void BasicNetcore_Runtime30() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
 
         [Test, MaxTime(DefaultTestTimeout)]
         public void BasicEnvironmentVariableSubprocess()
         {
             var envVar = "AWGJIEAJWIGJIAWE";
             var envValue = "JIAEWIGJEWIGHJRIEHJI";
-            var iface = CreateSuccessfulSubprocess(procInfo =>
+            var iface = CreateSuccessfulSubprocess2(procInfo =>
             {
                 procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) }.ToList();
             });
 
-            Assert.AreEqual(envValue, Unwrap(iface.GetEnvironmentVariable(envVar)));
+            using (iface)
+            {
+                Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
+            }
         }
 
         [Test, MaxTime(DefaultTestTimeout)]
@@ -184,22 +186,44 @@ namespace Spfx.Tests.Integration
             DeleteFileIfExists(customProcessName + ".exe");
             DeleteFileIfExists(customProcessName + ".dll");
 
-            CreateSuccessfulSubprocess(procInfo =>
+            CreateAndDestroySuccessfulSubprocess(procInfo =>
             {
                 procInfo.ProcessKind = ProcessKind.Netfx;
                 procInfo.ProcessName = customProcessName;
             });
         }
 
+        public class CustomExceptionNotMarshalled : Exception
+        {
+            public CustomExceptionNotMarshalled(string msg)
+                : base(msg)
+            {
+            }
+        }
+
+        [Test, MaxTime(DefaultTestTimeout)]
+        public void ThrowCustomException()
+        {
+            using (var svc = CreateSuccessfulSubprocess2(p => p.ProcessKind = ProcessKind.DirectlyInRootProcess))
+            {
+                var text = Guid.NewGuid().ToString("N");
+                UnwrapException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
+            }
+        }
+
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
         {
-            var test = CreateSuccessfulSubprocess(proc => proc.ProcessKind = processKind);
+            var testServices = new List<TestInterfaceWrapper>();
+            var test = CreateSuccessfulSubprocess2(proc => proc.ProcessKind = processKind);
+
+            testServices.Add(test);
 
             string targetProcess = WellKnownEndpoints.MasterProcessUniqueId;
-            if(!callbackInMaster)
+            if (!callbackInMaster)
             {
-                var test2 = CreateSuccessfulSubprocess(proc => proc.ProcessKind = processKind);
-                targetProcess = ProcessProxy.GetEndpointAddress(test2).TargetProcess;
+                var test2 = CreateSuccessfulSubprocess2(proc => proc.ProcessKind = processKind);
+                testServices.Add(test2);
+                targetProcess = ProcessProxy.GetEndpointAddress(test2.TestInterface).TargetProcess;
             }
 
             var targetEndpointBroker = m_cluster.PrimaryProxy.CreateInterface<IEndpointBroker>($"/{targetProcess}/{WellKnownEndpoints.EndpointBroker}");
@@ -215,11 +239,54 @@ namespace Spfx.Tests.Integration
             }));
 
             var input = 5;
-            var res = Unwrap(test.Callback($"/{targetProcess}/{callbackEndpoint}", input));
+            var res = Unwrap(test.TestInterface.Callback($"/{targetProcess}/{callbackEndpoint}", input));
             Assert.AreEqual(input * 2, res);
+
+            foreach(var svc in testServices)
+            {
+                svc.Dispose();
+            }
         }
 
-        private ITestInterface CreateSuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
+        private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
+        {
+            CreateSuccessfulSubprocess2(requestCustomization).Dispose();
+        }
+
+        private void DisposeTestProcess(ITestInterface svc)
+        {
+            var osKind = Unwrap(svc.GetOsKind());
+            var isWsl = osKind == OsKind.Linux && HostFeaturesHelper.LocalMachineOsKind != OsKind.Linux;
+
+            var pid = Unwrap(svc.GetProcessId());
+            var proc = Process.GetProcessById(pid);
+            var processName = ProcessProxy.GetEndpointAddress(svc).TargetProcess;
+
+            Unwrap(m_cluster.ProcessBroker.DestroyProcess(processName));
+
+            if (pid != Process.GetCurrentProcess().Id && !isWsl)
+                proc.WaitForExit(DefaultTestTimeout);
+        }
+
+        public class TestInterfaceWrapper : IDisposable
+        {
+            public ITestInterface TestInterface { get; }
+
+            private readonly GeneralEndToEndSanity m_owner;
+
+            public TestInterfaceWrapper(GeneralEndToEndSanity owner, ITestInterface iface)
+            {
+                TestInterface = iface;
+                m_owner = owner;
+            }
+
+            public void Dispose()
+            {
+                m_owner.DisposeTestProcess(TestInterface);
+            }
+        }
+
+        private TestInterfaceWrapper CreateSuccessfulSubprocess2(Action<ProcessCreationInfo> requestCustomization = null)
         {
             var procId = Guid.NewGuid().ToString("N");
             var req = new ProcessCreationRequest
@@ -305,7 +372,7 @@ namespace Spfx.Tests.Integration
                 Assert.IsTrue(ver.Contains(requestedRuntime) || requestedRuntime.Contains(ver), $"Expected runtime version {requestedRuntime} actual {ver}");
             }*/
 
-            return iface;
+            return new TestInterfaceWrapper(this, iface);
         }
 
         private ITestInterface CreateAndValidateTestInterface(ProcessEndpointAddress processEndpointAddress)

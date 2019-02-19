@@ -1,0 +1,10 @@
+<Project>
+  <ItemGroup>
+    <SpfxNativeLibs Include="$(MSBuildThisFileDirectory)../tools/**/*.*" />
+    
+    <None Include="@(SpfxNativeLibs)">
+      <!--<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>-->
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
