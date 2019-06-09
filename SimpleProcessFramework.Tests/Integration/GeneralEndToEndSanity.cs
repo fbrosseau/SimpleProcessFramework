@@ -82,7 +82,7 @@ namespace Spfx.Tests.Integration
 
                 if (exceptionToThrow != null)
                 {
-                    ThrowException_AGgj9a322gj932jyg9a3w4j9(exceptionToThrow, exceptionText);
+                    ThrowException_ThisMethodNameShouldBeInExceptionCallstack(exceptionToThrow, exceptionText);
                 }
 
                 return new DummyReturn
@@ -91,10 +91,10 @@ namespace Spfx.Tests.Integration
                 };
             }
 
-            public static readonly string ThrowingMethodName = nameof(ThrowException_AGgj9a322gj932jyg9a3w4j9);
+            public static readonly string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            private void ThrowException_AGgj9a322gj932jyg9a3w4j9(ReflectedTypeInfo exceptionToThrow, string exceptionText)
+            private void ThrowException_ThisMethodNameShouldBeInExceptionCallstack(ReflectedTypeInfo exceptionToThrow, string exceptionText)
             {
                 throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, new object[] { exceptionText ?? "<no exception text>" });
             }
