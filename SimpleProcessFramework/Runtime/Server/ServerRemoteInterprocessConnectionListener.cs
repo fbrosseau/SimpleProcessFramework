@@ -39,6 +39,7 @@ namespace Spfx.Runtime.Server
 
         public override void Start(IClientConnectionManager owner)
         {
+            base.Start(owner);
             m_listener.Start();
             m_listenLoop = ListenLoop();
         }
@@ -50,13 +51,13 @@ namespace Spfx.Runtime.Server
                 var s = await m_listener.AcceptSocketAsync();
                 HandleSocket(s).FireAndForget();
             }
-        }
+        } 
 
         private async Task HandleSocket(Socket s)
         {
             using (var disposeBag = new DisposeBag())
             {
-                var ns = disposeBag.Add(new NetworkStream(s));
+                var ns = disposeBag.Add(new NetworkStream(s, ownsSocket: true));
 
                 var clientHandshakeTask = DoHandshake(ns);
                 if (!await clientHandshakeTask.WaitAsync(TimeSpan.FromSeconds(30)))
@@ -65,8 +66,8 @@ namespace Spfx.Runtime.Server
                 var finalStream = await clientHandshakeTask;
 
                 var conn = new ServerInterprocessChannel(m_serializer, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
-                disposeBag.ReleaseAll();
                 RaiseConnectionReceived(conn);
+                disposeBag.ReleaseAll();
             }
         }
 
