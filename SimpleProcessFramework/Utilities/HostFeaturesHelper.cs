@@ -18,6 +18,7 @@ namespace Spfx.Utilities
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
         public static bool IsNetCoreSupported { get; } = NetCoreExists(true);
         public static bool IsNetCore32Supported { get; } = NetCoreExists(false);
+        public static bool IsInsideWsl => false;
 
         public static string GetNetCoreHostPath(bool anyCpu)
         {
@@ -33,6 +34,9 @@ namespace Spfx.Utilities
             return new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
         }
 #else
+        private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
+        public static bool IsInsideWsl => s_isInsideWsl.Value;
+
         public static bool IsWslSupported => false;
         public static bool IsNetCoreSupported => true;
         public static bool IsNetCore32Supported => false;
@@ -107,13 +111,20 @@ namespace Spfx.Utilities
 
         private static ProcessKind GetLocalProcessKind()
         {
-            var desc = RuntimeInformation.FrameworkDescription;
-            if (desc.StartsWith(".net framework", StringComparison.OrdinalIgnoreCase))
+            if (GetLocalOs() == OsKind.Linux)
             {
-                return Environment.Is64BitProcess ? ProcessKind.Netfx : ProcessKind.Netfx32;
+                return IsInsideWsl ? ProcessKind.Wsl : ProcessKind.Netcore;
             }
+            else
+            {
+                var desc = RuntimeInformation.FrameworkDescription;
+                if (desc.StartsWith(".net framework", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Environment.Is64BitProcess ? ProcessKind.Netfx : ProcessKind.Netfx32;
+                }
 
-            return Environment.Is64BitProcess ? ProcessKind.Netcore : ProcessKind.Netcore32;
+                return Environment.Is64BitProcess ? ProcessKind.Netcore : ProcessKind.Netcore32;
+            }
         }
 
         private static OsKind GetLocalOs()
