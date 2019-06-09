@@ -11,9 +11,15 @@ namespace Spfx.Tests
 {
     internal static class TestUtilities
     {
+#if DEBUG
+        public const int DefaultTestTimeout = 30000;
+#else
+        public const int DefaultTestTimeout = 30000;
+#endif
+
         public static void Unwrap(Task task)
         {
-            if (!task.Wait(TimeSpan.FromSeconds(30)))
+            if (!task.Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
                 throw new TimeoutException();
         }
 

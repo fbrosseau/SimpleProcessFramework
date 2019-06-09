@@ -125,49 +125,49 @@ namespace Spfx.Tests.Integration
             Unwrap(m_cluster.TeardownAsync(TimeSpan.FromSeconds(30)));
         }
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess() => CreateAndDestroySuccessfulSubprocess();
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess_Netfx() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess_Netfx32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx32);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess_NetCore() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess_NetCore32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore32);
 
 #if WINDOWS_BUILD
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicDefaultNameSubprocess_Wsl() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
 #endif
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicTestInMasterProcess() => CreateAndValidateTestInterface(m_cluster.MasterProcess.UniqueAddress);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
 
 #if WINDOWS_BUILD && NETFX_BUILD
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void AppDomainCallbackToOtherProcess() => TestCallback(ProcessKind.AppDomain, callbackInMaster: false);
 #endif
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicNetcore_Runtime21() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicNetcore_Runtime30() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicEnvironmentVariableSubprocess()
         {
             var envVar = "AWGJIEAJWIGJIAWE";
             var envValue = "JIAEWIGJEWIGHJRIEHJI";
-            var iface = CreateSuccessfulSubprocess2(procInfo =>
+            var iface = CreateSuccessfulSubprocess(procInfo =>
             {
                 procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) }.ToList();
             });
@@ -178,7 +178,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void BasicCustomNameSubprocess()
         {
             const string customProcessName = "Spfx.UnitTests.agj90gj09jg0a94jg094jg";
@@ -201,10 +201,10 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, MaxTime(DefaultTestTimeout)]
+        [Test, Timeout(DefaultTestTimeout), Parallelizable]
         public void ThrowCustomException()
         {
-            using (var svc = CreateSuccessfulSubprocess2(p => p.ProcessKind = ProcessKind.DirectlyInRootProcess))
+            using (var svc = CreateSuccessfulSubprocess(p => p.ProcessKind = ProcessKind.DirectlyInRootProcess))
             {
                 var text = Guid.NewGuid().ToString("N");
                 UnwrapException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
@@ -214,14 +214,14 @@ namespace Spfx.Tests.Integration
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
         {
             var testServices = new List<TestInterfaceWrapper>();
-            var test = CreateSuccessfulSubprocess2(proc => proc.ProcessKind = processKind);
+            var test = CreateSuccessfulSubprocess(proc => proc.ProcessKind = processKind);
 
             testServices.Add(test);
 
             string targetProcess = WellKnownEndpoints.MasterProcessUniqueId;
             if (!callbackInMaster)
             {
-                var test2 = CreateSuccessfulSubprocess2(proc => proc.ProcessKind = processKind);
+                var test2 = CreateSuccessfulSubprocess(proc => proc.ProcessKind = processKind);
                 testServices.Add(test2);
                 targetProcess = ProcessProxy.GetEndpointAddress(test2.TestInterface).TargetProcess;
             }
@@ -250,13 +250,12 @@ namespace Spfx.Tests.Integration
 
         private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
         {
-            CreateSuccessfulSubprocess2(requestCustomization).Dispose();
+            CreateSuccessfulSubprocess(requestCustomization).Dispose();
         }
 
         private void DisposeTestProcess(ITestInterface svc)
         {
-            var osKind = Unwrap(svc.GetOsKind());
-            var isWsl = osKind == OsKind.Linux && HostFeaturesHelper.LocalMachineOsKind != OsKind.Linux;
+            var processKind = Unwrap(svc.GetRealProcessKind());
 
             var pid = Unwrap(svc.GetProcessId());
             var proc = Process.GetProcessById(pid);
@@ -264,7 +263,7 @@ namespace Spfx.Tests.Integration
 
             Unwrap(m_cluster.ProcessBroker.DestroyProcess(processName));
 
-            if (pid != Process.GetCurrentProcess().Id && !isWsl)
+            if (processKind != ProcessKind.Wsl)
                 proc.WaitForExit(DefaultTestTimeout);
         }
 
@@ -286,7 +285,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        private TestInterfaceWrapper CreateSuccessfulSubprocess2(Action<ProcessCreationInfo> requestCustomization = null)
+        private TestInterfaceWrapper CreateSuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
         {
             var procId = Guid.NewGuid().ToString("N");
             var req = new ProcessCreationRequest
@@ -371,6 +370,8 @@ namespace Spfx.Tests.Integration
                 var ver = m.Groups["v"].Value;
                 Assert.IsTrue(ver.Contains(requestedRuntime) || requestedRuntime.Contains(ver), $"Expected runtime version {requestedRuntime} actual {ver}");
             }*/
+
+            Log("CreateSuccessfulSubprocess success");
 
             return new TestInterfaceWrapper(this, iface);
         }

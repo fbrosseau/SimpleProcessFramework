@@ -4,11 +4,7 @@ namespace Spfx.Tests
 {
     public abstract class CommonTestClass
     {
-#if DEBUG
-        public const int DefaultTestTimeout = 30000;
-#else
-        public const int DefaultTestTimeout = 30000;
-#endif
+        public const int DefaultTestTimeout = TestUtilities.DefaultTestTimeout;
 
         protected static void Log(string msg)
         {
