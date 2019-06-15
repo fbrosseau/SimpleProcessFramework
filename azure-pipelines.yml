@@ -24,21 +24,19 @@ jobs:
 #    inputs:
 #      version: '3.0.100-preview-010184'
 
-  - task: NuGetCommand@2
-    displayName: 'Nuget Restore'
+  - task: DotNetCoreCLI@2
+    displayName: Build
     inputs:
-      restoreSolution: '$(solution)'
+      command: build
+      projects: 'SimpleProcessFramework.sln'
+      arguments: '--configuration Release_NoTests'
 
-  - task: VSBuild@1
+  - task: DotNetCoreCLI@2
+    displayName: 'Full Build and tests'
     inputs:
-      solution: '$(solution)'
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
-
-  - task: VSTest@2
-    inputs:
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
+      command: test
+      projects: 'SimpleProcessFramework.sln'
+      arguments: '--configuration Release'
 
 #  - task: CopyFiles@2
 #    inputs:
