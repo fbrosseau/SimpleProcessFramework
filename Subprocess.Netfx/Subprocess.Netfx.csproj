@@ -5,14 +5,11 @@
     <TargetFramework>net472</TargetFramework>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
-    <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netfx</AssemblyName>
     <RootNamespace>Spfx.Process.Netfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
     <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
-    <Product>SimpleProcessFramework</Product>
-    <ProductName>SimpleProcessFramework subprocess (netfx anycpu)</ProductName>
     <Title>SimpleProcessFramework subprocess (netfx anycpu)</Title>
     <Description>SimpleProcessFramework subprocess (netfx anycpu)</Description>
   </PropertyGroup>

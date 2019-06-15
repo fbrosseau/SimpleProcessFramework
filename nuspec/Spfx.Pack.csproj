@@ -4,7 +4,7 @@
     <NoBuild>true</NoBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NuspecFile>SimpleProcessFramework.nuspec</NuspecFile>
-    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
+    <NuspecProperties>configuration=$(Configuration);ver=$(ProductVersion)</NuspecProperties>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>.</OutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>

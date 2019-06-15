@@ -4,10 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <LangVersion>7.2</LangVersion>
-    <DefineConstants>$(DefineConstants);WINDOWS_BUILD;SUPPORTS_NETFX;SUPPORTS_NETCORE</DefineConstants>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.0.2</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>    
     <AssemblyName>Spfx</AssemblyName>
     <RootNamespace>Spfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
