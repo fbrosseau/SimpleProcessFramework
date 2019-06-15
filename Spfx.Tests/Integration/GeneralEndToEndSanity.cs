@@ -127,6 +127,8 @@ namespace Spfx.Tests.Integration
             if (!HostFeaturesHelper.IsWslSupported)
                 Assert.Ignore("WSL not supported");
 
+                Assert.Ignore("WSL not supported");
+
             CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
         }
 
