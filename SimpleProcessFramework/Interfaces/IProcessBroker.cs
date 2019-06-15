@@ -1,6 +1,7 @@
 ﻿using Spfx.Reflection;
 using Spfx.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -83,10 +84,33 @@ namespace Spfx.Interfaces
         }
     }
 
+    [DataContract]
+    public class ProcessInformation
+    {
+        [DataMember]
+        public string ProcessName { get; }
+
+        [DataMember]
+        public int OsPid { get; }
+
+        [DataMember]
+        public ProcessKind ProcessKind { get; }
+
+        public ProcessInformation(string name, int pid, ProcessKind kind)
+        {
+            ProcessName = name;
+            OsPid = pid;
+            ProcessKind = kind;
+        }
+    }
+
     public interface IProcessBroker
     {
         event EventHandler<ProcessEventArgs> ProcessCreated;
         event EventHandler<ProcessEventArgs> ProcessLost;
+
+        Task<List<ProcessInformation>> GetAllProcesses();
+        Task<ProcessInformation> GetProcessInformation(string processName);
 
         Task<ProcessClusterHostInformation> GetHostInformation();
 

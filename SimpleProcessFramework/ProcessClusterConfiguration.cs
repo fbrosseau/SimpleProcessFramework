@@ -1,5 +1,7 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Reflection;
+using Spfx.Utilities;
+using System.ComponentModel;
 
 namespace Spfx
 {
@@ -17,26 +19,31 @@ namespace Spfx
             set { m_typeResolver = value ?? ProcessCluster.DefaultTypeResolver; }
         }
 
-#if WINDOWS_BUILD
         public bool UseGenericProcessSpawnOnWindows { get; set; } = true;
-        public bool SupportNetfx { get; set; } = true;
-        public bool Support32Bit { get; set; } = true;
-        public bool SupportNetcore { get; set; } = true;
-        public bool SupportAppDomains { get; set; } = true;
-        public bool SupportWsl { get; set; } = true;
-#endif
+        public bool EnableNetcore { get; set; } = true;
+
+        public bool EnableAppDomains { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
+        public bool EnableNetfx { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
+        public bool Enable32Bit { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
+        public bool EnableWsl { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
 
         public bool CreateExecutablesIfMissing { get; set; } = true;
 
-#if WINDOWS_BUILD
         public string DefaultNetfxProcessName { get; set; } = "Spfx.Process.Netfx";
         public string DefaultNetfx32ProcessName { get; set; } = "Spfx.Process.Netfx32";
-#endif
         public string DefaultNetcoreProcessName { get; set; } = "Spfx.Process.Netcore";
 
-        public ProcessKind DefaultProcessKind { get; set; } = ProcessKind.Netcore;
-        public bool SupportFakeProcesses { get; set; }
+        public ProcessKind DefaultProcessKind { get; set; } = HostFeaturesHelper.LocalProcessKind;
+        public bool EnableFakeProcesses { get; set; }
         public string DefaultWslNetcoreHost { get; set; } = "dotnet";
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public const string DefaultDefaultNetfxCodeBase = "../net472";
+        public string DefaultNetfxCodeBase { get; set; } = DefaultDefaultNetfxCodeBase;
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public const string DefaultDefaultNetcoreCodeBase = "../netcoreapp2.1";
+        public string DefaultNetcoreCodeBase { get; set; } = DefaultDefaultNetcoreCodeBase;
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

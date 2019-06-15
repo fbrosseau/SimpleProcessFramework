@@ -165,7 +165,7 @@ namespace Spfx.Runtime.Server
                     ParentProcessId = Process.GetCurrentProcess().Id
                 };
 
-                await handle.CreateActualProcessAsync(punchPayload);
+                await handle.CreateProcess(punchPayload);
 
                 return ProcessCreationOutcome.CreatedNew;
             }
@@ -219,43 +219,61 @@ namespace Spfx.Runtime.Server
 
         private IProcessHandle CreateNewProcessHandle(ProcessCreationInfo info)
         {
+            void CheckWindows(string error)
+            {
+                if (HostFeaturesHelper.LocalMachineOsKind != OsKind.Windows)
+                    throw new PlatformNotSupportedException(error);
+            }
+            void Check32()
+            {
+                CheckWindows("Running 32-bit is only supported on Windows");
+                if (!m_config.Enable32Bit)
+                    throw new PlatformNotSupportedException("This current configuration does not support 32-bit processes");
+            }
+
+            void CheckNetfx()
+            {
+                CheckWindows("Running .Net Framework (Netfx) is only supported on Windows");
+                if (!m_config.EnableNetfx)
+                    throw new PlatformNotSupportedException("This current configuration does not support .Net Framework");
+            }
+
+            void CheckNetcore()
+            {
+                if (!m_config.EnableNetcore)
+                    throw new PlatformNotSupportedException("This current configuration does not support .Net core");
+            }
+
             switch (info.ProcessKind)
             {
                 case ProcessKind.AppDomain:
-#if !WINDOWS_BUILD
-                    throw new PlatformNotSupportedException("This platform does not support AppDomains");
-#else
-                    if (!m_config.SupportNetfx || !m_config.SupportAppDomains)
-                        throw new PlatformNotSupportedException("This platform does not support AppDomains");
+                    CheckWindows("This platform does not support AppDomains");
+                    if (!HostFeaturesHelper.LocalProcessKind.IsNetfx())
+                        throw new PlatformNotSupportedException("Only .Net Framework (Netfx) hosts can create AppDomain processes");
+                    if (!m_config.EnableAppDomains)
+                        throw new PlatformNotSupportedException("The current configuration does not support AppDomains");
+                    CheckNetfx();
                     return new AppDomainProcessHandle(info, m_typeResolver);
-#endif
                 case ProcessKind.DirectlyInRootProcess:
-                    if (!m_config.SupportFakeProcesses)
-                        throw new PlatformNotSupportedException("This platform does not support " + nameof(ProcessKind.DirectlyInRootProcess));
+                    if (!m_config.EnableFakeProcesses)
+                        throw new PlatformNotSupportedException("This current configuration does not support " + nameof(ProcessKind.DirectlyInRootProcess));
                     return new SameProcessFakeHandle(info, m_typeResolver);
                 case ProcessKind.Netfx:
-                    if (!m_config.SupportNetfx)
-                        throw new PlatformNotSupportedException("This platform does not support .Net Framework");
+                    CheckNetfx();
                     break;
                 case ProcessKind.Netfx32:
-                    if (!m_config.SupportNetfx)
-                        throw new PlatformNotSupportedException("This platform does not support .Net Framework");
-                    if (!m_config.Support32Bit)
-                        throw new PlatformNotSupportedException("This platform does not support 32-bit processes");
+                    CheckNetfx(); Check32();
                     break;
                 case ProcessKind.Netcore:
-                    if (!m_config.SupportNetcore)
-                        throw new PlatformNotSupportedException("This platform does not support .Net core");
+                    CheckNetcore();
                     break;
                 case ProcessKind.Netcore32:
-                    if (!m_config.SupportNetcore)
-                        throw new PlatformNotSupportedException("This platform does not support .Net core");
-                    if (!m_config.Support32Bit)
-                        throw new PlatformNotSupportedException("This platform does not support 32-bit processes");
+                    CheckNetcore(); Check32();
                     break;
                 case ProcessKind.Wsl:
-                    if (!m_config.SupportWsl)
-                        throw new PlatformNotSupportedException("This platform does not support 32-bit processes");
+                    CheckWindows("This platform does not support WSL");
+                    if (!m_config.EnableWsl)
+                        throw new PlatformNotSupportedException("This current configuration does not support WSL");
                     break;
                 case ProcessKind.Default:
                     break;
@@ -264,10 +282,8 @@ namespace Spfx.Runtime.Server
             if (!HostFeaturesHelper.IsProcessKindSupported(info.ProcessKind))
                 throw new PlatformNotSupportedException("This platform does not support ProcessKind " + info.ProcessKind);
 
-#if WINDOWS_BUILD
-            if (!m_config.UseGenericProcessSpawnOnWindows)
+            if (HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows && !m_config.UseGenericProcessSpawnOnWindows)
                 return new GenericChildProcessHandle(info, m_typeResolver);
-#endif
             return new GenericChildProcessHandle(info, m_typeResolver);
         }
 
@@ -311,6 +327,19 @@ namespace Spfx.Runtime.Server
         Task<ProcessClusterHostInformation> IProcessBroker.GetHostInformation()
         {
             return Task.FromResult(ProcessClusterHostInformation.GetCurrent());
+        }
+
+        public Task<List<ProcessInformation>> GetAllProcesses()
+        {
+            lock (m_subprocesses)
+            {
+                return Task.FromResult(m_subprocesses.Values.Select(p => p.ProcessInfo).ToList());
+            }
+        }
+
+        public Task<ProcessInformation> GetProcessInformation(string processName)
+        {
+            return Task.FromResult(GetSubprocess(processName, throwIfMissing: true).ProcessInfo);
         }
     }
 }

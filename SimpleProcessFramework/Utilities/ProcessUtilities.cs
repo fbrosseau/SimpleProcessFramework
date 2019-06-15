@@ -33,7 +33,7 @@ namespace Spfx.Utilities
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = PathHelper.BinFolder.FullName
+                WorkingDirectory = PathHelper.CurrentBinFolder.FullName
             };
 
             Process proc;

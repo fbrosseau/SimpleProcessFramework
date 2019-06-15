@@ -15,6 +15,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="CoreEndpoints\**" />
+    <EmbeddedResource Remove="CoreEndpoints\**" />
+    <None Remove="CoreEndpoints\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Properties\spfx.snk" />
   </ItemGroup>
 
@@ -33,7 +39,6 @@
 
   <ItemGroup>
     <Folder Include="Codegen\" />
-    <Folder Include="CoreEndpoints\" />
   </ItemGroup>
 
 </Project>

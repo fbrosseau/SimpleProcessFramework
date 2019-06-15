@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Spfx.Properties;
 using Spfx.Reflection;
 
+[assembly: InternalsVisibleTo("Spfx.Tests" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo("Spfx.Tests.Netfx" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo("Spfx.Tests.Netcore" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo("Spfx.TestApp" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
@@ -18,7 +19,8 @@ namespace Spfx.Runtime.Server.Processes
 {
     internal class GenericChildProcessHandle : GenericProcessHandle, IIpcConnectorListener
     {
-        private static readonly Lazy<string> s_wslRootBinPath = new Lazy<string>(() => WslUtilities.GetLinuxPath(PathHelper.BinFolder.FullName), false);
+        private static readonly string s_windowsVersionOfWslRoot = GetDefaultRuntimeCodeBase(ProcessKind.Wsl, null);
+        private static readonly Lazy<string> s_wslRootBinPath = new Lazy<string>(() => WslUtilities.GetLinuxPath(s_windowsVersionOfWslRoot), false);
         private static string EscapeArg(string a) => ProcessUtilities.EscapeArg(a);
 
         private Process m_targetProcess;
@@ -26,7 +28,6 @@ namespace Spfx.Runtime.Server.Processes
         public string ProcessName => ProcessCreationInfo.ProcessName;
         protected string CommandLine { get; set; }
         protected string TargetExecutable { get; set; }
-        protected string WorkingDirectory { get; set; } = PathHelper.BinFolder.FullName;
         public ProcessSpawnPunchPayload RemotePunchPayload { get; private set; }
 
         private readonly TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -37,7 +38,7 @@ namespace Spfx.Runtime.Server.Processes
         {
         }
 
-        public override async Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
+        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
         {
             RemotePunchPayload = punchPayload;
 
@@ -45,13 +46,13 @@ namespace Spfx.Runtime.Server.Processes
             using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
             {
                 var ct = cts.Token;
-                var remoteProcessHandles = ProcessKind != ProcessKind.Wsl ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles() : new WslProcessSpawnPunchHandles();
+                var remoteProcessHandles = WindowsProcessSpawnPunchHandles.Create(ProcessKind);
                 disposeBag.Add(remoteProcessHandles);
 
                 try
                 {
                     var spawnTask = SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
-                    await TaskEx.ExpectFirstTask(spawnTask, m_processExitEvent.Task);
+                    m_targetProcess = spawnTask.Result;
                 }
                 catch(Exception ex)
                 {
@@ -67,6 +68,8 @@ namespace Spfx.Runtime.Server.Processes
 
                 m_ipcConnector = connector;
                 disposeBag.ReleaseAll();
+
+                return new ProcessInformation(ProcessUniqueId, m_targetProcess.Id, ProcessCreationInfo.ProcessKind);
             }
         }
 
@@ -88,6 +91,36 @@ namespace Spfx.Runtime.Server.Processes
             }
         }
 
+        internal static string GetDefaultRuntimeCodeBase(ProcessKind processKind, ProcessClusterConfiguration config)
+        {
+            if (processKind.IsNetfx() == HostFeaturesHelper.LocalProcessKind.IsNetfx())
+            {
+                return PathHelper.CurrentBinFolder.FullName;
+            }
+
+            string relativeCodebase;
+
+            switch (processKind)
+            {
+                case ProcessKind.Netfx:
+                case ProcessKind.Netfx32:
+                    relativeCodebase = config?.DefaultNetfxCodeBase ?? ProcessClusterConfiguration.DefaultDefaultNetfxCodeBase;
+                    break;
+                case ProcessKind.Netcore:
+                case ProcessKind.Netcore32:
+                case ProcessKind.Wsl:
+                    relativeCodebase = config?.DefaultNetcoreCodeBase ?? ProcessClusterConfiguration.DefaultDefaultNetcoreCodeBase;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(processKind));
+            }
+
+            if (Path.IsPathRooted(relativeCodebase))
+                return relativeCodebase;
+
+            return PathHelper.GetPathRelativeToBin(relativeCodebase);
+        }
+
         private static string GetExecutableExtension(ProcessKind processKind)
         {
             switch (processKind)
@@ -102,7 +135,10 @@ namespace Spfx.Runtime.Server.Processes
 
         private string GetDefaultExecutable()
         {
-            return GetFullExecutableName(GetDefaultExecutableFileName(ProcessKind, Config), GetExecutableExtension(ProcessKind));
+            var filename = GetDefaultExecutableFileName(ProcessKind, Config);
+            var ext = GetExecutableExtension(ProcessKind);
+
+            return GetFullExecutableName(filename, ext);
         }
 
         private string GetFullExecutableName(string baseFilename, string ext = ".dll")
@@ -117,10 +153,10 @@ namespace Spfx.Runtime.Server.Processes
                 return s_wslRootBinPath.Value + baseFilename;
             }
 
-            return PathHelper.GetFileRelativeToBin(baseFilename).FullName;
+            return Path.Combine(GetDefaultRuntimeCodeBase(ProcessKind, Config), baseFilename);
         }
 
-        protected virtual async Task SpawnProcess(IProcessSpawnPunchHandles punchHandles, CancellationToken ct)
+        protected virtual async Task<Process> SpawnProcess(IProcessSpawnPunchHandles punchHandles, CancellationToken ct)
         {
             CommandLine = $"{EscapeArg(ProcessCreationInfo.ProcessUniqueId)} {EscapeArg(Process.GetCurrentProcess().Id.ToString())}";
 
@@ -158,12 +194,14 @@ namespace Spfx.Runtime.Server.Processes
             var combinedCommandLine = $"{GetExecutablePrefix()}{commandLinePreArguments} {EscapeArg(TargetExecutable)} {CommandLine}";
             combinedCommandLine = combinedCommandLine.Trim();
 
+            var workingDir = ProcessKind == ProcessKind.Wsl ? s_windowsVersionOfWslRoot : Path.GetDirectoryName(TargetExecutable);
+
             var startInfo = new ProcessStartInfo(combinedCommandLine)
             {
                 RedirectStandardInput = true,
                 RedirectStandardOutput = ProcessCreationInfo.ManuallyRedirectConsole,
                 RedirectStandardError = ProcessCreationInfo.ManuallyRedirectConsole,
-                WorkingDirectory = WorkingDirectory,
+                WorkingDirectory = workingDir,
                 UseShellExecute = false,
                 CreateNoWindow = false
             };
@@ -229,6 +267,8 @@ namespace Spfx.Runtime.Server.Processes
                 m_targetProcess?.TryKill();
                 throw;
             }
+
+            return m_targetProcess;
         }
 
         protected virtual string GetExecutablePrefix()

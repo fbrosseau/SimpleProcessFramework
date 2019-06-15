@@ -9,10 +9,11 @@ namespace Spfx.Runtime.Server.Processes
     {
         string ProcessUniqueId { get; }
         ProcessKind ProcessKind { get; }
+        ProcessInformation ProcessInfo { get; }
 
         void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
         void ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage req);
 
-        Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
+        Task CreateProcess(ProcessSpawnPunchPayload punchPayload);
     }
 }

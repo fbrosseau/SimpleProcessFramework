@@ -11,7 +11,6 @@ using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
-#if SUPPORTS_NETFX
     internal class AppDomainProcessHandle : GenericChildProcessHandle
     {
         [Serializable]
@@ -30,14 +29,14 @@ namespace Spfx.Runtime.Server.Processes
         {
         }
 
-        protected override Task SpawnProcess(IProcessSpawnPunchHandles handles, CancellationToken ct)
+        protected override Task<Process> SpawnProcess(IProcessSpawnPunchHandles handles, CancellationToken ct)
         {
             // So far this is the only place in the entire project where I had to break the abstraction of netstandard.
             // So... for a dying feature like appdomains a little bit of reflection sounds perfectly fine instead of going into a
             // multi-targeting nightmare
             var setupType = Type.GetType("System.AppDomainSetup");
             var appDomainSetup = Activator.CreateInstance(setupType);
-            setupType.GetProperty("ApplicationBase").SetValue(appDomainSetup, PathHelper.BinFolder.FullName);
+            setupType.GetProperty("ApplicationBase").SetValue(appDomainSetup, PathHelper.CurrentBinFolder.FullName);
 
             var dom = (AppDomain)typeof(AppDomain).InvokeMember("CreateDomain",
                 BindingFlags.Public | BindingFlags.Static | BindingFlags.InvokeMethod,
@@ -70,8 +69,7 @@ namespace Spfx.Runtime.Server.Processes
                     new object[] { typedCallback });
             }).ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.ExtractException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 
-            return Task.CompletedTask;
+            return Task.FromResult(Process.GetCurrentProcess());
         }
     }
-#endif
 }

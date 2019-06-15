@@ -16,6 +16,7 @@ namespace Spfx.Runtime.Server.Processes
         public ProcessCreationInfo ProcessCreationInfo { get; }
         protected ProcessClusterConfiguration Config { get; }
         private readonly IInternalProcessBroker m_processBroker;
+        public ProcessInformation ProcessInfo { get; private set; }
 
         protected IBinarySerializer BinarySerializer { get; }
 
@@ -27,7 +28,12 @@ namespace Spfx.Runtime.Server.Processes
             m_processBroker = typeResolver.GetSingleton<IInternalProcessBroker>();
         }
 
-        public abstract Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
+        public async Task CreateProcess(ProcessSpawnPunchPayload punchPayload)
+        {
+            ProcessInfo = await CreateActualProcessAsync(punchPayload);
+        }
+
+        protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
         protected abstract override Task OnTeardownAsync(CancellationToken ct);
         protected abstract override void OnDispose();
 

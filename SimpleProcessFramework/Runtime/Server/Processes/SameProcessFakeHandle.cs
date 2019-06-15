@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
@@ -20,12 +21,14 @@ namespace Spfx.Runtime.Server.Processes
             m_rawProcessContainer = m_processContainer;
         }
 
-        public override async Task CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
+        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
         {
             m_processContainer.Initialize(new StringReader(punchPayload.SerializeToString()));
             m_processContainer.SetConnector(new FakeSubprocessConnector(this));
 
             await m_rawProcessContainer.CompleteInitialization();
+
+            return new ProcessInformation(ProcessUniqueId, Process.GetCurrentProcess().Id, ProcessCreationInfo.ProcessKind);
         }
 
         private class FakeSubprocessConnector : ISubprocessConnector

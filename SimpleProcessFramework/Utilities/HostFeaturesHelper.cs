@@ -14,14 +14,20 @@ namespace Spfx.Utilities
         private static string[] s_installedNetcoreRuntimes;
         private static string[] s_installedNetcore32Runtimes;
 
-#if WINDOWS_BUILD
+        public static bool IsWindows => LocalMachineOsKind == OsKind.Windows;
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
-        public static bool IsNetCoreSupported { get; } = NetCoreExists(true);
-        public static bool IsNetCore32Supported { get; } = NetCoreExists(false);
-        public static bool IsInsideWsl => false;
+
+        public static bool IsNetCoreSupported { get; } = !IsWindows || NetCoreExists(true);
+        public static bool IsNetCore32Supported { get; } = IsWindows && NetCoreExists(false);
+
+        private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
+        public static bool IsInsideWsl { get; } = !IsWindows && s_isInsideWsl.Value;
 
         public static string GetNetCoreHostPath(bool anyCpu)
         {
+            if (!IsWindows)
+                return "dotnet";
+
             var suffix = "dotnet\\dotnet.exe";
             if (!anyCpu && Environment.Is64BitOperatingSystem)
                 return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), suffix);
@@ -33,24 +39,9 @@ namespace Spfx.Utilities
         {
             return new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
         }
-#else
-        private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
-        public static bool IsInsideWsl => s_isInsideWsl.Value;
 
-        public static bool IsWslSupported => false;
-        public static bool IsNetCoreSupported => true;
-        public static bool IsNetCore32Supported => false;
-
-        public static string GetNetCoreHostPath(bool anyCpu)
-        {
-            if (!anyCpu)
-                throw new ArgumentException("Non-Windows is only AnyCPU");
-            return "dotnet";
-        }
-#endif
-
-        public static bool IsNetFxSupported { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
+        public static bool IsNetFxSupported { get; } = LocalMachineOsKind == OsKind.Windows;
         public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
         public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
 

@@ -5,16 +5,11 @@ using Spfx.Runtime.Server;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Serialization;
 using Spfx.Utilities;
-using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static Spfx.Tests.TestUtilities;
@@ -110,7 +105,7 @@ namespace Spfx.Tests.Integration
         {
             return new ProcessCluster(new ProcessClusterConfiguration
             {
-                SupportFakeProcesses = true
+                EnableFakeProcesses = true
             });
         }
 
