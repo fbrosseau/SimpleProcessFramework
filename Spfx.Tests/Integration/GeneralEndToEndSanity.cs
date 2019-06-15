@@ -349,11 +349,11 @@ namespace Spfx.Tests.Integration
             if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
                 if (HostFeaturesHelper.GetBestNetcoreRuntime(requestedRuntime) == null)
-                    Assert.Inconclusive(".net core runtime " + requestedRuntime + " is not supported by this host");
+                    Assert.Ignore(".net core runtime " + requestedRuntime + " is not supported by this host");
             }
 
             if (!HostFeaturesHelper.IsProcessKindSupported(expectedProcessKind))
-                Assert.Inconclusive("ProcessKind " + expectedProcessKind + " is not supported by this host");
+                Assert.Ignore("ProcessKind " + expectedProcessKind + " is not supported by this host");
             
             var expectedProcessName = req.ProcessInfo.ProcessName;
             if (string.IsNullOrWhiteSpace(expectedProcessName)

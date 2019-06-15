@@ -46,7 +46,7 @@ jobs:
     inputs:
       command: test
       projects: 'SimpleProcessFramework.sln'
-      arguments: '-c $(buildConfiguration) -f $(netcoreName)'
+      arguments: '-c $(buildConfiguration) -f $(netcoreName) -v n'
 
   - task: DotNetCoreCLI@2
     displayName: 'Run tests (netfx)'
@@ -54,7 +54,7 @@ jobs:
     inputs:
       command: test
       projects: 'SimpleProcessFramework.sln'
-      arguments: '-c $(buildConfiguration) -f $(netfxName)'
+      arguments: '-c $(buildConfiguration) -f $(netfxName) -v n'
 
 #  - task: CopyFiles@2
 #    inputs:
