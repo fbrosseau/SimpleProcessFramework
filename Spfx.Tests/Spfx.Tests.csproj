@@ -7,10 +7,6 @@
     <DefineConstants>TRACE;WINDOWS_BUILD</DefineConstants>
     <OutputPath>bin/$(Configuration)</OutputPath>
     <IsTestProject>true</IsTestProject>
-    <RestoreSources>
-      $(RestoreSources);
-      ../nuspec;
-    </RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>

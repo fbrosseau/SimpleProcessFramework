@@ -25,18 +25,25 @@ jobs:
 #      version: '3.0.100-preview-010184'
 
   - task: DotNetCoreCLI@2
-    displayName: Build
+    displayName: 'Main Build without tests'
     inputs:
       command: build
       projects: 'SimpleProcessFramework.sln'
-      arguments: '--configuration Release_NoTests'
+      arguments: '-c Release_NoTests'
 
   - task: DotNetCoreCLI@2
-    displayName: 'Full Build and tests'
+    displayName: 'Full Build'
+    inputs:
+      command: build
+      projects: 'SimpleProcessFramework.sln'
+      arguments: '-c Release'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests'
     inputs:
       command: test
       projects: 'SimpleProcessFramework.sln'
-      arguments: '--configuration Release'
+      arguments: '-c Release'
 
 #  - task: CopyFiles@2
 #    inputs:

@@ -20,8 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Main Programs", "Main Progr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4F437425-524F-41B3-857A-D5D47D496994}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuget", "Nuget", "{E4052715-734A-4669-8638-D943553F640A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Utilities", "Build Utilities", "{E4052715-734A-4669-8638-D943553F640A}"
 	ProjectSection(SolutionItems) = preProject
+		azure-pipelines.yml = azure-pipelines.yml
 		nuspec\BuildNuget.bat = nuspec\BuildNuget.bat
 		nuspec\SimpleProcessFramework.nuspec = nuspec\SimpleProcessFramework.nuspec
 		nuspec\SimpleProcessFramework.targets = nuspec\SimpleProcessFramework.targets
