@@ -60,7 +60,9 @@ namespace Spfx.Serialization
                 typeof(double),
                 typeof(decimal),
                 typeof(object),
-                typeof(IPAddress)
+                typeof(IPAddress),
+                typeof(DateTime),
+                typeof(TimeSpan)
             };
 
             var criticalInternalTypes = new[]

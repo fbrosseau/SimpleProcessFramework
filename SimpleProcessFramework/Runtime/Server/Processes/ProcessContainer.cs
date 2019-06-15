@@ -156,6 +156,11 @@ namespace Spfx.Runtime.Server.Processes
             return m_process.InitializeAsync();
         }
 
+        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex = null)
+        {
+            Dispose();
+        }
+
         void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct)
         {
             Guard.ArgumentNotNull(source, nameof(source));

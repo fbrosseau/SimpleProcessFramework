@@ -35,7 +35,6 @@ namespace Spfx.Runtime.Server.Processes
 
         protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
         protected abstract override Task OnTeardownAsync(CancellationToken ct);
-        protected abstract override void OnDispose();
 
         void IProcessHandle.HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {

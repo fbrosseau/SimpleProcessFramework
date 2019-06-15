@@ -21,7 +21,7 @@ namespace Spfx.Tests.Integration
     {
         public static bool IsInMsTest { get; set; } = true;
 
-        private const ProcessKind DefaultProcessKind = ProcessKind.Netfx;
+        private static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
 
         public interface ITestInterface
         {
@@ -144,6 +144,7 @@ namespace Spfx.Tests.Integration
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
 
+#if NETFRAMEWORK
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         [Category("Windows-Only")]
         public void AppDomainCallbackToOtherProcess()
@@ -152,6 +153,7 @@ namespace Spfx.Tests.Integration
                 Assert.Ignore("AppDomains not supported");
             TestCallback(ProcessKind.AppDomain, callbackInMaster: false);
         }
+#endif
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);

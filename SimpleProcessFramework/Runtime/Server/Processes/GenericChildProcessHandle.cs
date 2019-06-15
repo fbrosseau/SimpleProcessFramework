@@ -226,9 +226,9 @@ namespace Spfx.Runtime.Server.Processes
 
                 if(ProcessCreationInfo.ManuallyRedirectConsole)
                 {
+                    var idStr = m_targetProcess.Id.ToString();
                     DataReceivedEventHandler GetLogHandler(TextWriter w)
                     {
-                        var idStr = m_targetProcess.Id.ToString();
                         return (sender, e) =>
                         {
                             if (e.Data != null)
@@ -306,7 +306,7 @@ namespace Spfx.Runtime.Server.Processes
             return result;
         }
 
-        protected void OnProcessLost(string reason)
+        protected void OnProcessLost(string reason, Exception ex = null)
         {
             m_processExitEvent.TrySetResult(reason);
         }
@@ -349,6 +349,7 @@ namespace Spfx.Runtime.Server.Processes
         protected override void OnDispose()
         {
             m_ipcConnector?.Dispose();
+            base.OnDispose();
         }
 
         void IIpcConnectorListener.OnTeardownRequestReceived()
@@ -370,6 +371,11 @@ namespace Spfx.Runtime.Server.Processes
         void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)
         {
             OnMessageReceivedFromProcess(msg);
+        }
+
+        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex = null)
+        {
+            OnProcessLost(msg, ex);
         }
     }
 }

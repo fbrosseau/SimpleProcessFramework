@@ -128,8 +128,18 @@ namespace Spfx.Runtime.Server
             }
             finally
             {
-                m_terminateEvent.Set();
+                try
+                {
+                    m_terminateEvent.Set();
+                }
+                catch
+                {
+                }
+
+                m_terminateEvent.Dispose();
             }
+
+            base.OnDispose();
         }
 
         protected async override Task OnTeardownAsync(CancellationToken ct)

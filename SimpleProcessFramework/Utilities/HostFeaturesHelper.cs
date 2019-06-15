@@ -90,7 +90,7 @@ namespace Spfx.Utilities
                 return m.Groups["ver"].Value;
             }
 
-            cachedResult = lines.Select(ParseLine).Where(l => l != null).OrderByDescending(l => l, StringComparer.OrdinalIgnoreCase).ToArray();
+            cachedResult = lines.Select(ParseLine).Where(l => l != null).OrderByDescending(l => l, LexicographicStringComparer.Instance).ToArray();
             return cachedResult;
         }
 

@@ -64,6 +64,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         Task CompleteInitialization();
         void OnMessageReceived(WrappedInterprocessMessage msg);
         void OnTeardownRequestReceived();
+
+        void OnRemoteEndLost(string msg, Exception ex = null);
     }
 
     internal abstract class IpcConnector : AsyncDestroyable
@@ -113,6 +115,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             WritePipe.Dispose();
             Shutdown1ReceivedEvent.Set();
             Shutdown2ReceivedEvent.Set();
+            Owner.OnRemoteEndLost("IpcConnector disposed");
             base.OnDispose();
         }
 
@@ -169,8 +172,13 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                     }
                 }
             }
-            catch(Exception)
+            catch(EndOfStreamException ex)
             {
+                Owner.OnRemoteEndLost("The IPC stream was closed", ex);
+            }
+            catch(Exception ex)
+            {
+                Owner.OnRemoteEndLost("Exception in IpcConnector::ReadLoop", ex);
             }
             finally
             {

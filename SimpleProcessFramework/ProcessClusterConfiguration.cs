@@ -33,7 +33,10 @@ namespace Spfx
         public string DefaultNetfx32ProcessName { get; set; } = "Spfx.Process.Netfx32";
         public string DefaultNetcoreProcessName { get; set; } = "Spfx.Process.Netcore";
 
-        public ProcessKind DefaultProcessKind { get; set; } = HostFeaturesHelper.LocalProcessKind;
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static readonly ProcessKind DefaultDefaultProcessKind = HostFeaturesHelper.LocalProcessKind;
+        public ProcessKind DefaultProcessKind { get; set; } = DefaultDefaultProcessKind;
+
         public bool EnableFakeProcesses { get; set; }
         public string DefaultWslNetcoreHost { get; set; } = "dotnet";
 
