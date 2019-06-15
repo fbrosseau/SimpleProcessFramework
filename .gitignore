@@ -10,3 +10,4 @@
 **/nuget.exe
 
 *.csproj.user
+/nuspec/netstandard2.0

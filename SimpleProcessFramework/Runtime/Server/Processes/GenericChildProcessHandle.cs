@@ -373,7 +373,7 @@ namespace Spfx.Runtime.Server.Processes
             OnMessageReceivedFromProcess(msg);
         }
 
-        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex = null)
+        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex)
         {
             OnProcessLost(msg, ex);
         }

@@ -156,7 +156,7 @@ namespace Spfx.Runtime.Server.Processes
             return m_process.InitializeAsync();
         }
 
-        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex = null)
+        void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex)
         {
             Dispose();
         }

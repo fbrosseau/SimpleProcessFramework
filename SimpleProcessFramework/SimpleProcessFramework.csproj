@@ -12,6 +12,8 @@
     <RootNamespace>Spfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
+    <NuspecFile>../nuspec/SimpleProcessFramework.nuspec</NuspecFile>
+    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,6 +41,12 @@
 
   <ItemGroup>
     <Folder Include="Codegen\" />
+  </ItemGroup>
+
+  <ItemGroup Condition="false">
+    <ProjectReference Include="..\Subprocess.Netcore\Subprocess.Netcore.csproj" />
+    <ProjectReference Include="..\Subprocess.Netfx32\Subprocess.Netfx32.csproj" />
+    <ProjectReference Include="..\Subprocess.Netfx\Subprocess.Netfx.csproj" />
   </ItemGroup>
 
 </Project>

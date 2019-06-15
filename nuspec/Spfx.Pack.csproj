@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <NoBuild>true</NoBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NuspecFile>SimpleProcessFramework.nuspec</NuspecFile>
+    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <OutputPath>.</OutputPath>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />
+  </ItemGroup>
+</Project>
