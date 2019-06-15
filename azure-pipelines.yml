@@ -5,12 +5,14 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  netcoreName: 'netcoreapp2.1'
+  netfxName: 'net472'
 
 jobs:
 - job: Windows_Build
   displayName: 'Windows Build'
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - task: NuGetToolInstaller@0
 
@@ -29,21 +31,28 @@ jobs:
     inputs:
       command: build
       projects: 'SimpleProcessFramework.sln'
-      arguments: '-c Release_NoTests'
+      arguments: '-c $(buildConfiguration)_NoTests'
 
   - task: DotNetCoreCLI@2
     displayName: 'Full Build'
     inputs:
       command: build
       projects: 'SimpleProcessFramework.sln'
-      arguments: '-c Release'
+      arguments: '-c $(buildConfiguration)'
 
   - task: DotNetCoreCLI@2
-    displayName: 'Run tests'
+    displayName: 'Run tests (netcore)'
     inputs:
       command: test
       projects: 'SimpleProcessFramework.sln'
-      arguments: '-c Release'
+      arguments: '-c $(buildConfiguration) -f $(netcoreName)'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests (netfx)'
+    inputs:
+      command: test
+      projects: 'SimpleProcessFramework.sln'
+      arguments: '-c $(buildConfiguration) -f $(netfxName)'
 
 #  - task: CopyFiles@2
 #    inputs:
