@@ -4,17 +4,22 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net472</TargetFramework>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netfx</AssemblyName>
     <RootNamespace>Spfx.Process.Netfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
+    <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
+    <Product>SimpleProcessFramework</Product>
+    <ProductName>SimpleProcessFramework subprocess (netfx anycpu)</ProductName>
+    <Title>SimpleProcessFramework subprocess (netfx anycpu)</Title>
+    <Description>SimpleProcessFramework subprocess (netfx anycpu)</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
+  </PropertyGroup> 
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -23,6 +28,7 @@
   <ItemGroup>
     <Folder Include="Properties\" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
+    <None Include="../Resources/Gear.ico" Link="Properties\Gear.ico" />
   </ItemGroup>
 
 </Project>

@@ -4,19 +4,33 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net472</TargetFramework>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netfx32</AssemblyName>
     <RootNamespace>Spfx.Process.Netfx32</RootNamespace>
     <SignAssembly>true</SignAssembly>
+    <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Product>SimpleProcessFramework</Product>
+    <ProductName>SimpleProcessFramework subprocess (netfx 32-bit)</ProductName>
+    <Title>SimpleProcessFramework subprocess (netfx 32-bit)</Title>
+    <Description>SimpleProcessFramework subprocess (netfx 32-bit)</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
     <Folder Include="Properties\" />
+    <Compile Include="..\Subprocess.Netfx\Program.cs" Link="Program.cs" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
+    <None Include="../Resources/Gear.ico" Link="Properties\Gear.ico" />
   </ItemGroup>
 
 </Project>

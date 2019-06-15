@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Reflection;
 
-namespace Spfx.Process
+namespace Spfx.Runtime.Server.Processes.NetfxHost
 {
-    public class Program
+    internal class Program
     {
         public static void Main(string[] args)
         {

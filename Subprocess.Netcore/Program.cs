@@ -4,9 +4,9 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 
-namespace Spfx.Process
+namespace Spfx.Runtime.Server.Processes.Host
 {
-    public class Program
+    internal class Program
     {
         private static readonly string BinFolder = new FileInfo(new Uri(typeof(Program).Assembly.Location, UriKind.Absolute).LocalPath).Directory.FullName;
 

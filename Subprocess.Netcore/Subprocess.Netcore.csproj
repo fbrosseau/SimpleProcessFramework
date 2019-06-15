@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <LangVersion>7.2</LangVersion>
     <AssemblyName>Spfx.Process.Netcore</AssemblyName>
     <SignAssembly>true</SignAssembly>
@@ -14,12 +14,14 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <ApplicationIcon />
     <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
+    <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
     <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
+    <None Include="../Resources/Gear.ico" Link="Properties\Gear.ico" />
   </ItemGroup>
 
   <ItemGroup>
