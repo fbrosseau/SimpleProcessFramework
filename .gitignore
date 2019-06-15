@@ -8,3 +8,5 @@
 
 *.nupkg
 **/nuget.exe
+
+*.csproj.user
