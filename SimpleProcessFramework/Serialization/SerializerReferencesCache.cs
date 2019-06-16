@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
 namespace Spfx.Serialization
@@ -46,6 +47,7 @@ namespace Spfx.Serialization
             var primitiveTypes = new[] 
             {
                 typeof(string),
+                typeof(char),
                 typeof(bool),
                 typeof(sbyte),
                 typeof(short),
@@ -61,8 +63,12 @@ namespace Spfx.Serialization
                 typeof(decimal),
                 typeof(object),
                 typeof(IPAddress),
+                typeof(IPEndPoint),
+                typeof(DnsEndPoint),
                 typeof(DateTime),
-                typeof(TimeSpan)
+                typeof(TimeSpan),
+                typeof(Version),
+                typeof(X509Certificate),
             };
 
             var criticalInternalTypes = new[]

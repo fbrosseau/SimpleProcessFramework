@@ -139,7 +139,7 @@ namespace Spfx.Serialization
                 s_knownSerializers.Add(t, s);
             }
 
-            void AddSerializer2<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession,T> deserializer)
+            void AddSerializer2<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession, T> deserializer)
             {
                 AddSerializer(typeof(T), new SimpleTypeSerializer(
                     (bw, o) => serializer(bw, (T)o),
@@ -148,17 +148,32 @@ namespace Spfx.Serialization
 
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadByte());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt32());
-            AddSerializer2((bw, o) => bw.Writer.Write(o),br => br.Reader.ReadInt64());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt64());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSingle());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDouble());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDecimal());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadChar());
             AddSerializer2((bw, o) => bw.Writer.Write(o.ToUniversalTime().Ticks), br => new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc));
             AddSerializer2((bw, o) => bw.Writer.Write(o.Ticks), br => new TimeSpan(br.Reader.ReadInt64()));
-            AddSerializer2((bw, o) => bw.Writer.Write(o),br => br.Reader.ReadString());
-            AddSerializer2((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0),br => br.Reader.ReadByte() != 0);
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadString());
+            AddSerializer2((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0), br => br.Reader.ReadByte() != 0);
             AddSerializer2((bw, o) => { }, br => CancellationToken.None);
-            AddSerializer2((bw, o) => { },br => EventArgs.Empty);
-            AddSerializer2(WriteIPAddres, ReadIPAddress);
+            AddSerializer2((bw, o) => { }, br => EventArgs.Empty);
+            AddSerializer2(WriteIPAddress, ReadIPAddress);
+            AddSerializer2(WriteVersion, ReadVersion);
         }
 
-        private static void WriteIPAddres(SerializerSession session, IPAddress val)
+        private static void WriteVersion(SerializerSession session, Version val)
+        {
+            session.Writer.Write(val.ToString());
+        }
+
+        private static Version ReadVersion(DeserializerSession session)
+        {
+            return new Version(session.Reader.ReadString());
+        }
+
+        private static void WriteIPAddress(SerializerSession session, IPAddress val)
         {
             session.Writer.Write((byte)val.AddressFamily);
             session.Writer.Write(val.GetAddressBytes());
