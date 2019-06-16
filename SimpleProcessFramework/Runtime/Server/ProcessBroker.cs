@@ -184,7 +184,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public async Task<ProcessCreationOutcome> CreateEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
+        public async Task<ProcessCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
         {
             processReq.EnsureIsValid();
             endpointReq.EnsureIsValid();

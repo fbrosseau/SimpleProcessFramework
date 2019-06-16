@@ -115,7 +115,7 @@ namespace Spfx.Interfaces
         Task<ProcessClusterHostInformation> GetHostInformation();
 
         Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req);
-        Task<ProcessCreationOutcome> CreateEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
+        Task<ProcessCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
 
         Task<bool> DestroyProcess(string processName, bool onlyIfEmpty = true);
     }
