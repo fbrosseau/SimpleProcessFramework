@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Spfx.Runtime.Server.Processes.NetfxHost
 {
-    internal class Program
+    public class SpfxProgram
     {
         public static void Main(string[] args)
         {

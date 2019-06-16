@@ -27,7 +27,7 @@ namespace TestApp234
         static void Main(string[] args)
         {
             var c = new ProcessCluster();
-            c.MasterProcess.ProcessBroker.CreateEndpoint(new ProcessCreationRequest
+            c.MasterProcess.ProcessBroker.CreateProcessAndEndpoint(new ProcessCreationRequest
             {
                 MustCreateNew = true,
                 ProcessInfo = new ProcessCreationInfo

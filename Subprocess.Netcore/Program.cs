@@ -4,11 +4,11 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 
-namespace Spfx.Runtime.Server.Processes.Host
+namespace Spfx.Runtime.Server.Processes.NetcoreHost
 {
-    internal class Program
+    public class SpfxProgram
     {
-        private static readonly string BinFolder = new FileInfo(new Uri(typeof(Program).Assembly.Location, UriKind.Absolute).LocalPath).Directory.FullName;
+        private static readonly string BinFolder = new FileInfo(new Uri(typeof(SpfxProgram).Assembly.Location, UriKind.Absolute).LocalPath).Directory.FullName;
 
         public static void Main(string[] args)
         {
