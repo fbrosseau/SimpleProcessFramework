@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,13 +12,15 @@ namespace Spfx.Utilities.Threading
         private EventWaiter m_firstWaiter;
         private EventWaiter m_noCancellationWaiters;
 
+        private Exception m_disposeException;
+
         public bool IsSet { get; private set; }
 
         private class EventWaiter : TaskCompletionSource<bool>, IDisposable
         {
             public EventWaiter Next;
             public EventWaiter Previous;
-            private object m_ctRegistration; // boxing it because it's a large valuetype and I don't want tearing.
+            private IDisposable m_ctRegistration; // boxing it because it's a large valuetype and I don't want tearing.
             private Timer m_timer;
             private readonly AsyncManualResetEvent m_owner;
 
@@ -61,7 +64,7 @@ namespace Spfx.Utilities.Threading
             {
                 TrySetCanceled();
                 Thread.MemoryBarrier();
-                (m_ctRegistration as CancellationTokenRegistration?)?.Dispose();
+                m_ctRegistration?.Dispose();
                 m_timer?.Dispose();
             }
         }
@@ -114,6 +117,12 @@ namespace Spfx.Utilities.Threading
             }
 
             base.OnDispose();
+        }
+
+        public void Dispose(Exception ex)
+        {
+            m_disposeException = ex;
+            Dispose();
         }
 
         private ValueTask<bool> WaitAsync(CancellationToken ct, TimeSpan timeout, EventWaiter waiter = null)
@@ -175,12 +184,22 @@ namespace Spfx.Utilities.Threading
 
         private void UnblockAllWaiters(bool success)
         {
+            var ex = m_disposeException;
+
+            Debug.Assert(Monitor.IsEntered(m_lock));
             while (m_firstWaiter != null)
             {
                 if (success)
+                {
                     m_firstWaiter.TrySetResult(true);
+                }
                 else
-                    m_firstWaiter.TrySetCanceled();
+                {
+                    if (ex is null)
+                        m_firstWaiter.TrySetCanceled();
+                    else
+                        m_firstWaiter.TrySetException(new ObjectDisposedException("This object is disposed", ex));
+                }
 
                 m_firstWaiter = m_firstWaiter.Previous;
             }
