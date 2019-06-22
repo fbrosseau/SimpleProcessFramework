@@ -68,7 +68,7 @@ namespace Spfx.Runtime.Server
             SendMessage(new RemoteCallFailureResponse
             {
                 CallId = callId,
-                Error = new RemoteExceptionInfo(fault)
+                Error = RemoteExceptionInfo.Create(fault)
             });
         }
 

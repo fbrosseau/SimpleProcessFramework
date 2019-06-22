@@ -1,5 +1,4 @@
 ﻿using Spfx.Serialization;
-using System;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ namespace Spfx.Runtime.Messages
     public sealed class RemoteCallFailureResponse : RemoteInvocationResponse
     {
         [DataMember]
-        public RemoteExceptionInfo Error { get; set; }
+        public IRemoteExceptionInfo Error { get; set; }
 
         internal override void ForwardResult(TaskCompletionSource<object> completion)
         {
