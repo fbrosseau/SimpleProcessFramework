@@ -45,6 +45,25 @@ namespace Spfx.Utilities
         public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
         public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
 
+        private static readonly Lazy<Version> s_netcoreVersion = new Lazy<Version>(() =>
+        {
+            var m = Regex.Match(RuntimeInformation.FrameworkDescription, @"\.NET Core (?<v>[\d\.]+)", RegexOptions.IgnoreCase);
+            if (!m.Success)
+                throw new InvalidOperationException("Could not determine version");
+
+            var ver = new Version(m.Groups["v"].Value);
+            if(ver.Major == 4)
+            {
+                if (ver.Minor == 6)
+                    return new Version(2, 1, 0);
+                throw new InvalidOperationException("Could not determine version");
+            }
+
+            return ver;
+        });
+
+        public static Version NetcoreVersion => s_netcoreVersion.Value;
+
         private static string GetRuntimeDescription()
         {
             if (LocalProcessKind.IsNetfx())
@@ -55,7 +74,7 @@ namespace Spfx.Utilities
             }
             else
             {
-                return Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
+                return RuntimeInformation.FrameworkDescription;
             }
         }
 
