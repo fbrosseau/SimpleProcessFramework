@@ -2,18 +2,17 @@
 using Spfx.Utilities.Threading;
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Io
 {
-    internal class SyncLengthPrefixedStreamReader : ILengthPrefixedStreamReader
+    internal class AsyncLengthPrefixedStreamReader : ILengthPrefixedStreamReader
     {
         private readonly Stream m_stream;
-        private readonly Thread m_readThread;
+        private readonly Task m_readThread;
         private readonly AsyncQueue<LengthPrefixedStream> m_readQueue;
 
-        public SyncLengthPrefixedStreamReader(Stream stream, string name)
+        public AsyncLengthPrefixedStreamReader(Stream stream)
         {
             Guard.ArgumentNotNull(stream, nameof(stream));
             m_stream = stream;
@@ -22,23 +21,18 @@ namespace Spfx.Io
             {
                 DisposeIgnoredItems = true
             };
-            
-            m_readThread = new Thread(ReadLoop)
-            {
-                Name = name,
-                IsBackground = true
-            };
 
-            m_readThread.Start();
+            m_readThread = Task.Run(ReadLoop);
         }
 
         public void Dispose()
         {
-            m_readQueue.Dispose();
             m_stream.Dispose();
+            m_readQueue.Dispose();
+            m_readThread.FireAndForget(); // only for debugging
         }
-        
-        private void ReadLoop()
+
+        private async Task ReadLoop()
         {
             try
             {
@@ -48,7 +42,7 @@ namespace Spfx.Io
                     if (sizeBuffer is null)
                         sizeBuffer = new byte[4];
 
-                    m_stream.ReadBytes(new ArraySegment<byte>(sizeBuffer, 0, 4));
+                    await m_stream.ReadBytesAsync(new ArraySegment<byte>(sizeBuffer, 0, 4));
                     int count = BitConverter.ToInt32(sizeBuffer, 0);
                     if (count <= 0)
                     {
@@ -67,7 +61,7 @@ namespace Spfx.Io
                         buf = new byte[count];
                     }
 
-                    m_stream.ReadBytes(new ArraySegment<byte>(buf, 0, count));
+                    await m_stream.ReadBytesAsync(new ArraySegment<byte>(buf, 0, count));
                     m_readQueue.Enqueue(new LengthPrefixedStream(count, new MemoryStream(buf, 0, count)));
                 }
             }

@@ -108,13 +108,13 @@ namespace Spfx.Runtime.Server.Processes
                 }
                 else
                 {
-                    var sock = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                    var sock = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                     sock.Connect(SocketUtilities.CreateUnixEndpoint(m_inputPayload.ReadPipe));
                     readStream = writeStream = new NetworkStream(sock);
                 }
 
-                var streamReader = disposeBag.Add(new SyncLengthPrefixedStreamReader(readStream, m_inputPayload.ProcessUniqueId + " - SlaveRead"));
-                var streamWriter = disposeBag.Add(new SyncLengthPrefixedStreamWriter(writeStream, m_inputPayload.ProcessUniqueId + " - SlaveWrite"));
+                var streamReader = disposeBag.Add(LengthPrefixedStream.CreateReader(readStream, m_inputPayload.ProcessUniqueId + " - SubprocessRead"));
+                var streamWriter = disposeBag.Add(LengthPrefixedStream.CreateWriter(writeStream, m_inputPayload.ProcessUniqueId + " - SubProcessWrite"));
 
                 var connector = disposeBag.Add(new SubprocessIpcConnector(this, streamReader, streamWriter, new DefaultBinarySerializer()));
                 SetConnector(connector);

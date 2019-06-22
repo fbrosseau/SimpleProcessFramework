@@ -17,7 +17,7 @@ namespace Spfx.Runtime.Server.Processes
 
         public WslProcessSpawnPunchHandles()
         {
-            m_listenSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+            m_listenSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             var filename = Guid.NewGuid().ToString("N");
             m_linuxAddressName = s_tempFolderWslPath.Value + filename;
             var tempAddress = Path.Combine(Path.GetTempPath(), filename);
@@ -31,8 +31,11 @@ namespace Spfx.Runtime.Server.Processes
         public async Task CompleteHandshakeAsync(CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-            m_acceptedSocket = await Task.Factory.FromAsync((cb, s) => m_listenSocket.BeginAccept(cb, s), m_listenSocket.EndAccept, null);
-            WriteStream = ReadStream = new NetworkStream(m_acceptedSocket);
+            using (ct.Register(s => ((WslProcessSpawnPunchHandles)s).Dispose(), this, false))
+            {
+                m_acceptedSocket = await Task.Factory.FromAsync((cb, s) => m_listenSocket.BeginAccept(cb, s), m_listenSocket.EndAccept, null);
+                WriteStream = ReadStream = new NetworkStream(m_acceptedSocket);
+            }
         }
 
         public void Dispose()

@@ -13,7 +13,7 @@ namespace Spfx.Utilities
 
             try
             {
-                using (var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP))
+                using (var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified))
                 {
                     s.Bind(SocketUtilities.CreateUnixEndpoint(tempFile));
                     tryCleanupFile = true;

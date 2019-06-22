@@ -44,8 +44,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         public MasterProcessIpcConnector(GenericChildProcessHandle owner, IProcessSpawnPunchHandles remoteProcessHandles, IBinarySerializer serializer)
             : base(
                   owner,
-                  new SyncLengthPrefixedStreamReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
-                  new SyncLengthPrefixedStreamWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
+                  LengthPrefixedStream.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
+                  LengthPrefixedStream.CreateWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
                   serializer)
         {
         }

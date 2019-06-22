@@ -37,6 +37,28 @@ namespace Spfx.Io
         {
             m_stream?.Dispose();
         }
+
+        internal static ILengthPrefixedStreamWriter CreateWriter(Stream stream, string name, bool? sync = null)
+        {
+            if (sync == null)
+                sync = !HostFeaturesHelper.IsWindows;
+
+            if (sync == true)
+                return new SyncLengthPrefixedStreamWriter(stream, name);
+
+            return new AsyncLengthPrefixedStreamWriter(stream);
+        }
+
+        internal static ILengthPrefixedStreamReader CreateReader(Stream stream, string name, bool? sync = null)
+        {
+            if (sync == null)
+                sync = !HostFeaturesHelper.IsWindows;
+
+            if (sync == true)
+                return new SyncLengthPrefixedStreamReader(stream, name);
+
+            return new AsyncLengthPrefixedStreamReader(stream);
+        }
     }
 
     public interface ILengthPrefixedStreamWriter : IDisposable
