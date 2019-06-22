@@ -43,7 +43,7 @@ namespace Spfx.Serialization
 
             var members = new List<ReflectedDataMember>();
 
-            foreach (var memberInfo in actualType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            foreach (var memberInfo in EnumerateAllDataMembers(actualType))
             {
                 if (memberInfo.GetCustomAttribute<DataMemberAttribute>() == null)
                     continue;
@@ -55,7 +55,7 @@ namespace Spfx.Serialization
                 };
 
                 Type memberType;
-                if(memberInfo is FieldInfo fi)
+                if (memberInfo is FieldInfo fi)
                 {
                     memberType = fi.FieldType;
                     member.GetAccessor = o => fi.GetValue(o);
@@ -65,8 +65,26 @@ namespace Spfx.Serialization
                 {
                     var pi = (PropertyInfo)memberInfo;
                     memberType = pi.PropertyType;
-                    member.GetAccessor = o => pi.GetValue(o);
-                    member.SetAccessor = (o, v) => pi.SetValue(o, v);
+
+                    var getter = pi.GetGetMethod(true);
+                    if (getter is null)
+                        throw new InvalidOperationException($"Property {actualType.FullName}::{pi.Name} has no getter");
+
+                    member.GetAccessor = o => getter.Invoke(o, null);
+
+                    var setter = pi.GetSetMethod(true);
+                    if (setter is null)
+                    {
+                        var autoBackingField = actualType.GetField($"<{pi.Name}>k__BackingField", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (autoBackingField is null)
+                            throw new InvalidOperationException($"Property {actualType.FullName}::{pi.Name} has no setter");
+
+                        member.SetAccessor = (o, v) => autoBackingField.SetValue(o, v);
+                    }
+                    else
+                    {
+                        member.SetAccessor = (o, v) => setter.Invoke(o, new [] { v });
+                    }
                 }
 
                 member.TypeInfo = GetTypeInfo(memberType);
@@ -76,6 +94,18 @@ namespace Spfx.Serialization
 
             members.Sort((m1, m2) => m1.Name.CompareTo(m2.Name));
             Members = members.ToArray();
+        }
+
+        private static IEnumerable<MemberInfo> EnumerateAllDataMembers(Type actualType)
+        {
+            if (actualType is null || actualType == typeof(object))
+                yield break;
+
+            foreach (var m in actualType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                yield return m;
+
+            foreach (var m in EnumerateAllDataMembers(actualType.BaseType))
+                yield return m;
         }
 
         private ReflectedMemberTypeInfo GetTypeInfo(Type memberType)
