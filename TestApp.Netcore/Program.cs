@@ -30,7 +30,7 @@ namespace TestApp234
             var c = new ProcessCluster();
             c.MasterProcess.ProcessBroker.CreateProcessAndEndpoint(new ProcessCreationRequest
             {
-                MustCreateNew = true,
+                Options = ProcessCreationOptions.ThrowIfExists,
                 ProcessInfo = new ProcessCreationInfo
                 {
                     ProcessKind = ProcessKind.Netfx32,
