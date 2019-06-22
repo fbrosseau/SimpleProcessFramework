@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using Spfx.Properties;
@@ -12,6 +14,8 @@ namespace Spfx.Reflection
 
         public static ModuleBuilder DynamicModule { get; }
 
+        private static readonly HashSet<Assembly> s_ignoreAccessChecks = new HashSet<Assembly>();
+
         static DynamicCodeGenModule()
         {
             var ms = new MemoryStream();
@@ -24,6 +28,15 @@ namespace Spfx.Reflection
             asmName.SetPublicKey(SimpleProcessFrameworkPublicKey.PublicKeyBytes);
             AssemblyBuilder asm = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
             DynamicModule = asm.DefineDynamicModule(DynamicModuleName);
+        }
+
+        internal static void IgnoreAccessChecks(Assembly assembly)
+        {
+            lock (s_ignoreAccessChecks)
+            {
+                if (!s_ignoreAccessChecks.Add(assembly))
+                    return;
+            }
         }
     }
 }

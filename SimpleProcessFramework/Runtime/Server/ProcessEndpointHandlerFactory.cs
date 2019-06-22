@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Runtime.Exceptions;
 
 namespace Spfx.Runtime.Server
 {
@@ -33,8 +34,18 @@ namespace Spfx.Runtime.Server
 
         public static IProcessEndpointHandler Create(object handler, Type interfaceType)
         {
-            var createMethod = typeof(ProcessEndpointHandlerFactory).GetMethods(BindingFlags.Public | BindingFlags.Static).First(m => m.Name == "Create" && m.IsGenericMethod);
-            return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { handler });
+            try
+            {
+                var createMethod = typeof(ProcessEndpointHandlerFactory).GetMethods(BindingFlags.Public | BindingFlags.Static).First(m => m.Name == "Create" && m.IsGenericMethod);
+                return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { handler });
+            }
+            catch(Exception ex)
+            {
+                if (ex is TargetInvocationException && ex.InnerException != null)
+                    ex = ex.InnerException;
+
+                throw new CodeGenerationFailedException("ProcessEndpointHandlerFactory.Create failed for " + interfaceType.AssemblyQualifiedName, ex);
+            }
         }
         
         private static Func<object, ProcessEndpointHandler> CreateFactory(Type type)
@@ -43,6 +54,8 @@ namespace Spfx.Runtime.Server
 
             if (!type.IsInterface)
                 throw new ArgumentException("'T' must be an interface");
+
+            DynamicCodeGenModule.IgnoreAccessChecks(type.Assembly);
 
             var typeBuilder = DynamicCodeGenModule.DynamicModule.DefineType("HandlerImpl__" + type.AssemblyQualifiedName,
                 TypeAttributes.Public,

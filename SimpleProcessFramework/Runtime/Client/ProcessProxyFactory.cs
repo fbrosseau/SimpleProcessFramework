@@ -34,6 +34,8 @@ namespace Spfx.Runtime.Client
             if (!type.IsInterface)
                 throw new ArgumentException("'T' must be an interface");
 
+            DynamicCodeGenModule.IgnoreAccessChecks(type.Assembly);
+
             var typeBuilder = DynamicCodeGenModule.DynamicModule.DefineType("ProxyImpl__" + type.AssemblyQualifiedName,
                 TypeAttributes.Public,
                 typeof(ProcessProxyImplementation));
