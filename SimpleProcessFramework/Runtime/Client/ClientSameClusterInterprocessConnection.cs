@@ -19,6 +19,7 @@ namespace Spfx.Runtime.Client
         private readonly IInternalMessageDispatcher m_localProcess;
         private readonly IInterprocessClientProxy m_proxyToThis;
         private readonly IBinarySerializer m_binarySerializer;
+        private readonly IClientConnectionManager m_connectionManager;
         private readonly SimpleUniqueIdFactory<PendingClientCall> m_pendingRequests = new SimpleUniqueIdFactory<PendingClientCall>();
         private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
 
@@ -39,13 +40,12 @@ namespace Spfx.Runtime.Client
         public ClientSameClusterInterprocessConnection(ITypeResolver typeResolver)
         {
             m_localProcess = typeResolver.GetSingleton<IInternalMessageDispatcher>();
-
             UniqueId = m_localProcess.LocalProcessUniqueId + "/0";
 
             m_proxyToThis = new ConcreteClientProxy(this);
             m_binarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
 
-            typeResolver.GetSingleton<IClientConnectionManager>().RegisterClientChannel(this);
+            m_connectionManager = typeResolver.GetSingleton<IClientConnectionManager>();
         }
 
         Task IClientInterprocessConnection.ChangeEventSubscription(EventRegistrationRequestInfo req)
@@ -84,7 +84,7 @@ namespace Spfx.Runtime.Client
 
         void IInterprocessConnection.Initialize()
         {
-            // TODO - Bad code
+            m_connectionManager.RegisterClientChannel(this);
         }
 
         void IInterprocessClientChannel.Initialize(IClientRequestHandler clientConnectionsManager)
