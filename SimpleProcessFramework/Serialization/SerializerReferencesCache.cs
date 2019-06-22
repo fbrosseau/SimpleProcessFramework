@@ -82,7 +82,9 @@ namespace Spfx.Serialization
                 typeof(RemoteCallSuccessResponse),
                 typeof(RemoteClientConnectionRequest),
                 typeof(RemoteClientConnectionResponse),
-                typeof(WrappedInterprocessMessage)
+                typeof(WrappedInterprocessMessage),
+                typeof(RemoteExceptionInfo),
+                typeof(MarshalledRemoteExceptionInfo)
             };
 
             AddHardcodedTypeReference(typeof(CancellationToken));
