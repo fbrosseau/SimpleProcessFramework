@@ -15,8 +15,9 @@ namespace Spfx.Runtime.Server.Processes
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
         protected ProcessClusterConfiguration Config { get; }
-        private readonly IInternalProcessBroker m_processBroker;
         public ProcessInformation ProcessInfo { get; private set; }
+        private readonly IInternalProcessBroker m_processBroker;
+        private readonly AsyncManualResetEvent m_initEvent = new AsyncManualResetEvent();
 
         protected IBinarySerializer BinarySerializer { get; }
 
@@ -31,31 +32,55 @@ namespace Spfx.Runtime.Server.Processes
         public async Task CreateProcess(ProcessSpawnPunchPayload punchPayload)
         {
             ProcessInfo = await CreateActualProcessAsync(punchPayload);
+            m_initEvent.Set();
+        }
+
+        protected override void OnDispose()
+        {
+            m_initEvent.Dispose();
+            base.OnDispose();
         }
 
         protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
-        protected abstract override Task OnTeardownAsync(CancellationToken ct);
 
-        void IProcessHandle.HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
+        void IProcessHandle.HandleMessage(string connectionId, WrappedInterprocessMessage wrappedMessage)
         {
-            HandleMessage(source.UniqueId, wrappedMessage);
-        }
-        
-        void IProcessHandle.ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage msg)
-        {
-            SendBackMessage(source.UniqueId, msg);
+            _ = PrepareTransferToRemote(connectionId, wrappedMessage);
         }
 
-        public void SendBackMessage(string connectionId, IInterprocessMessage msg)
+        public void HandleMessage(string connectionId, IInterprocessMessage msg)
         {
             var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
             wrapped.SourceConnectionId = connectionId;
-            HandleMessage(connectionId, wrapped);
+            _ = PrepareTransferToRemote(connectionId, wrapped);
         }
 
-        protected abstract void HandleMessage(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage);
+        private async ValueTask PrepareTransferToRemote(string connectionId, WrappedInterprocessMessage wrappedMessage)
+        {
+            try
+            {
+                await WaitForInitializationComplete();
+                TransferMessageToRemote(connectionId, wrappedMessage);
+            }
+            catch(Exception ex)
+            {
+                OnDeliveryFailed(wrappedMessage, ex);
+            }
+        }
+
+        protected abstract void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage);
 
         protected void OnMessageReceivedFromProcess(WrappedInterprocessMessage msg)
+        {
+            DispatchMessageBackToMaster(msg);
+        }
+
+        protected void OnDeliveryFailed(WrappedInterprocessMessage wrappedMessage, Exception ex)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void DispatchMessageBackToMaster(WrappedInterprocessMessage msg)
         {
             m_processBroker.ForwardMessage(new ShallowConnectionProxy(this, msg.SourceConnectionId), msg);
         }
@@ -63,6 +88,11 @@ namespace Spfx.Runtime.Server.Processes
         Task<IInterprocessClientChannel> IMessageCallbackChannel.GetClientInfo(string uniqueId)
         {
             throw new NotImplementedException();
+        }
+
+        public ValueTask WaitForInitializationComplete()
+        {
+            return m_initEvent.WaitAsync();
         }
     }
 }

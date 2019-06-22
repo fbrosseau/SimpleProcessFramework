@@ -33,14 +33,14 @@ namespace Spfx.Interfaces
 
     public static class EndpointBrokerExtensions
     {
-        public static Task<ProcessCreationOutcome> CreateEndpoint(this IEndpointBroker broker, string uniqueId, ReflectedTypeInfo endpointType, ReflectedTypeInfo implType, bool failIfExists = true)
+        public static Task<ProcessCreationOutcome> CreateEndpoint(this IEndpointBroker broker, string uniqueId, ReflectedTypeInfo endpointType, ReflectedTypeInfo implType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
             return broker.CreateEndpoint(new EndpointCreationRequest
             {
                 EndpointId = uniqueId,
                 EndpointType = endpointType,
                 ImplementationType = implType,
-                FailIfExists = failIfExists
+                Options = options
             });
         }
     }

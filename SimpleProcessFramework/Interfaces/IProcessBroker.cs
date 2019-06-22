@@ -50,8 +50,14 @@ namespace Spfx.Interfaces
     public enum ProcessCreationOutcome
     {
         CreatedNew,
-        ProcessAlreadyExists,
-        EndpointAlreadyExists
+        AlreadyExists,
+        Failure
+    }
+
+    public enum ProcessCreationOptions
+    {
+        ContinueIfExists,
+        ThrowIfExists
     }
 
     [DataContract]
@@ -64,7 +70,7 @@ namespace Spfx.Interfaces
         [DataMember]
         public ReflectedTypeInfo ImplementationType { get; set; }
         [DataMember]
-        public bool FailIfExists { get; set; } = true;
+        public ProcessCreationOptions Options { get; set; } = ProcessCreationOptions.ThrowIfExists;
 
         internal void EnsureIsValid()
         {
@@ -104,6 +110,21 @@ namespace Spfx.Interfaces
         }
     }
 
+    [DataContract]
+    public class ProcessAndEndpointCreationOutcome
+    {
+        [DataMember]
+        public ProcessCreationOutcome ProcessOutcome { get; }
+        [DataMember]
+        public ProcessCreationOutcome EndpointOutcome { get; }
+
+        public ProcessAndEndpointCreationOutcome(ProcessCreationOutcome processOutcome, ProcessCreationOutcome endpointOutcome)
+        {
+            ProcessOutcome = processOutcome;
+            EndpointOutcome = endpointOutcome;
+        }
+    }
+
     public interface IProcessBroker
     {
         event EventHandler<ProcessEventArgs> ProcessCreated;
@@ -115,7 +136,7 @@ namespace Spfx.Interfaces
         Task<ProcessClusterHostInformation> GetHostInformation();
 
         Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req);
-        Task<ProcessCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
+        Task<ProcessAndEndpointCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
 
         Task<bool> DestroyProcess(string processName, bool onlyIfEmpty = true);
     }

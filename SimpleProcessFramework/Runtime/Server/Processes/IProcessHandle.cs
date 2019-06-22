@@ -11,9 +11,10 @@ namespace Spfx.Runtime.Server.Processes
         ProcessKind ProcessKind { get; }
         ProcessInformation ProcessInfo { get; }
 
-        void HandleMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
-        void ProcessIncomingRequest(IInterprocessClientProxy source, IInterprocessMessage req);
+        void HandleMessage(string connectionId, WrappedInterprocessMessage wrappedMessage);
+        void HandleMessage(string connectionId, IInterprocessMessage wrappedMessage);
 
         Task CreateProcess(ProcessSpawnPunchPayload punchPayload);
+        ValueTask WaitForInitializationComplete();
     }
 }

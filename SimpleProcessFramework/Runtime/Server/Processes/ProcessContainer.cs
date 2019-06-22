@@ -32,7 +32,7 @@ namespace Spfx.Runtime.Server.Processes
 
     internal interface IMessageCallbackChannel
     {
-        void SendBackMessage(string connectionId, IInterprocessMessage msg);
+        void HandleMessage(string connectionId, IInterprocessMessage msg);
         Task<IInterprocessClientChannel> GetClientInfo(string uniqueId);
     }
 
@@ -166,7 +166,7 @@ namespace Spfx.Runtime.Server.Processes
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));
 
-            m_connector.SendBackMessage(source.UniqueId, req);
+            m_connector.HandleMessage(source.UniqueId, req);
         }
     }
 
@@ -190,7 +190,7 @@ namespace Spfx.Runtime.Server.Processes
 
         public void SendMessage(IInterprocessMessage msg)
         {
-            m_owner.SendBackMessage(UniqueId, msg);
+            m_owner.HandleMessage(UniqueId, msg);
         }
     }
 }

@@ -19,8 +19,11 @@ namespace Spfx.Tests
 
         public static void Unwrap(Task task)
         {
-            if (!task.Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
+            if (!task.Wrap().Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
                 throw new TimeoutException();
+
+            // to rethrow the original clean exception
+            task.GetAwaiter().GetResult();
         }
 
         public static T Unwrap<T>(Task<T> task)
@@ -29,7 +32,13 @@ namespace Spfx.Tests
             return task.Result;
         }
 
-        public static void UnwrapException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null)
+        public static void UnwrapException<TException>(Task task, Action<TException> inspectException = null)
+            where TException : Exception
+        {
+            UnwrapException(task, typeof(TException), exceptionCallback: ex => inspectException((TException)ex));
+        }
+
+        public static void UnwrapException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null, Action<Exception> exceptionCallback = null)
         {
             if (!task.Wrap().Wait(TimeSpan.FromSeconds(30)))
                 throw new TimeoutException();
@@ -48,6 +57,8 @@ namespace Spfx.Tests
             {
                 Assert.IsTrue(ex.StackTrace?.Contains(expectedStackFrame));
             }
+
+            exceptionCallback?.Invoke(ex);
         }
 
         public static void AssertRangeEqual<T>(IEnumerable<T> expectedValues, IEnumerable<T> actualValues)

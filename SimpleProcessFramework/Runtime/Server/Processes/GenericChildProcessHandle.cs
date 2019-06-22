@@ -357,7 +357,7 @@ namespace Spfx.Runtime.Server.Processes
             throw new NotImplementedException();
         }
 
-        protected override void HandleMessage(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
+        protected override void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
         {
             wrappedMessage.SourceConnectionId = sourceConnectionId;
             m_ipcConnector.ForwardMessage(wrappedMessage);

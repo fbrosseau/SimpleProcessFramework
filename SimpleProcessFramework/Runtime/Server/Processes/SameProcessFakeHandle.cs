@@ -51,7 +51,7 @@ namespace Spfx.Runtime.Server.Processes
                 throw new System.NotImplementedException();
             }
 
-            public void SendBackMessage(string connectionId, IInterprocessMessage msg)
+            public void HandleMessage(string connectionId, IInterprocessMessage msg)
             {
                 var wrapped = WrappedInterprocessMessage.Wrap(msg, m_owner.BinarySerializer);
                 wrapped.SourceConnectionId = connectionId;
@@ -64,7 +64,7 @@ namespace Spfx.Runtime.Server.Processes
             }
         }
 
-        protected override void HandleMessage(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
+        protected override void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
         {
             m_rawProcessContainer.OnMessageReceived(wrappedMessage);
         }

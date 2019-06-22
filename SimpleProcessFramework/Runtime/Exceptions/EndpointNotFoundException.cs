@@ -1,23 +1,22 @@
-﻿using System;
+﻿using System.Runtime.Serialization;
 
 namespace Spfx.Runtime.Exceptions
 {
-    public class EndpointNotFoundException : Exception
+    [DataContract]
+    public class EndpointNotFoundException : SerializableException
     {
-        private ProcessEndpointAddress destination;
+        [DataMember]
+        public string EndpointId { get; }
 
-        public EndpointNotFoundException(ProcessEndpointAddress destination)
+        public EndpointNotFoundException(ProcessEndpointAddress endpoint)
+            : this(endpoint.ToString())
         {
-            this.destination = destination;
         }
-    }
-    public class EndpointAlreadyExistsException : Exception
-    {
-        private string destination;
 
-        public EndpointAlreadyExistsException(string destination)
+        public EndpointNotFoundException(string endpoint)
+            : base("Endpoint not found: " + endpoint)
         {
-            this.destination = destination;
+            EndpointId = endpoint;
         }
     }
 }

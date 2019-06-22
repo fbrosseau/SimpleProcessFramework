@@ -11,6 +11,7 @@ using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities.Threading;
+using System.Runtime.Serialization;
 
 namespace Spfx.Runtime.Server
 {
@@ -93,29 +94,6 @@ namespace Spfx.Runtime.Server
             await base.OnTeardownAsync(ct);
         }
 
-        void IIncomingClientMessagesHandler.ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
-        {
-            string targetProcess;
-            if (wrappedMessage.IsRequest)
-            {
-                targetProcess = wrappedMessage.Destination.TargetProcess;
-            }
-            else
-            {
-                targetProcess = wrappedMessage.SourceConnectionId.Substring(0, wrappedMessage.SourceConnectionId.IndexOf('/'));
-            }
-
-            if (ProcessEndpointAddress.StringComparer.Equals(targetProcess, Process2.MasterProcessUniqueId))
-            {
-                m_masterProcess.ProcessIncomingMessage(source, wrappedMessage);
-            }
-            else
-            {
-                IProcessHandle target = GetSubprocess(targetProcess, throwIfMissing: true);
-                target.HandleMessage(source, wrappedMessage);
-            }
-        }
-
         private IProcessHandle GetSubprocess(string targetProcess, bool throwIfMissing)
         {
             IProcessHandle target;
@@ -143,18 +121,28 @@ namespace Spfx.Runtime.Server
 
             try
             {
+                IProcessHandle existingHandle = null;
                 lock (m_subprocesses)
                 {
                     ThrowIfDisposing();
 
-                    if (m_subprocesses.ContainsKey(info.ProcessUniqueId))
+                    if (m_subprocesses.TryGetValue(info.ProcessUniqueId, out existingHandle))
                     {
-                        if (req.MustCreateNew)
-                            throw new InvalidOperationException("The process already exists");
-                        return ProcessCreationOutcome.ProcessAlreadyExists;
-                    }
+                        handle.Dispose();
 
-                    m_subprocesses.Add(info.ProcessUniqueId, handle);
+                        if ((req.Options & ProcessCreationOptions.ThrowIfExists) != 0)
+                            throw new ProcessAlreadyExistsException(info.ProcessUniqueId);
+                    }
+                    else
+                    {
+                        m_subprocesses.Add(info.ProcessUniqueId, handle);
+                    }
+                }
+
+                if (existingHandle != null)
+                {
+                    await existingHandle.WaitForInitializationComplete();
+                    return ProcessCreationOutcome.AlreadyExists;
                 }
 
                 var punchPayload = new ProcessSpawnPunchPayload
@@ -184,19 +172,20 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public async Task<ProcessCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
+        public async Task<ProcessAndEndpointCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
         {
             processReq.EnsureIsValid();
             endpointReq.EnsureIsValid();
 
-            var processOutcome = ProcessCreationOutcome.ProcessAlreadyExists;
+            var processOutcome = ProcessCreationOutcome.Failure;
+            ProcessCreationOutcome endpointOutcome;
 
             try
             {
                 processOutcome = await CreateProcess(processReq);
                 var addr = $"/{processReq.ProcessInfo.ProcessUniqueId}/{WellKnownEndpoints.EndpointBroker}";
                 var processBroker = MasterProcess.ClusterProxy.CreateInterface<IEndpointBroker>(addr);
-                return await processBroker.CreateEndpoint(endpointReq);
+                endpointOutcome = await processBroker.CreateEndpoint(endpointReq);
             }
             catch
             {
@@ -207,6 +196,8 @@ namespace Spfx.Runtime.Server
 
                 throw;
             }
+
+            return new ProcessAndEndpointCreationOutcome(processOutcome, endpointOutcome);
         }
 
         private void ApplyConfigToProcessRequest(ProcessCreationRequest req)
@@ -312,15 +303,41 @@ namespace Spfx.Runtime.Server
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));
 
-            var sourceProxy = source.GetWrapperProxy();
             if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.TargetProcess, Process2.MasterProcessUniqueId))
             {
+                var sourceProxy = source.GetWrapperProxy();
                 m_masterProcess.ProcessIncomingMessage(sourceProxy, req);
             }
             else
             {
                 var target = GetSubprocess(req.Destination.TargetProcess, throwIfMissing: true);
-                target.ProcessIncomingRequest(sourceProxy, req);
+                target.HandleMessage(source.UniqueId, req);
+            }
+        }
+
+        void IIncomingClientMessagesHandler.ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
+        {
+            Guard.ArgumentNotNull(source, nameof(source));
+            Guard.ArgumentNotNull(wrappedMessage, nameof(wrappedMessage));
+
+            string targetProcess;
+            if (wrappedMessage.IsRequest)
+            {
+                targetProcess = wrappedMessage.Destination.TargetProcess;
+            }
+            else
+            {
+                targetProcess = wrappedMessage.SourceConnectionId.Substring(0, wrappedMessage.SourceConnectionId.IndexOf('/'));
+            }
+
+            if (ProcessEndpointAddress.StringComparer.Equals(targetProcess, Process2.MasterProcessUniqueId))
+            {
+                m_masterProcess.ProcessIncomingMessage(source, wrappedMessage);
+            }
+            else
+            {
+                IProcessHandle target = GetSubprocess(targetProcess, throwIfMissing: true);
+                target.HandleMessage(source.UniqueId, wrappedMessage);
             }
         }
 

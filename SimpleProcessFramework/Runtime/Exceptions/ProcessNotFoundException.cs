@@ -1,11 +1,17 @@
-﻿using System;
+﻿using System.Runtime.Serialization;
 
 namespace Spfx.Runtime.Exceptions
 {
-    public class ProcessNotFoundException : Exception
+    [DataContract]
+    public class ProcessNotFoundException : SerializableException
     {
-        public ProcessNotFoundException(string targetProcess)
+        [DataMember]
+        public string ProcessId { get; }
+
+        public ProcessNotFoundException(string processId)
+            : base("Process not found: " + processId)
         {
+            ProcessId = processId;
         }
     }
 }

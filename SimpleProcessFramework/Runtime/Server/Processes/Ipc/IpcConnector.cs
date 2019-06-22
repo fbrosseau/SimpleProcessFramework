@@ -31,7 +31,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             SendCode(InterprocessFrameType.Handshake3);
         }
 
-        void IMessageCallbackChannel.SendBackMessage(string connectionId, IInterprocessMessage msg)
+        void IMessageCallbackChannel.HandleMessage(string connectionId, IInterprocessMessage msg)
         {
             var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
             wrapped.SourceConnectionId = connectionId;

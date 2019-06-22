@@ -1,15 +1,15 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
-using Spfx.Reflection;
-using Spfx.Runtime.Server;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Serialization;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static Spfx.Tests.TestUtilities;
@@ -23,83 +23,11 @@ namespace Spfx.Tests.Integration
 
         private static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
 
-        public interface ITestInterface
-        {
-            Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default, string exceptionText = null);
-            Task<string> GetActualProcessName();
-            Task<int> GetPointerSize();
-            Task<string> GetEnvironmentVariable(string key);
-            Task<int> Callback(string uri, int num);
-            Task<ProcessKind> GetRealProcessKind();
-            Task<OsKind> GetOsKind();
-            Task<string> GetActualRuntime();
-            Task<int> GetProcessId();
-            Task<bool> IsWsl();
-        }
-
-        public interface ICallbackInterface
-        {
-            Task<int> Double(int i);
-        }
-
-        private class CallbackInterface : ICallbackInterface
-        {
-            public Task<int> Double(int i)
-            {
-                return Task.FromResult(i * 2);
-            }
-        }
-
-        private class TestInterface : AbstractProcessEndpoint, ITestInterface
-        {
-            public Task<int> Callback(string uri, int num)
-            {
-                return ParentProcess.ClusterProxy.CreateInterface<ICallbackInterface>(uri).Double(num);
-            }
-
-            public Task<string> GetActualProcessName()
-            {
-                return Task.FromResult(Process.GetCurrentProcess().ProcessName);
-            }
-
-            public Task<string> GetActualRuntime()
-            {
-                return Task.FromResult(HostFeaturesHelper.CurrentProcessRuntimeDescription);
-            }
-
-            public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
-            {
-                if (delay > TimeSpan.Zero)
-                {
-                    await Task.Delay(delay, ct);
-                }
-
-                if (exceptionToThrow != null)
-                {
-                    ThrowException_ThisMethodNameShouldBeInExceptionCallstack(exceptionToThrow, exceptionText);
-                }
-
-                return new DummyReturn
-                {
-                    DummyValue = DummyReturn.ExpectedDummyValue
-                };
-            }
-
-            public static readonly string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);
-
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            private void ThrowException_ThisMethodNameShouldBeInExceptionCallstack(ReflectedTypeInfo exceptionToThrow, string exceptionText)
-            {
-                throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, new object[] { exceptionText ?? "<no exception text>" });
-            }
-
-            public Task<string> GetEnvironmentVariable(string key) => Task.FromResult(Environment.GetEnvironmentVariable(key));
-            public Task<OsKind> GetOsKind() => Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);
-            public Task<int> GetPointerSize() => Task.FromResult(IntPtr.Size);
-            public Task<ProcessKind> GetRealProcessKind() => Task.FromResult(HostFeaturesHelper.LocalProcessKind);
-            public Task<int> GetProcessId() => Task.FromResult(Process.GetCurrentProcess().Id);
-            public Task<bool> IsWsl() => Task.FromResult(HostFeaturesHelper.IsInsideWsl);
-        }
+#if NETFRAMEWORK
+        private static readonly ProcessKind SimpleIsolationKind = ProcessKind.AppDomain;
+#else
+        private static readonly ProcessKind SimpleIsolationKind = ProcessKind.Netcore;
+#endif
 
         private ProcessCluster CreateTestCluster()
         {
@@ -218,6 +146,175 @@ namespace Spfx.Tests.Integration
             }
         }
 
+        private class LongInitEndpoint : TestInterface
+        {
+            protected override async Task InitializeAsync()
+            {
+                await Task.Delay(1000);
+                await base.InitializeAsync();
+            }
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void ConcurrentCreateProcess_Throw() => ConcurrentCreateProcess(ProcessCreationOptions.ThrowIfExists);
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void ConcurrentCreateProcess_NoThrow() => ConcurrentCreateProcess(ProcessCreationOptions.ContinueIfExists);
+
+        private void ConcurrentCreateProcess(ProcessCreationOptions mustCreateNewProcess)
+        {
+            using (var cluster = CreateTestCluster())
+            {
+                var tasks = new List<Task<Task<ProcessCreationOutcome>>>();
+                var processId = "asdfasdf";
+
+                const int concurrencyCount = 10;
+
+                for (int i = 0; i < concurrencyCount; ++i)
+                {
+                    int innerI = i;
+                    var t = Task.Run(() =>
+                    {
+                        return cluster.ProcessBroker.CreateProcess(new ProcessCreationRequest
+                        {
+                            Options = mustCreateNewProcess,
+                            ProcessInfo = new ProcessCreationInfo
+                            {
+                                ProcessUniqueId = processId
+                            }
+                        });
+                    }).Wrap();
+
+                    tasks.Add(t);
+                }
+
+                Task.WaitAll(tasks.ToArray());
+
+                Assert.AreEqual(1, tasks.Count(t => t.Result.Status == TaskStatus.RanToCompletion && t.Result.Result == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+
+                if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
+                    Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Status == TaskStatus.Faulted), "Expected all other tasks to fail");
+                else
+                    Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
+            }
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void DuplicateProcesses_ThrowsExpectedException()
+        {
+            using (var cluster = CreateTestCluster())
+            {
+                const string procId = "asiejfiwaj";
+                var procInfo = new ProcessCreationRequest
+                {
+                    Options = ProcessCreationOptions.ThrowIfExists,
+                    ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId }
+                };
+
+                Unwrap(cluster.ProcessBroker.CreateProcess(procInfo));
+
+                UnwrapException(cluster.ProcessBroker.CreateProcess(procInfo), (ProcessAlreadyExistsException ex) =>
+                {
+                    Assert.AreEqual(procId, ex.ProcessId);
+                    Assert.IsTrue(ex.ToString().Contains(procId));
+                });
+            }
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void DuplicateEndpoints_ThrowsExpectedException()
+        {
+            using (var cluster = CreateTestCluster())
+            {
+                const string procId = "asiejfiwaj";
+                const string epId = "asijdfjigij";
+
+                var procInfo = new ProcessCreationRequest
+                {
+                    Options = ProcessCreationOptions.ContinueIfExists,
+                    ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId, ProcessKind = SimpleIsolationKind }
+                };
+
+                var epInfo = new EndpointCreationRequest
+                {
+                    EndpointId = epId,
+                    ImplementationType = typeof(TestInterface),
+                    EndpointType = typeof(ITestInterface),
+                    Options = ProcessCreationOptions.ThrowIfExists
+                };
+
+                Unwrap(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo));
+                UnwrapException(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo),
+                    (EndpointAlreadyExistsException ex) =>
+                {
+                    Assert.AreEqual(epId, ex.EndpointId);
+                    Assert.IsTrue(ex.ToString().Contains(epId));
+                });
+            }
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void ConcurrentCreateProcessAndEndpoint_Throw() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ThrowIfExists);
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void ConcurrentCreateProcessAndEndpoint_NoThrow() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ContinueIfExists);
+
+        public void ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions mustCreateNewProcess)
+        {
+            using (var cluster = CreateTestCluster())
+            {
+                var tasks = new List<Task<Task<ProcessAndEndpointCreationOutcome>>>();
+                var processId = "asdfasdf";
+
+                const int concurrencyCount = 10;
+
+                for (int i = 0; i < concurrencyCount; ++i)
+                {
+                    int innerI = i;
+
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        var endpointId = "test_" + innerI;
+                        var result = await cluster.ProcessBroker.CreateProcessAndEndpoint(new ProcessCreationRequest
+                        {
+                            Options = mustCreateNewProcess,
+                            ProcessInfo = new ProcessCreationInfo
+                            {
+                                ProcessUniqueId = processId
+                            }
+                        }, new EndpointCreationRequest
+                        {
+                            Options = ProcessCreationOptions.ThrowIfExists,
+                            EndpointId = endpointId,
+                            EndpointType = typeof(ITestInterface),
+                            ImplementationType = typeof(LongInitEndpoint)
+                        });
+
+                        var ep = cluster.PrimaryProxy.CreateInterface<ITestInterface>($"/{processId}/{endpointId}");
+                        Assert.AreEqual(innerI, await ep.Echo(innerI));
+
+                        return result;
+                    }).Wrap());
+                }
+
+                Task.WaitAll(tasks.ToArray());
+
+                Assert.AreEqual(1, tasks.Count(t => t.Result.Status == TaskStatus.RanToCompletion && t.Result.Result.ProcessOutcome == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+
+                if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
+                {
+                    Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Status == TaskStatus.Faulted), "Expected all other tasks to fail");
+                }
+                else
+                {
+                    Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result.ProcessOutcome == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
+
+                    foreach (var t in tasks)
+                    {
+                        Assert.AreEqual(ProcessCreationOutcome.CreatedNew, t.Result.Result.EndpointOutcome);
+                    }
+                }
+            }
+        }
+
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
         {
             using (var cluster = CreateTestCluster())
@@ -250,7 +347,7 @@ namespace Spfx.Tests.Integration
                 EndpointId = callbackEndpoint,
                 EndpointType = typeof(ICallbackInterface),
                 ImplementationType = typeof(CallbackInterface),
-                FailIfExists = true
+                Options = ProcessCreationOptions.ThrowIfExists
             }));
 
             var input = 5;
@@ -274,8 +371,6 @@ namespace Spfx.Tests.Integration
         private static void DisposeTestProcess(TestInterfaceWrapper testInterface)
         {
             var svc = testInterface.TestInterface;
-            var processKind = Unwrap(svc.GetRealProcessKind());
-
             var proc = testInterface.ProcessInfo;
             var pid = proc.Id;
 
@@ -333,7 +428,7 @@ namespace Spfx.Tests.Integration
             var procId = Guid.NewGuid().ToString("N");
             var req = new ProcessCreationRequest
             {
-                MustCreateNew = true,
+                Options = ProcessCreationOptions.ThrowIfExists,
                 ProcessInfo = new ProcessCreationInfo
                 {
                     ProcessUniqueId = procId,
@@ -410,15 +505,13 @@ namespace Spfx.Tests.Integration
             Log("GetPointerSize");
             Assert.AreEqual(expectedPtrSize, Unwrap(iface.GetPointerSize()));
 
-            /*
-             * TODO - 3.0 preview returns 2.1 :/
-             * 
-             * if (!string.IsNullOrWhiteSpace(requestedRuntime))
+            if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
-                var m = Regex.Match(Unwrap(iface.GetActualRuntime()), @"v(?<v>(\d|\.)+)");
-                var ver = m.Groups["v"].Value;
-                Assert.IsTrue(ver.Contains(requestedRuntime) || requestedRuntime.Contains(ver), $"Expected runtime version {requestedRuntime} actual {ver}");
-            }*/
+                var ver = Unwrap(iface.GetNetCoreVersion());
+                var requestedVersion = new Version(requestedRuntime);
+                Assert.AreEqual(requestedVersion.Major, ver.Major, "Unexpected runtime version");
+                Assert.AreEqual(requestedVersion.Minor, ver.Minor, "Unexpected runtime version");
+            }
 
             Log("CreateSuccessfulSubprocess success");
 

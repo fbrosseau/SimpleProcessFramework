@@ -7,7 +7,7 @@ namespace Spfx.Interfaces
     public class ProcessCreationRequest
     {
         [DataMember]
-        public bool MustCreateNew { get; set; } = true;
+        public ProcessCreationOptions Options { get; set; } = ProcessCreationOptions.ThrowIfExists;
 
         [DataMember]
         public ProcessCreationInfo ProcessInfo { get; set; }

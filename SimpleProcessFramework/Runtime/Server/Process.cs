@@ -32,10 +32,10 @@ namespace Spfx.Runtime.Server
 
         ProcessEndpointAddress UniqueAddress { get; }
 
-        Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists = true);
-        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true);
-        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, bool failIfExists = true);
-        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists);
+        Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists);
         Task<bool> DestroyEndpoint(string uniqueId);
 
         Task AutoDestroyAsync();
@@ -203,27 +203,27 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
-            return InitializeEndpointAsync(address, DefaultTypeResolver.CreateSingleton<T>());
+            return InitializeEndpointAsync(address, DefaultTypeResolver.CreateSingleton<T>(), options);
         }
 
-        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, Type impl, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
-            return InitializeEndpointAsync(address, typeof(T), impl, failIfExists);
+            return InitializeEndpointAsync(address, typeof(T), impl, options);
         }
 
-        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, bool failIfExists = true)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync<T>(string address, T handler, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
-            return InitializeEndpointAsync(address, typeof(T), handler, failIfExists);
+            return InitializeEndpointAsync(address, typeof(T), handler, options);
         }
 
-        public Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, bool failIfExists)
+        public Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
             var instance = DefaultTypeResolver.CreateInstance(endpointType, implementationType);
             try
             {
-                return InitializeEndpointAsync(uniqueId, endpointType, instance, failIfExists);
+                return InitializeEndpointAsync(uniqueId, endpointType, instance, options);
             }
             catch
             {
@@ -232,7 +232,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public async Task<ProcessCreationOutcome> InitializeEndpointAsync(string address, Type interfaceType, object handler, bool failIfExists)
+        public async Task<ProcessCreationOutcome> InitializeEndpointAsync(string address, Type interfaceType, object handler, ProcessCreationOptions options)
         {
             var wrapper = ProcessEndpointHandlerFactory.Create(handler, interfaceType);
 
@@ -241,9 +241,9 @@ namespace Spfx.Runtime.Server
                 ThrowIfDisposed();
                 if (m_endpointHandlers.ContainsKey(address))
                 {
-                    if (failIfExists)
+                    if ((options & ProcessCreationOptions.ThrowIfExists) != 0)
                         throw new EndpointAlreadyExistsException(address);
-                    return ProcessCreationOutcome.EndpointAlreadyExists;
+                    return ProcessCreationOutcome.AlreadyExists;
                 }
                 m_endpointHandlers.Add(address, wrapper);
             }
