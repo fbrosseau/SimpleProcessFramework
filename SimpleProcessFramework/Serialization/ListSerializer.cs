@@ -16,7 +16,7 @@ namespace Spfx.Serialization
     {
         public object ReadObject(DeserializerSession reader)
         {
-            int count = reader.Reader.ReadEncodedInt32();
+            int count = checked((int) reader.Reader.ReadEncodedUInt32());
             var list = new List<T>(count);
 
             for (int i = 0; i < count; ++i)
@@ -30,7 +30,7 @@ namespace Spfx.Serialization
         public void WriteObject(SerializerSession bw, object graph)
         {
             var arr = (ICollection<T>)graph;
-            bw.Writer.WriteEncodedInt32(arr.Count);
+            bw.Writer.WriteEncodedUInt32(checked((uint)arr.Count));
 
             foreach (var i in arr)
             {

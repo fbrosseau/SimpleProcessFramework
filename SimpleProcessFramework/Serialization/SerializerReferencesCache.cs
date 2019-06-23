@@ -9,10 +9,9 @@ using System.Threading;
 
 namespace Spfx.Serialization
 {
-
     internal class SerializerReferencesCache
     {
-        private readonly Dictionary<object, int> m_referencesByObject = new Dictionary<object, int>();
+        private Dictionary<object, int> m_referencesByObject;
 
         private readonly SerializerReferencesCache m_parent;
 
@@ -20,7 +19,7 @@ namespace Spfx.Serialization
 
         static SerializerReferencesCache()
         {
-            HardcodedReferences = new SerializerReferencesCache();
+            HardcodedReferences = new SerializerReferencesCache { m_referencesByObject = new Dictionary<object, int>() };
 
             void AddHardcodedReference(object o)
             {
@@ -124,7 +123,8 @@ namespace Spfx.Serialization
             if (parentIndex != null)
                 return parentIndex;
 
-            if (m_referencesByObject.TryGetValue(obj, out int idx))
+            int idx = 0;
+            if (m_referencesByObject?.TryGetValue(obj, out idx) == true)
                 return idx;
 
             if (!addIfMissing)
@@ -134,19 +134,25 @@ namespace Spfx.Serialization
             var objectTypeInfo = ReflectedTypeInfo.Create(objectType);
             GetOrCreateCacheIndex(objectTypeInfo);
 
-            idx = m_referencesByObject.Count;
-            SetReferenceKey(obj, idx);
-            return idx;
+            return AddNewReference(obj);
         }
 
-        public void SetReferenceKey(object obj, int idx)
+        private int AddNewReference(object obj)
         {
+            if (m_referencesByObject is null)
+                m_referencesByObject = new Dictionary<object, int>();
+
+            int idx = m_referencesByObject.Count;
             m_referencesByObject.Add(obj, idx);
+            return idx;
         }
 
         internal void WriteAllReferences(SerializerSession serializerSession)
         {
-            serializerSession.Writer.WriteEncodedInt32(m_referencesByObject.Count);
+            if (m_referencesByObject is null)
+                return;
+
+            serializerSession.Writer.WriteEncodedUInt32(checked((uint)m_referencesByObject.Count));
             foreach (var reference in m_referencesByObject.OrderBy(kvp => kvp.Value))
             {
                 serializerSession.Writer.WriteEncodedInt32(reference.Value);

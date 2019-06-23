@@ -8,7 +8,7 @@ using Spfx.Runtime.Messages;
 
 namespace Spfx.Tests.LowLevel.CodeGen
 {
-    [TestFixture]
+    [TestFixture, Parallelizable]
     public class InterfaceProxyTests : CommonTestClass
     {
         public interface ITestInterface1

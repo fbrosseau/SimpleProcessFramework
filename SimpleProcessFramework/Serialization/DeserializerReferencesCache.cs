@@ -5,8 +5,7 @@ namespace Spfx.Serialization
 {
     internal class DeserializerReferencesCache
     {
-        private readonly Dictionary<int, object> m_referencesById = new Dictionary<int, object>();
-
+        private Dictionary<int, object> m_referencesById;
         private readonly DeserializerReferencesCache m_parent;
 
         public static DeserializerReferencesCache HardcodedReferences { get; }
@@ -27,7 +26,8 @@ namespace Spfx.Serialization
             if (parentValue != null)
                 return parentValue;
 
-            if (!m_referencesById.TryGetValue(referenceId, out var val))
+            object val = null;
+            if (m_referencesById?.TryGetValue(referenceId, out val) != true)
             {
                 if (mustExist)
                     throw new SerializationException("Unknown reference in stream");
@@ -38,6 +38,8 @@ namespace Spfx.Serialization
 
         public void SetReferenceKey(object obj, int idx)
         {
+            if (m_referencesById is null)
+                m_referencesById = new Dictionary<int, object>();
             m_referencesById.Add(idx, obj);
         }
     }

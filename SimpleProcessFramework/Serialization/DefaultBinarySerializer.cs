@@ -22,7 +22,11 @@ namespace Spfx.Serialization
 
             reader.PrepareRead();
 
-            return (T)Deserialize(reader, ReflectionUtilities.GetType<T>());
+            var res = (T)Deserialize(reader, ReflectionUtilities.GetType<T>());
+
+            reader.EndRead();
+
+            return res;
         }
 
         internal static object Deserialize(DeserializerSession reader, Type expectedType)
@@ -147,8 +151,13 @@ namespace Spfx.Serialization
             }
 
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadByte());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSByte());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt16());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt16());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt32());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt32());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt64());
+            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt64());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSingle());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDouble());
             AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDecimal());
@@ -159,8 +168,25 @@ namespace Spfx.Serialization
             AddSerializer2((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0), br => br.Reader.ReadByte() != 0);
             AddSerializer2((bw, o) => { }, br => CancellationToken.None);
             AddSerializer2((bw, o) => { }, br => EventArgs.Empty);
+            AddSerializer2(UnsafeWriteGuid, UnsafeReadGuid);
             AddSerializer2(WriteIPAddress, ReadIPAddress);
             AddSerializer2(WriteVersion, ReadVersion);
+        }
+
+        private static unsafe void UnsafeWriteGuid(SerializerSession session, Guid val)
+        {
+            long* int64 = (long*)&val;
+            session.Writer.Write(int64[0]);
+            session.Writer.Write(int64[1]);
+        }
+
+        private static unsafe Guid UnsafeReadGuid(DeserializerSession session)
+        {
+            Guid g = default;
+            long* int64 = (long*)&g;
+            int64[0] = session.Reader.ReadInt64();
+            int64[1] = session.Reader.ReadInt64();
+            return g;
         }
 
         private static void WriteVersion(SerializerSession session, Version val)

@@ -11,6 +11,7 @@
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <NuspecFile>../nuspec/SimpleProcessFramework.nuspec</NuspecFile>
     <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

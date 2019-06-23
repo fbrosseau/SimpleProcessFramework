@@ -37,18 +37,18 @@ namespace Spfx.Tests.Integration
             });
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess() => CreateAndDestroySuccessfulSubprocess();
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess_Netfx() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess_Netfx32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netfx32);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess_NetCore() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess_NetCore32() => CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Netcore32);
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         [Category("Windows-Only")]
         public void BasicDefaultNameSubprocess_Wsl()
         {
@@ -58,7 +58,7 @@ namespace Spfx.Tests.Integration
             CreateAndDestroySuccessfulSubprocess(p => p.ProcessKind = ProcessKind.Wsl);
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicTestInMasterProcess()
         {
             using (var cluster = CreateTestCluster())
@@ -67,13 +67,13 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
 
 #if NETFRAMEWORK
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         [Category("Windows-Only")]
         public void AppDomainCallbackToOtherProcess()
         {
@@ -83,16 +83,16 @@ namespace Spfx.Tests.Integration
         }
 #endif
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicNetcore_Runtime21() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicNetcore_Runtime30() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicEnvironmentVariableSubprocess()
         {
             var envVar = "AWGJIEAJWIGJIAWE";
@@ -112,7 +112,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicCustomNameSubprocess()
         {
             const string customProcessName = "Spfx.UnitTests.agj90gj09jg0a94jg094jg";
@@ -135,7 +135,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ThrowCustomException()
         {
             using (var cluster = CreateTestCluster())
@@ -155,9 +155,9 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ConcurrentCreateProcess_Throw() => ConcurrentCreateProcess(ProcessCreationOptions.ThrowIfExists);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ConcurrentCreateProcess_NoThrow() => ConcurrentCreateProcess(ProcessCreationOptions.ContinueIfExists);
 
         private void ConcurrentCreateProcess(ProcessCreationOptions mustCreateNewProcess)
@@ -198,7 +198,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void DuplicateProcesses_ThrowsExpectedException()
         {
             using (var cluster = CreateTestCluster())
@@ -220,7 +220,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void DuplicateEndpoints_ThrowsExpectedException()
         {
             using (var cluster = CreateTestCluster())
@@ -252,9 +252,9 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ConcurrentCreateProcessAndEndpoint_Throw() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ThrowIfExists);
-        [Test, Timeout(DefaultTestTimeout), Parallelizable]
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ConcurrentCreateProcessAndEndpoint_NoThrow() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ContinueIfExists);
 
         public void ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions mustCreateNewProcess)

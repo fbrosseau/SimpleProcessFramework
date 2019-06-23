@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.Serialization;
 
 namespace Spfx.Serialization
@@ -8,7 +9,8 @@ namespace Spfx.Serialization
         public Stream Stream { get; }
         public SerializerBinaryReader Reader { get; }
 
-        private readonly DeserializerReferencesCache m_localReferences = new DeserializerReferencesCache(DeserializerReferencesCache.HardcodedReferences);
+        private DeserializerReferencesCache m_localReferences;
+        private long m_finalPosition;
 
         public DeserializerSession(Stream s)
         {
@@ -46,15 +48,31 @@ namespace Spfx.Serialization
             Stream.Position = graphPosition + totalGraphSize;
 
             var referencesBlockSize = Reader.ReadInt32();
-            var totalReferences = Reader.ReadEncodedInt32();
-            for (int i = 0; i < totalReferences; ++i)
+            m_finalPosition = Stream.Position + referencesBlockSize;
+
+            if (referencesBlockSize == 0)
             {
-                var idx = Reader.ReadEncodedInt32();
-                var obj = DefaultBinarySerializer.Deserialize(this, typeof(object));
-                m_localReferences.SetReferenceKey(obj, idx);
+                m_localReferences = DeserializerReferencesCache.HardcodedReferences;
+            }
+            else
+            {
+                m_localReferences = new DeserializerReferencesCache(DeserializerReferencesCache.HardcodedReferences);
+                var totalReferences = Reader.ReadEncodedUInt32();
+
+                for (uint i = 0; i < totalReferences; ++i)
+                {
+                    var idx = Reader.ReadEncodedInt32();
+                    var obj = DefaultBinarySerializer.Deserialize(this, typeof(object));
+                    m_localReferences.SetReferenceKey(obj, idx);
+                }
             }
 
             Stream.Position = graphPosition;
+        }
+
+        internal void EndRead()
+        {
+            Stream.Position = m_finalPosition;
         }
     }
 }

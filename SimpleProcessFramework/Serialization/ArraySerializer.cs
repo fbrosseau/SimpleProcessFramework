@@ -15,7 +15,7 @@ namespace Spfx.Serialization
     {
         public object ReadObject(DeserializerSession reader)
         {
-            int count = reader.Reader.ReadEncodedInt32();
+            int count = checked((int)reader.Reader.ReadEncodedUInt32());
             if (count == 0)
                 return Array.Empty<T>();
 
@@ -32,7 +32,7 @@ namespace Spfx.Serialization
         public void WriteObject(SerializerSession bw, object graph)
         {
             var arr = (T[])graph;
-            bw.Writer.WriteEncodedInt32(arr.Length);
+            bw.Writer.WriteEncodedUInt32(checked((uint)arr.Length));
 
             foreach (var i in arr)
             {
