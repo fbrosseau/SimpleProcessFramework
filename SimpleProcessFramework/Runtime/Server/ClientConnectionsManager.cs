@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Listeners;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
@@ -36,6 +39,14 @@ namespace Spfx.Runtime.Server
             catch
             {
                 RemoveListener(listener);
+            }
+        }
+
+        public List<EndPoint> GetListenEndpoints()
+        {
+            lock (m_listeners)
+            {
+                return m_listeners.OfType<IExternalConnectionsListener>().Select(l => l.ListenEndpoint).ToList();
             }
         }
 
