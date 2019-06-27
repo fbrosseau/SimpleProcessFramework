@@ -15,6 +15,11 @@ namespace Spfx.Runtime.Messages
         [DataMember]
         public bool Cancellable { get; set; }
 
+        public override string ToString()
+        {
+            return GetType().Name + "(#" + CallId + ")";
+        }
+
         public virtual bool ExpectResponse => false;
         public bool HasTimeout => AbsoluteTimeout > TimeSpan.Zero && AbsoluteTimeout != TimeSpan.MaxValue;
     }
