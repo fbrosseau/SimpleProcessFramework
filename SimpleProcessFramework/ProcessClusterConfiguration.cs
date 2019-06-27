@@ -22,10 +22,10 @@ namespace Spfx
         public bool UseGenericProcessSpawnOnWindows { get; set; } = true;
         public bool EnableNetcore { get; set; } = true;
 
-        public bool EnableAppDomains { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
-        public bool EnableNetfx { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
-        public bool Enable32Bit { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
-        public bool EnableWsl { get; set; } = HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows;
+        public bool EnableAppDomains { get; set; }
+        public bool EnableNetfx { get; set; } = HostFeaturesHelper.IsNetFxSupported;
+        public bool Enable32Bit { get; set; } = HostFeaturesHelper.Is32BitSupported;
+        public bool EnableWsl { get; set; }
 
         public bool CreateExecutablesIfMissing { get; set; } = true;
 
@@ -47,6 +47,8 @@ namespace Spfx
         [EditorBrowsable(EditorBrowsableState.Never)]
         public const string DefaultDefaultNetcoreCodeBase = "../netcoreapp2.1";
         public string DefaultNetcoreCodeBase { get; set; } = DefaultDefaultNetcoreCodeBase;
+
+        public bool FallbackToBestAvailableProcessKind { get; set; }
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

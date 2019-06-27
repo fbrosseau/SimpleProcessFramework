@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Spfx.Interfaces;
 
@@ -16,12 +14,19 @@ namespace Spfx.Utilities
 
         public static bool IsWindows => LocalMachineOsKind == OsKind.Windows;
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
+        public static bool Is32BitSupported => IsWindows;
 
         public static bool IsNetCoreSupported { get; } = !IsWindows || NetCoreExists(true);
         public static bool IsNetCore32Supported { get; } = IsWindows && NetCoreExists(false);
 
         private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
         public static bool IsInsideWsl { get; } = !IsWindows && s_isInsideWsl.Value;
+
+        public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
+        public static bool IsNetFxSupported { get; } = IsWindows;
+        public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
+        public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
+        public static Version NetcoreVersion => s_netcoreVersion.Value;
 
         public static string GetNetCoreHostPath(bool anyCpu)
         {
@@ -34,16 +39,6 @@ namespace Spfx.Utilities
 
             return Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramW6432%"), suffix);
         }
-
-        private static bool NetCoreExists(bool anyCpu)
-        {
-            return new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
-        }
-
-        public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
-        public static bool IsNetFxSupported { get; } = LocalMachineOsKind == OsKind.Windows;
-        public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
-        public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
 
         private static readonly Lazy<Version> s_netcoreVersion = new Lazy<Version>(() =>
         {
@@ -62,7 +57,10 @@ namespace Spfx.Utilities
             return ver;
         });
 
-        public static Version NetcoreVersion => s_netcoreVersion.Value;
+        private static bool NetCoreExists(bool anyCpu)
+        {
+            return new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
+        }
 
         private static string GetRuntimeDescription()
         {
@@ -121,8 +119,9 @@ namespace Spfx.Utilities
 
         private static ProcessKind GetLocalProcessKind()
         {
-            if (GetLocalOs() == OsKind.Linux)
+            if (!IsWindows)
             {
+                // only distinguish 32 vs 64 on Windows
                 return IsInsideWsl ? ProcessKind.Wsl : ProcessKind.Netcore;
             }
             else
@@ -148,27 +147,127 @@ namespace Spfx.Utilities
             return OsKind.Other;
         }
 
-        public static bool IsProcessKindSupported(ProcessKind processKind)
+        public static bool IsProcessKindSupportedByCurrentProcess(ProcessKind kind)
         {
-            switch (processKind)
+            return IsProcessKindSupportedByCurrentProcess(kind, out _);
+        }
+
+        public static bool IsProcessKindSupportedByCurrentProcess(ProcessKind kind, out string details)
+        {
+            if (kind.IsNetfx() && !IsWindows)
             {
-                case ProcessKind.Wsl:
-                    return IsWslSupported;
-                case ProcessKind.Netfx:
-                case ProcessKind.Netfx32:
-                    return IsNetFxSupported;
-                case ProcessKind.AppDomain:
-                    return IsNetFxSupported && LocalProcessKind.IsNetfx();
-                case ProcessKind.Netcore:
-                    return IsNetCoreSupported;
-                case ProcessKind.Netcore32:
-                    return IsNetCore32Supported;
-                case ProcessKind.DirectlyInRootProcess:
-                case ProcessKind.Default:
-                    return true;
-                default:
-                    return false;
+                details = ".Net Framework is only supported on Windows";
+                return false;
             }
+
+            if (kind == ProcessKind.AppDomain && !LocalProcessKind.IsNetfx())
+            {
+                details = "AppDomains can only be used in .Net Framework hosts";
+                return false;
+            }
+
+            if (kind.Is32Bit() && !Is32BitSupported)
+            {
+                details = "Only Windows supports 32-bit processes";
+                return false;
+            }
+
+            if (kind == ProcessKind.Wsl && !IsWslSupported)
+            {
+                details = "WSL is not supported on this platform";
+                return false;
+            }
+
+            if (kind == ProcessKind.Netcore && !IsNetCoreSupported)
+            {
+                details = ".Net core is not supported on this host";
+                return false;
+            }
+
+            if (kind == ProcessKind.Netcore32 && !IsNetCore32Supported)
+            {
+                details = "32-bit .Net core is not supported on this host";
+                return false;
+            }
+
+            details = null;
+            return true;
+        }
+
+        internal static ProcessKind GetBestAvailableProcessKind(ProcessKind processKind, ProcessClusterConfiguration config)
+        {
+            if (IsProcessKindSupportedByCurrentProcess(processKind, config, out string originalError))
+                return processKind;
+
+            if (!config.FallbackToBestAvailableProcessKind)
+                throw new PlatformNotSupportedException($"ProcessKind {processKind} is not supported: {originalError}");
+
+            if (processKind == ProcessKind.AppDomain && config.EnableFakeProcesses)
+                return ProcessKind.DirectlyInRootProcess;
+
+            if (processKind.IsFakeProcess())
+                throw new PlatformNotSupportedException($"ProcessKind {processKind} is not supported: {originalError}");
+
+            if (processKind.Is32Bit())
+            {
+                var anyCpu = processKind.AsAnyCpu();
+                if (IsProcessKindSupportedByCurrentProcess(anyCpu, config, out _))
+                    return anyCpu;
+            }
+
+            if(processKind.IsNetcore() && IsNetFxSupported)
+            {
+                if (IsProcessKindSupportedByCurrentProcess(ProcessKind.Netfx, config, out _))
+                    return ProcessKind.Netfx;
+            }
+
+            if (processKind.IsNetfx() && IsNetCoreSupported)
+            {
+                if (IsNetCoreSupported && IsProcessKindSupportedByCurrentProcess(ProcessKind.Netcore, config, out _))
+                    return ProcessKind.Netcore;
+                if (IsNetCore32Supported && IsProcessKindSupportedByCurrentProcess(ProcessKind.Netcore32, config, out _))
+                    return ProcessKind.Netcore32;
+            }
+
+            throw new PlatformNotSupportedException($"ProcessKind {processKind} is not supported: {originalError}");
+        }
+
+        public static bool IsProcessKindSupportedByCurrentProcess(ProcessKind processKind, ProcessClusterConfiguration config, out string error)
+        {
+            if (!IsProcessKindSupportedByCurrentProcess(processKind, out error))
+                return false;
+
+            if (processKind.Is32Bit() && !config.Enable32Bit)
+            {
+                error = "This current configuration does not support 32-bit processes";
+                return false;
+            }
+
+            if (processKind.IsNetfx() && !config.EnableNetfx)
+            {
+                error = "This current configuration does not support .Net Framework";
+                return false;
+            }
+
+            if (processKind.IsNetcore() && !config.EnableNetcore)
+            {
+                error = "This current configuration does not support .Net Core";
+                return false;
+            }
+
+            if (processKind == ProcessKind.AppDomain && !config.EnableAppDomains)
+            {
+                error = "This current configuration does not support AppDomains";
+                return false;
+            }
+
+            if(processKind == ProcessKind.Wsl && !config.EnableWsl)
+            {
+                error = "This current configuration does not support WSL";
+                return false;
+            }
+
+            return true;
         }
     }
 }
