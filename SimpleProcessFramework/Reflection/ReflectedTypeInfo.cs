@@ -27,7 +27,7 @@ namespace Spfx.Reflection
             {
                 if (m_resolvedType is null)
                 {
-                    m_resolvedType = Assembly.ResolvedAssembly.GetType(Name);
+                    m_resolvedType = Assembly.ResolvedAssembly.GetType(Name, throwOnError: true);
                     if (m_resolvedType is null)
                         throw new TypeLoadException("Could not load type " + Name + " from assembly " + Assembly.Name);
                 }
