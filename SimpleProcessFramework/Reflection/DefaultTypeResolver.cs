@@ -43,6 +43,15 @@ namespace Spfx.Reflection
             }
         }
 
+        public void RegisterSingleton<TInterface, TImpl>()
+            where TImpl : TInterface, new()
+        {
+            lock (m_services)
+            {
+                m_services[ReflectionUtilities.GetType<TInterface>()] = new TImpl();
+            }
+        }
+
         public ITypeResolver CreateNewScope()
         {
             return new DefaultTypeResolver(this);
@@ -56,6 +65,15 @@ namespace Spfx.Reflection
         public T CreateSingleton<T>(ITypeResolver scope, bool addResultToCache)
         {
             Guard.ArgumentNotNull(scope, nameof(scope));
+
+            object s;
+            lock (m_services)
+            {
+                m_services.TryGetValue(ReflectionUtilities.GetType<T>(), out s);
+            }
+
+            if (s != null)
+                return (T)s;
 
             Func<ITypeResolver, object> factory;
             lock (m_factories)

@@ -11,7 +11,7 @@ using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities.Threading;
-using System.Runtime.Serialization;
+using Spfx.Utilities.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {
@@ -32,6 +32,7 @@ namespace Spfx.Runtime.Server
         private readonly ProcessCluster m_owner;
         private readonly ITypeResolver m_typeResolver;
         private readonly ProcessClusterConfiguration m_config;
+        private readonly ILogger m_logger;
 
         public IProcess MasterProcess => m_masterProcess;
 
@@ -47,7 +48,9 @@ namespace Spfx.Runtime.Server
             m_owner = owner;
             m_typeResolver = owner.TypeResolver;
             m_typeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
+            m_typeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
             m_config = m_typeResolver.GetSingleton<ProcessClusterConfiguration>();
+            m_logger = m_typeResolver.GetLogger(GetType(), uniqueInstance: true);
 
             m_masterProcess = new Process2(owner);
             m_typeResolver.RegisterSingleton<IProcess>(m_masterProcess);
@@ -55,6 +58,8 @@ namespace Spfx.Runtime.Server
 
         protected override void OnDispose()
         {
+            m_logger.Info?.Trace(nameof(OnDispose));
+
             List<IProcessHandle> processes;
             lock (m_subprocesses)
             {
@@ -74,6 +79,8 @@ namespace Spfx.Runtime.Server
 
         protected async override Task OnTeardownAsync(CancellationToken ct)
         {
+            m_logger.Info?.Trace(nameof(OnTeardownAsync));
+
             List<IProcessHandle> processes;
             lock (m_subprocesses)
             {
@@ -82,6 +89,8 @@ namespace Spfx.Runtime.Server
 
             var teardownTasks = new List<Task>();
 
+            m_logger.Info?.Trace($"Starting teardown of {processes.Count} processes");
+
             foreach (var p in processes)
             {
                 teardownTasks.Add(p.TeardownAsync(ct));
@@ -89,7 +98,11 @@ namespace Spfx.Runtime.Server
 
             await Task.WhenAll(teardownTasks);
 
+            m_logger.Info?.Trace($"Teardown of processes completed");
+
             await m_masterProcess.TeardownAsync(ct);
+
+            m_logger.Info?.Trace($"Teardown of master process completed");
 
             await base.OnTeardownAsync(ct);
         }
@@ -111,6 +124,7 @@ namespace Spfx.Runtime.Server
         public async Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req)
         {
             var info = req.ProcessInfo;
+            m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}");
 
             if (ProcessEndpointAddress.StringComparer.Equals(info.ProcessUniqueId, Process2.MasterProcessUniqueId))
                 throw new InvalidOperationException("The master process cannot be created this way");
@@ -141,7 +155,9 @@ namespace Spfx.Runtime.Server
 
                 if (existingHandle != null)
                 {
+                    m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}: Already exists");
                     await existingHandle.WaitForInitializationComplete();
+                    m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Process init complete");
                     return ProcessCreationOutcome.AlreadyExists;
                 }
 
@@ -153,12 +169,15 @@ namespace Spfx.Runtime.Server
                     ParentProcessId = Process.GetCurrentProcess().Id
                 };
 
+                m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
                 await handle.CreateProcess(punchPayload);
+                m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Creation complete. PID is {handle.ProcessInfo.OsPid}");
 
                 return ProcessCreationOutcome.CreatedNew;
             }
-            catch
+            catch(Exception ex)
             {
+                m_logger.Warn?.Trace(ex, $"CreateProcess {info.ProcessUniqueId} failed: " + ex.Message);
                 lock (m_subprocesses)
                 {
                     if (m_subprocesses.TryGetValue(info.ProcessUniqueId, out var knownHandle) && ReferenceEquals(knownHandle, handle))
@@ -167,13 +186,17 @@ namespace Spfx.Runtime.Server
                     }
                 }
 
+                m_logger.Debug?.Trace($"CreateProcess teardown failed process {info.ProcessUniqueId}");
                 await handle.TeardownAsync(TimeSpan.FromSeconds(5));
+                m_logger.Debug?.Trace($"CreateProcess teardown complete of failed process {info.ProcessUniqueId}");
                 throw;
             }
         }
 
         public async Task<ProcessAndEndpointCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
         {
+            m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId}");
+
             processReq.EnsureIsValid();
             endpointReq.EnsureIsValid();
 
@@ -183,13 +206,17 @@ namespace Spfx.Runtime.Server
             try
             {
                 processOutcome = await CreateProcess(processReq);
+                m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} -> CreateProcess result is {processOutcome}");
                 var addr = $"/{processReq.ProcessInfo.ProcessUniqueId}/{WellKnownEndpoints.EndpointBroker}";
                 var processBroker = MasterProcess.ClusterProxy.CreateInterface<IEndpointBroker>(addr);
                 endpointOutcome = await processBroker.CreateEndpoint(endpointReq);
+                m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} -> CreateEndpoint result is {endpointOutcome}");
             }
-            catch
+            catch(Exception ex)
             {
-                if(processOutcome == ProcessCreationOutcome.CreatedNew)
+                m_logger.Warn?.Trace(ex, $"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} failed: " + ex.Message);
+
+                if (processOutcome == ProcessCreationOutcome.CreatedNew)
                 {
                     await DestroyProcess(processReq.ProcessInfo.ProcessUniqueId, onlyIfEmpty: true);
                 }
@@ -210,89 +237,49 @@ namespace Spfx.Runtime.Server
 
         private IProcessHandle CreateNewProcessHandle(ProcessCreationInfo info)
         {
-            void CheckWindows(string error)
-            {
-                if (HostFeaturesHelper.LocalMachineOsKind != OsKind.Windows)
-                    throw new PlatformNotSupportedException(error);
-            }
-            void Check32()
-            {
-                CheckWindows("Running 32-bit is only supported on Windows");
-                if (!m_config.Enable32Bit)
-                    throw new PlatformNotSupportedException("This current configuration does not support 32-bit processes");
-            }
-
-            void CheckNetfx()
-            {
-                CheckWindows("Running .Net Framework (Netfx) is only supported on Windows");
-                if (!m_config.EnableNetfx)
-                    throw new PlatformNotSupportedException("This current configuration does not support .Net Framework");
-            }
-
-            void CheckNetcore()
-            {
-                if (!m_config.EnableNetcore)
-                    throw new PlatformNotSupportedException("This current configuration does not support .Net core");
-            }
+            info.ProcessKind = HostFeaturesHelper.GetBestAvailableProcessKind(info.ProcessKind, m_config);
 
             switch (info.ProcessKind)
             {
                 case ProcessKind.AppDomain:
-                    CheckWindows("This platform does not support AppDomains");
-                    if (!HostFeaturesHelper.LocalProcessKind.IsNetfx())
-                        throw new PlatformNotSupportedException("Only .Net Framework (Netfx) hosts can create AppDomain processes");
-                    if (!m_config.EnableAppDomains)
-                        throw new PlatformNotSupportedException("The current configuration does not support AppDomains");
-                    CheckNetfx();
                     return new AppDomainProcessHandle(info, m_typeResolver);
                 case ProcessKind.DirectlyInRootProcess:
-                    if (!m_config.EnableFakeProcesses)
-                        throw new PlatformNotSupportedException("This current configuration does not support " + nameof(ProcessKind.DirectlyInRootProcess));
                     return new SameProcessFakeHandle(info, m_typeResolver);
                 case ProcessKind.Netfx:
-                    CheckNetfx();
-                    break;
                 case ProcessKind.Netfx32:
-                    CheckNetfx(); Check32();
-                    break;
                 case ProcessKind.Netcore:
-                    CheckNetcore();
-                    break;
                 case ProcessKind.Netcore32:
-                    CheckNetcore(); Check32();
-                    break;
-                case ProcessKind.Wsl:
-                    CheckWindows("This platform does not support WSL");
-                    if (!m_config.EnableWsl)
-                        throw new PlatformNotSupportedException("This current configuration does not support WSL");
-                    break;
                 case ProcessKind.Default:
-                    break;
+                case ProcessKind.Wsl:
+                    if (HostFeaturesHelper.IsWindows && !m_config.UseGenericProcessSpawnOnWindows)
+                        return new GenericChildProcessHandle(info, m_typeResolver);
+                    return new GenericChildProcessHandle(info, m_typeResolver);
+                default:
+                    throw new PlatformNotSupportedException($"ProcessKind {info.ProcessKind} is not supported");
             }
-
-            if (!HostFeaturesHelper.IsProcessKindSupported(info.ProcessKind))
-                throw new PlatformNotSupportedException("This platform does not support ProcessKind " + info.ProcessKind);
-
-            if (HostFeaturesHelper.LocalMachineOsKind == OsKind.Windows && !m_config.UseGenericProcessSpawnOnWindows)
-                return new GenericChildProcessHandle(info, m_typeResolver);
-            return new GenericChildProcessHandle(info, m_typeResolver);
         }
 
         public async Task<bool> DestroyProcess(string processUniqueId, bool onlyIfEmpty = true)
         {
+            m_logger.Info?.Trace($"DestroyProcess {processUniqueId}");
+
             if (ProcessEndpointAddress.StringComparer.Equals(processUniqueId, Process2.MasterProcessUniqueId))
                 throw new InvalidOperationException("The master process cannot be destroyed this way");
 
-            var target = GetSubprocess(processUniqueId, throwIfMissing: false);
-            if (target is null)
-                return false;
+            using (var target = GetSubprocess(processUniqueId, throwIfMissing: false))
+            {
+                if (target is null)
+                    return false;
 
-            try
-            {
-                await target.TeardownAsync().ConfigureAwait(false);
-            }
-            catch
-            {
+                try
+                {
+                    await target.TeardownAsync().ConfigureAwait(false);
+                    m_logger.Debug?.Trace($"DestroyProcess completed for {processUniqueId}");
+                }
+                catch (Exception ex)
+                {
+                    m_logger.Warn?.Trace(ex, $"DestroyProcess failed for {processUniqueId}: " + ex.Message);
+                }
             }
 
             return true;

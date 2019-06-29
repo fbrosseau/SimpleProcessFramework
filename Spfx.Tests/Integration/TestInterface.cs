@@ -1,5 +1,7 @@
 ﻿using Spfx.Interfaces;
+using Spfx.Utilities.Diagnostics;
 using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server;
 using Spfx.Utilities;
 using System;
@@ -27,6 +29,34 @@ namespace Spfx.Tests.Integration
 
     internal class TestInterface : AbstractProcessEndpoint, ITestInterface
     {
+        public ILogger Logger { get; private set; }
+
+        protected override Task InitializeAsync()
+        {
+            Logger = ParentProcess.DefaultTypeResolver.GetLogger(GetType(), true);
+            Logger.Info?.Trace("InitializeAsync");
+            return base.InitializeAsync();
+        }
+
+        protected override void OnDispose()
+        {
+            Logger.Info?.Trace("OnDispose");
+            Logger.Dispose();
+            base.OnDispose();
+        }
+
+        protected override Task OnTeardownAsync(CancellationToken ct)
+        {
+            Logger.Info?.Trace("OnTeardownAsync");
+            return base.OnTeardownAsync(ct);
+        }
+
+        protected override bool FilterMessage(IInterprocessRequestContext request)
+        {
+            Logger.Debug?.Trace(request.Request.ToString());
+            return base.FilterMessage(request);
+        }
+
         public Task<int> Callback(string uri, int num)
         {
             return ParentProcess.ClusterProxy.CreateInterface<ICallbackInterface>(uri).Double(num);

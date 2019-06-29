@@ -1,4 +1,6 @@
-﻿using Spfx.Utilities.Threading;
+﻿using System.Collections.Generic;
+using System.Net;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {
@@ -9,5 +11,7 @@ namespace Spfx.Runtime.Server
 
         void RegisterClientChannel(IInterprocessClientChannel channel);
         IInterprocessClientChannel GetClientChannel(string connectionId, bool mustExist);
+
+        List<EndPoint> GetListenEndpoints();
     }
 }

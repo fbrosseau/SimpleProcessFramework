@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
+using Spfx.Utilities.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {
@@ -46,7 +47,6 @@ namespace Spfx.Runtime.Server
     internal interface IProcessInternal : IProcess, IIncomingClientMessagesHandler, IAsyncDestroyable
     {
         Task InitializeAsync();
-
         void ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req);
     }
 
@@ -71,6 +71,7 @@ namespace Spfx.Runtime.Server
         private readonly IBinarySerializer m_binarySerializer;
         private readonly Dictionary<string, IProcessEndpointHandler> m_endpointHandlers = new Dictionary<string, IProcessEndpointHandler>(ProcessEndpointAddress.StringComparer);
         private readonly IClientConnectionManager m_connectionManager;
+        private readonly ILogger m_logger;
         private IProcessBroker m_processBroker;
         private IEndpointBroker m_localEndpointBroker;
 
@@ -103,8 +104,13 @@ namespace Spfx.Runtime.Server
             DefaultTypeResolver.RegisterSingleton<IInternalRequestsHandler>(new InternalRequestsHandler(hostAuthority));
             DefaultTypeResolver.RegisterSingleton<IProcess>(this);
             DefaultTypeResolver.RegisterSingleton<IProcessInternal>(this);
-            DefaultTypeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
             DefaultTypeResolver.RegisterSingleton<IClientConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
+
+            m_logger = DefaultTypeResolver.GetLogger(GetType(), uniqueInstance: true);
+
+            if (UniqueId != MasterProcessUniqueId) // otherwise ProcessBroker does it
+                DefaultTypeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
+
             m_connectionManager = DefaultTypeResolver.CreateSingleton<IClientConnectionManager>();
 
             ClusterProxy = new ProcessProxy(DefaultTypeResolver);
@@ -120,6 +126,8 @@ namespace Spfx.Runtime.Server
                     endpoints = m_endpointHandlers.Values.ToList();
                     m_endpointHandlers.Clear();
                 }
+
+                m_logger.Info?.Trace($"OnDispose of {endpoints.Count} endpoints");
 
                 foreach (var ep in endpoints)
                 {
@@ -140,6 +148,7 @@ namespace Spfx.Runtime.Server
             }
 
             base.OnDispose();
+            m_logger.Dispose();
         }
 
         protected async override Task OnTeardownAsync(CancellationToken ct)
@@ -151,6 +160,8 @@ namespace Spfx.Runtime.Server
                 m_endpointHandlers.Clear();
             }
 
+            m_logger.Info?.Trace($"OnTeardownAsync of {endpoints.Count} endpoints");
+
             var disposeTasks = new List<Task>();
             foreach (var ep in endpoints)
             {
@@ -159,12 +170,16 @@ namespace Spfx.Runtime.Server
 
             await Task.WhenAll(disposeTasks);
 
+            m_logger.Info?.Trace($"OnTeardownAsync of endpoints completed");
+
             await base.OnTeardownAsync(ct);
         }
 
         public async Task InitializeAsync()
         {
+            m_logger.Info?.Trace("InitializeAsync");
             await InitializeEndpointAsync<IEndpointBroker>(WellKnownEndpoints.EndpointBroker).ConfigureAwait(false);
+            m_logger.Info?.Trace("InitializeAsync completed");
         }
 
         public ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null)
@@ -235,31 +250,41 @@ namespace Spfx.Runtime.Server
         public async Task<ProcessCreationOutcome> InitializeEndpointAsync(string address, Type interfaceType, object handler, ProcessCreationOptions options)
         {
             var wrapper = ProcessEndpointHandlerFactory.Create(handler, interfaceType);
-
-            lock (m_endpointHandlers)
-            {
-                ThrowIfDisposed();
-                if (m_endpointHandlers.ContainsKey(address))
-                {
-                    if ((options & ProcessCreationOptions.ThrowIfExists) != 0)
-                        throw new EndpointAlreadyExistsException(address);
-                    return ProcessCreationOutcome.AlreadyExists;
-                }
-                m_endpointHandlers.Add(address, wrapper);
-            }
-
+            bool removeFromEndpoints = false;
             try
             {
+                m_logger.Info?.Trace($"InitializeEndpointAsync {address}");
+
+                lock (m_endpointHandlers)
+                {
+                    ThrowIfDisposed();
+                    if (m_endpointHandlers.ContainsKey(address))
+                    {
+                        m_logger.Info?.Trace($"InitializeEndpointAsync {address} already existed");
+
+                        if ((options & ProcessCreationOptions.ThrowIfExists) != 0)
+                            throw new EndpointAlreadyExistsException(address);
+                        return ProcessCreationOutcome.AlreadyExists;
+                    }
+                    m_endpointHandlers.Add(address, wrapper);
+                    removeFromEndpoints = true;
+                }
+
                 await wrapper.InitializeAsync(this);
+                m_logger.Info?.Trace($"InitializeEndpointAsync succeeded");
                 return ProcessCreationOutcome.CreatedNew;
             }
             catch
             {
-                lock (m_endpointHandlers)
+                if (removeFromEndpoints)
                 {
-                    m_endpointHandlers.Remove(address);
+                    lock (m_endpointHandlers)
+                    {
+                        m_endpointHandlers.Remove(address);
+                    }
                 }
 
+                wrapper.Dispose();
                 throw;
             }
         }
@@ -291,6 +316,7 @@ namespace Spfx.Runtime.Server
 
         public Task AutoDestroyAsync()
         {
+            m_logger.Info?.Trace("AutoDestroyAsync");
             return TeardownAsync();
         }
 

@@ -26,12 +26,41 @@
 
         public static bool IsFakeProcess(this ProcessKind k)
         {
-            return k == ProcessKind.AppDomain || k == ProcessKind.DirectlyInRootProcess;
+            return !k.IsRealProcess();
         }
 
         public static bool Is32Bit(this ProcessKind k)
         {
             return k == ProcessKind.Netfx32 || k == ProcessKind.Netcore32;
+        }
+
+        public static ProcessKind AsAnyCpu(this ProcessKind k)
+        {
+            switch (k)
+            {
+                case ProcessKind.Netcore32:
+                    return ProcessKind.Netcore;
+                case ProcessKind.Netfx32:
+                    return ProcessKind.Netfx;
+                default:
+                    return k;
+            }
+        }
+
+        public static bool IsRealProcess(this ProcessKind k)
+        {
+            switch(k)
+            {
+                case ProcessKind.Default:
+                case ProcessKind.Wsl:
+                case ProcessKind.Netfx:
+                case ProcessKind.Netfx32:
+                case ProcessKind.Netcore:
+                case ProcessKind.Netcore32:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Spfx.Utilities.Diagnostics;
 
 namespace Spfx.Tests
 {
@@ -6,9 +6,11 @@ namespace Spfx.Tests
     {
         public const int DefaultTestTimeout = TestUtilities.DefaultTestTimeout;
 
+        private static readonly ILogger s_logger = ProcessCluster.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass));
+
         protected static void Log(string msg)
         {
-            Console.WriteLine(DateTime.Now + "| " + msg);
+            s_logger.Info?.Trace(msg);
         }
     }
 }

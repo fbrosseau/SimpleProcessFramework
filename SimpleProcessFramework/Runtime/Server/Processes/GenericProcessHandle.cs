@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
+using Spfx.Utilities.Diagnostics;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
@@ -14,9 +14,12 @@ namespace Spfx.Runtime.Server.Processes
         public ProcessKind ProcessKind => ProcessCreationInfo.ProcessKind;
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
+        protected ITypeResolver TypeResolver { get; }
         protected ProcessClusterConfiguration Config { get; }
         public ProcessInformation ProcessInfo { get; private set; }
         private readonly IInternalProcessBroker m_processBroker;
+        protected ILogger Logger { get; }
+
         private readonly AsyncManualResetEvent m_initEvent = new AsyncManualResetEvent();
 
         protected IBinarySerializer BinarySerializer { get; }
@@ -24,21 +27,36 @@ namespace Spfx.Runtime.Server.Processes
         protected GenericProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
         {
             ProcessCreationInfo = info;
+            TypeResolver = typeResolver;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
             BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
             m_processBroker = typeResolver.GetSingleton<IInternalProcessBroker>();
+            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
         }
 
         public async Task CreateProcess(ProcessSpawnPunchPayload punchPayload)
         {
-            ProcessInfo = await CreateActualProcessAsync(punchPayload);
-            m_initEvent.Set();
+            try
+            {
+                Logger.Debug?.Trace($"Starting CreateProcess...");
+                ProcessInfo = await CreateActualProcessAsync(punchPayload);
+                m_initEvent.Set();
+                Logger.Info?.Trace($"CreateProcess succeeded (PID {ProcessInfo.OsPid})");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn?.Trace(ex, "CreateProcess failed: " + ex.Message);
+                m_initEvent.Dispose(ex);
+                throw;
+            }
         }
 
         protected override void OnDispose()
         {
+            Logger.Info?.Trace("OnDispose");
             m_initEvent.Dispose();
             base.OnDispose();
+            Logger.Dispose();
         }
 
         protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
@@ -77,6 +95,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected void OnDeliveryFailed(WrappedInterprocessMessage wrappedMessage, Exception ex)
         {
+            Logger.Warn?.Trace(ex, $"OnDeliveryFailed: {ex.Message}");
             throw new NotImplementedException();
         }
 

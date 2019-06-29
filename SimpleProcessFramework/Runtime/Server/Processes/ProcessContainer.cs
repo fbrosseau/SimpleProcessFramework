@@ -14,22 +14,11 @@ using System.Collections.Generic;
 using Spfx.Interfaces;
 using System.Net.Sockets;
 using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Reflection;
+using Spfx.Utilities.Diagnostics;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class Win32WaitHandle : WaitHandle
-    {
-        public Win32WaitHandle(IntPtr h)
-        {
-            SafeWaitHandle = new SafeWaitHandle(h, true);
-        }
-
-        public Win32WaitHandle(SafeHandle h)
-        {
-            SafeWaitHandle = new SafeWaitHandle(h.DangerousGetHandle(), false);
-        }
-    }
-
     internal interface IMessageCallbackChannel
     {
         void HandleMessage(string connectionId, IInterprocessMessage msg);
@@ -47,16 +36,21 @@ namespace Spfx.Runtime.Server.Processes
         private WaitHandle[] m_shutdownHandles;
         private ProcessSpawnPunchPayload m_inputPayload;
         private GCHandle m_gcHandleToThis;
+        private ILogger m_logger;
 
         public string LocalProcessUniqueId => m_process.UniqueId;
+
+        public ITypeResolver TypeResolver { get; private set; }
 
         protected override void OnDispose()
         {
             try
             {
+                m_logger.Info?.Trace("OnDispose");
                 m_process?.Dispose();
                 m_connector?.Dispose();
                 base.OnDispose();
+                m_logger.Dispose();
             }
             finally
             {
@@ -69,11 +63,12 @@ namespace Spfx.Runtime.Server.Processes
         {
             m_gcHandleToThis = GCHandle.Alloc(this);
             m_inputPayload = ProcessSpawnPunchPayload.Deserialize(input);
-            Console.WriteLine("Successfully read input");
 
-            var typeResolver = ProcessCluster.DefaultTypeResolver.CreateNewScope();
-            typeResolver.RegisterSingleton<IIpcConnectorListener>(this);
-            typeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
+            TypeResolver = ProcessCluster.DefaultTypeResolver.CreateNewScope();
+            TypeResolver.RegisterSingleton<IIpcConnectorListener>(this);
+            TypeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
+            m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true);
+            m_logger.Info?.Trace("Initialize");
 
             using (var disposeBag = new DisposeBag())
             {
@@ -81,7 +76,7 @@ namespace Spfx.Runtime.Server.Processes
                 if (!string.IsNullOrWhiteSpace(m_inputPayload.ShutdownEvent))
                     shutdownHandles.Add(new Win32WaitHandle(ProcessSpawnPunchPayload.DeserializeHandleFromString(m_inputPayload.ShutdownEvent)));
 
-                m_process = new Process2(m_inputPayload.HostAuthority, m_inputPayload.ProcessUniqueId, typeResolver);
+                m_process = new Process2(m_inputPayload.HostAuthority, m_inputPayload.ProcessUniqueId, TypeResolver);
                 shutdownHandles.Add(m_process.TerminateEvent);
 
                 m_shutdownHandles = shutdownHandles.ToArray();
@@ -92,6 +87,8 @@ namespace Spfx.Runtime.Server.Processes
 
         internal void InitializeConnector()
         {
+            m_logger.Info?.Trace("InitializeConnector");
+
             var timeout = TimeSpan.FromMilliseconds(m_inputPayload.HandshakeTimeout);
             if (timeout == TimeSpan.Zero)
                 timeout = TimeSpan.FromSeconds(30);
@@ -116,11 +113,13 @@ namespace Spfx.Runtime.Server.Processes
                 var streamReader = disposeBag.Add(LengthPrefixedStream.CreateReader(readStream, m_inputPayload.ProcessUniqueId + " - SubprocessRead"));
                 var streamWriter = disposeBag.Add(LengthPrefixedStream.CreateWriter(writeStream, m_inputPayload.ProcessUniqueId + " - SubProcessWrite"));
 
-                var connector = disposeBag.Add(new SubprocessIpcConnector(this, streamReader, streamWriter, new DefaultBinarySerializer()));
+                var connector = disposeBag.Add(new SubprocessIpcConnector(this, streamReader, streamWriter, TypeResolver));
                 SetConnector(connector);
                 connector.InitializeAsync(ct).WaitOrTimeout(TimeSpan.FromSeconds(30));
                 disposeBag.ReleaseAll();
             }
+
+            m_logger.Info?.Trace("InitializeConnector completed");
         }
 
         internal void SetConnector(ISubprocessConnector connector)
@@ -142,6 +141,7 @@ namespace Spfx.Runtime.Server.Processes
         {
             try
             {
+                m_logger.Info?.Trace("OnTeardownRequestReceived");
                 await m_process.TeardownAsync();
                 await m_connector.TeardownAsync();
             }
@@ -153,11 +153,13 @@ namespace Spfx.Runtime.Server.Processes
 
         Task IIpcConnectorListener.CompleteInitialization()
         {
+            m_logger.Info?.Trace("IIpcConnectorListener.CompleteInitialization");
             return m_process.InitializeAsync();
         }
 
         void IIpcConnectorListener.OnRemoteEndLost(string msg, Exception ex)
         {
+            m_logger.Info?.Trace("IIpcConnectorListener.OnRemoteEndLost");
             Dispose();
         }
 
@@ -167,30 +169,6 @@ namespace Spfx.Runtime.Server.Processes
             Guard.ArgumentNotNull(req, nameof(req));
 
             m_connector.HandleMessage(source.UniqueId, req);
-        }
-    }
-
-    internal class ShallowConnectionProxy : IInterprocessClientProxy
-    {
-        public string UniqueId { get; }
-
-        private readonly IMessageCallbackChannel m_owner;
-
-        public ShallowConnectionProxy(IMessageCallbackChannel owner, string sourceId)
-        {
-            Guard.ArgumentNotNull(owner, nameof(owner));
-            UniqueId = sourceId;
-            m_owner = owner;
-        }
-
-        public Task<IInterprocessClientChannel> GetClientInfo()
-        {
-            return m_owner.GetClientInfo(UniqueId);
-        }
-
-        public void SendMessage(IInterprocessMessage msg)
-        {
-            m_owner.HandleMessage(UniqueId, msg);
         }
     }
 }

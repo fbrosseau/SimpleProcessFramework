@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Threading;
 
 namespace Spfx.Runtime.Server.Processes.NetcoreHost
 {
@@ -10,8 +10,12 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
     {
         private static readonly string BinFolder = new FileInfo(new Uri(typeof(SpfxProgram).Assembly.Location, UriKind.Absolute).LocalPath).Directory.FullName;
 
+        private static bool s_verboseLogs;
+
         public static void Main(string[] args)
         {
+            s_verboseLogs = args?.Contains("--spfxdebug") == true;
+
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -25,7 +29,7 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
                 if (entryPointType is null)
                     throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
                 entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);
-                Console.WriteLine("Clean exit");
+                Log("Clean exit");
             }
             catch (Exception ex)
             {
@@ -47,20 +51,28 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
         {
             try
             {
-                Console.WriteLine("Resolving " + name);
+                Log("Resolving " + name);
                 var file = Path.Combine(BinFolder, name.Name) + ".dll";
                 if (!new FileInfo(file).Exists)
                     return null;
 
                 var a = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
                 if (a != null)
-                    Console.WriteLine("Resolved " + name);
+                    Log("Resolved " + name);
                 return a;
             }
             catch
             {
                 return null;
             }
+        }
+
+        private static void Log(string msg)
+        {
+            if (!s_verboseLogs)
+                return;
+
+            Console.WriteLine(msg);
         }
     }
 }

@@ -108,7 +108,7 @@ namespace Spfx
         public ProcessProxy(ITypeResolver resolver)
         {
             m_typeResolver = resolver.CreateNewScope();
-            m_connectionFactory = m_typeResolver.GetSingleton<IClientConnectionFactory>();
+            m_connectionFactory = m_typeResolver.CreateSingleton<IClientConnectionFactory>();
         }
 
         public T CreateInterface<T>(string address)

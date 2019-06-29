@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
 using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Server;
+using Spfx.Runtime.Server.Listeners;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Serialization;
 using Spfx.Utilities;
@@ -9,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,10 +20,18 @@ using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
 {
-    [TestFixture]
+    [TestFixture(SanityTestOptions.UseTcpProxy)]
+    [TestFixture(SanityTestOptions.UseIpcProxy)]
     public class GeneralEndToEndSanity : CommonTestClass
     {
         public static bool IsInMsTest { get; set; } = true;
+
+        [Flags]
+        public enum SanityTestOptions
+        {
+            UseIpcProxy = 1,
+            UseTcpProxy = 2
+        }
 
         private static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
 
@@ -29,14 +41,61 @@ namespace Spfx.Tests.Integration
         private static readonly ProcessKind SimpleIsolationKind = ProcessKind.Netcore;
 #endif
 
-        private ProcessCluster CreateTestCluster()
+        private readonly SanityTestOptions m_options;
+
+        public GeneralEndToEndSanity(SanityTestOptions options)
         {
-            return new ProcessCluster(new ProcessClusterConfiguration
-            {
-                EnableFakeProcesses = true
-            });
+            m_options = options;
         }
 
+        private ProcessCluster CreateTestCluster()
+        {
+            var cluster = new ProcessCluster(new ProcessClusterConfiguration
+            {
+                EnableFakeProcesses = true,
+                EnableAppDomains = true,
+                EnableWsl = true,
+                Enable32Bit = true
+            });
+
+            if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
+                cluster.AddListener(new TcpInterprocessConnectionListener(0));
+
+            return cluster;
+        }
+
+        private ProcessProxy CreateProxy(ProcessCluster cluster)
+        {
+            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
+                return cluster.PrimaryProxy;
+            return new ProcessProxy();
+        }
+
+        private T CreateProxyInterface<T>(ProcessProxy proxy, ProcessCluster cluster, string processId, string endpointId)
+        {
+            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
+            {
+                return proxy.CreateInterface<T>($"/{processId}/{endpointId}");
+            }
+            else
+            {
+                var ep = cluster.GetListenEndpoints().OfType<IPEndPoint>().First();
+                if (ep.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    if (ep.Address.Equals(IPAddress.Any))
+                        ep = new IPEndPoint(IPAddress.Loopback, ep.Port);
+                }
+                else
+                {
+                    if (ep.Address.Equals(IPAddress.IPv6Any))
+                        ep = new IPEndPoint(IPAddress.IPv6Loopback, ep.Port);
+                }
+
+                var addr = new ProcessEndpointAddress(ep.ToString(), processId, endpointId);
+                return proxy.CreateInterface<T>(addr);
+            }
+        }
+        
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicDefaultNameSubprocess() => CreateAndDestroySuccessfulSubprocess();
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
@@ -264,6 +323,8 @@ namespace Spfx.Tests.Integration
                 var tasks = new List<Task<Task<ProcessAndEndpointCreationOutcome>>>();
                 var processId = "asdfasdf";
 
+                var proxy = CreateProxy(cluster);
+
                 const int concurrencyCount = 10;
 
                 for (int i = 0; i < concurrencyCount; ++i)
@@ -288,7 +349,7 @@ namespace Spfx.Tests.Integration
                             ImplementationType = typeof(LongInitEndpoint)
                         });
 
-                        var ep = cluster.PrimaryProxy.CreateInterface<ITestInterface>($"/{processId}/{endpointId}");
+                        var ep = CreateProxyInterface<ITestInterface>(proxy, cluster, processId, endpointId);
                         Assert.AreEqual(innerI, await ep.Echo(innerI));
 
                         return result;
@@ -338,7 +399,8 @@ namespace Spfx.Tests.Integration
                 targetProcess = ProcessProxy.GetEndpointAddress(test2.TestInterface).TargetProcess;
             }
 
-            var targetEndpointBroker = cluster.PrimaryProxy.CreateInterface<IEndpointBroker>($"/{targetProcess}/{WellKnownEndpoints.EndpointBroker}");
+            var proxy = CreateProxy(cluster);
+            var targetEndpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, targetProcess, WellKnownEndpoints.EndpointBroker);
 
             var callbackEndpoint = Guid.NewGuid().ToString("N");
 
@@ -447,7 +509,7 @@ namespace Spfx.Tests.Integration
                     Assert.Ignore(".net core runtime " + requestedRuntime + " is not supported by this host");
             }
 
-            if (!HostFeaturesHelper.IsProcessKindSupported(expectedProcessKind))
+            if (!HostFeaturesHelper.IsProcessKindSupportedByCurrentProcess(expectedProcessKind))
                 Assert.Ignore("ProcessKind " + expectedProcessKind + " is not supported by this host");
             
             var expectedProcessName = req.ProcessInfo.ProcessName;
@@ -522,11 +584,13 @@ namespace Spfx.Tests.Integration
         {
             var testEndpoint = Guid.NewGuid().ToString("N");
 
-            var endpointBroker = cluster.PrimaryProxy.CreateInterface<IEndpointBroker>(processEndpointAddress.Combine(WellKnownEndpoints.EndpointBroker));
+            var proxy = CreateProxy(cluster);
+
+            var endpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, processEndpointAddress.TargetProcess, WellKnownEndpoints.EndpointBroker);
             endpointBroker.CreateEndpoint(testEndpoint, typeof(ITestInterface), typeof(TestInterface));
             Log("Create Endpoint " + testEndpoint);
 
-            var testInterface = cluster.PrimaryProxy.CreateInterface<ITestInterface>(processEndpointAddress.Combine(testEndpoint));
+            var testInterface = CreateProxyInterface<ITestInterface>(proxy, cluster, processEndpointAddress.TargetProcess, testEndpoint);
             var res = Unwrap(testInterface.GetDummyValue());
             DummyReturn.Verify(res);
             Log("Validated Endpoint " + testEndpoint);

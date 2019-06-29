@@ -60,7 +60,7 @@ namespace Spfx.Runtime.Server.Processes
                     throw;
                 }
 
-                var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, new DefaultBinarySerializer());
+                var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, TypeResolver);
                 disposeBag.Add(connector);
 
                 var initTask = connector.InitializeAsync(ct).WithCancellation(ct);

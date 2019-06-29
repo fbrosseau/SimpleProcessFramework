@@ -4,70 +4,15 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Io;
+using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
 using Spfx.Utilities;
+using Spfx.Utilities.Diagnostics;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes.Ipc
 {
-    internal class SubprocessIpcConnector : IpcConnector, ISubprocessConnector
-    {
-        public SubprocessIpcConnector(ProcessContainer owner, ILengthPrefixedStreamReader readStream, ILengthPrefixedStreamWriter writeStream, IBinarySerializer serializer)
-            : base(owner, readStream, writeStream, serializer)
-        {
-        }
-
-        public Task<IInterprocessClientChannel> GetClientInfo(string uniqueId)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override async Task DoInitialize()
-        {
-            SendCode(InterprocessFrameType.Handshake1);
-            await ReceiveCode(InterprocessFrameType.Handshake2);
-            await Owner.CompleteInitialization();
-            SendCode(InterprocessFrameType.Handshake3);
-        }
-
-        void IMessageCallbackChannel.HandleMessage(string connectionId, IInterprocessMessage msg)
-        {
-            var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
-            wrapped.SourceConnectionId = connectionId;
-            ForwardMessage(wrapped);
-        }
-    }
-
-    internal class MasterProcessIpcConnector : IpcConnector
-    {
-        public MasterProcessIpcConnector(GenericChildProcessHandle owner, IProcessSpawnPunchHandles remoteProcessHandles, IBinarySerializer serializer)
-            : base(
-                  owner,
-                  LengthPrefixedStream.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
-                  LengthPrefixedStream.CreateWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
-                  serializer)
-        {
-        }
-
-        protected override async Task DoInitialize()
-        {
-            await ReceiveCode(InterprocessFrameType.Handshake1);
-            await Owner.CompleteInitialization();
-            SendCode(InterprocessFrameType.Handshake2);
-            await ReceiveCode(InterprocessFrameType.Handshake3);
-        }
-    }
-
-    internal interface IIpcConnectorListener
-    {
-        Task CompleteInitialization();
-        void OnMessageReceived(WrappedInterprocessMessage msg);
-        void OnTeardownRequestReceived();
-
-        void OnRemoteEndLost(string msg, Exception ex = null);
-    }
-
     internal abstract class IpcConnector : AsyncDestroyable
     {
         protected enum InterprocessFrameType
@@ -88,7 +33,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         protected static readonly IBinarySerializer s_binarySerializer = new DefaultBinarySerializer();
 
-
+        protected ILogger Logger { get; }
         protected IIpcConnectorListener Owner { get; }
         protected ILengthPrefixedStreamReader ReadPipe { get; }
         protected ILengthPrefixedStreamWriter WritePipe { get; }
@@ -97,30 +42,34 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         protected AsyncManualResetEvent Shutdown1ReceivedEvent { get; } = new AsyncManualResetEvent();
         protected AsyncManualResetEvent Shutdown2ReceivedEvent { get; } = new AsyncManualResetEvent();
 
-        protected IpcConnector(IIpcConnectorListener owner, ILengthPrefixedStreamReader readPipe, ILengthPrefixedStreamWriter writePipe, IBinarySerializer serializer)
+        protected IpcConnector(IIpcConnectorListener owner, ILengthPrefixedStreamReader readPipe, ILengthPrefixedStreamWriter writePipe, ITypeResolver typeResolver)
         {
             Guard.ArgumentNotNull(owner, nameof(owner));
             Guard.ArgumentNotNull(readPipe, nameof(readPipe));
             Guard.ArgumentNotNull(writePipe, nameof(writePipe));
 
+            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
             Owner = owner;
             ReadPipe = readPipe;
             WritePipe = writePipe;
-            BinarySerializer = serializer;
+            BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
         }
 
         protected override void OnDispose()
         {
+            Logger.Info?.Trace("OnDispose");
             ReadPipe.Dispose();
             WritePipe.Dispose();
             Shutdown1ReceivedEvent.Set();
             Shutdown2ReceivedEvent.Set();
             Owner.OnRemoteEndLost("IpcConnector disposed");
             base.OnDispose();
+            Logger.Dispose();
         }
 
         protected async override Task OnTeardownAsync(CancellationToken ct)
         {
+            Logger.Info?.Trace("OnTeardownAsync");
             if (!Shutdown1ReceivedEvent.IsSet)
             {
                 SendCode(InterprocessFrameType.Teardown1);
@@ -142,8 +91,10 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         internal async Task InitializeAsync(CancellationToken ct)
         {
+            Logger.Info?.Trace("InitializeAsync");
             await DoInitialize();
             ReadLoop().FireAndForget();
+            Logger.Info?.Trace("InitializeAsync completed");
         }
 
         private async Task ReadLoop()

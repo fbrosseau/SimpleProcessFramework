@@ -72,6 +72,9 @@ namespace Spfx.Runtime.Server
         {
             try
             {
+                if (m_realTargetAsEndpoint?.FilterMessage(req) == false)
+                    return;
+
                 switch (req.Request)
                 {
                     case EndpointDescriptionRequest _:
