@@ -8,93 +8,57 @@ variables:
   verbosity: 'normal'
   netcoreName: 'netcoreapp2.1'
   netfxName: 'net472'
+  windowsImage: 'windows-2019'
 
-jobs:
-- job: Windows_Build
-  displayName: 'Windows Build'
-  pool:
-    vmImage: 'windows-2019'
-  steps:
-  - task: NuGetToolInstaller@0
+strategy:
+    matrix:
+        #windows:
+        #    imageName: $(windowsImage)
+        linux:
+            imageName: 'ubuntu-16.04'
 
-  - task: DotNetCoreInstaller@0
-    displayName: 'Install .net core 2.1.x'
-    inputs:
-      version: '2.1.300'
+pool:
+    vmImage: $(imageName)
 
-#  - task: DotNetCoreInstaller@0
-#    displayName: 'Install .net core 3.0.x'
-#    inputs:
-#      version: '3.0.100-preview-010184'
+steps:
+- task: NuGetToolInstaller@0
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Main Build without tests'
-    inputs:
-      command: build
-      projects: 'SimpleProcessFramework.sln'
-      arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
+- task: DotNetCoreInstaller@0
+displayName: 'Install .net core 2.1.x'
+inputs:
+    version: '2.1.300'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Full Build'
-    inputs:
-      command: build
-      projects: 'SimpleProcessFramework.sln'
-      arguments: '-c $(buildConfiguration) -v $(verbosity)'
+- task: DotNetCoreCLI@2
+displayName: 'Main Build without tests'
+inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Run tests (netcore)'
-    continueOnError: true
-    inputs:
-      command: test
-      projects: 'SimpleProcessFramework.sln'
-      buildConfiguration: '$(buildConfiguration)'
-      testRunTitle: '$(buildConfiguration) $(netcoreName)'
-      arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
+- task: DotNetCoreCLI@2
+displayName: 'Full Build'
+inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration) -v $(verbosity)'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Run tests (netfx)'
-    continueOnError: true
-    inputs:
-      command: test
-      projects: 'SimpleProcessFramework.sln'
-      buildConfiguration: '$(buildConfiguration)'
-      testRunTitle: '$(buildConfiguration) $(netfxName)'
-      arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
+- task: DotNetCoreCLI@2
+displayName: 'Run tests (netcore)'
+continueOnError: true
+inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
 
-#  - task: CopyFiles@2
-#    inputs:
-#      sourceFolder: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)'
-#      contents: '**/*'
-#      targetFolder: $(Build.ArtifactStagingDirectory)
-
-  #- task: NuGetCommand@2
-  #  displayName: 'Nuget Pack'
-  #  inputs:
-  #    command: pack
-  #    packagesToPack: 'nuspec/**.nuspec'
-
-  #- task: NuGetCommand@2
-  #  displayName: 'Nuget Push'
-  #  inputs:
-  #    command: push
-  #    nuGetFeedType: external
-  #    publishFeedCredentials: 'Nuget.org SimpleProcessFramework'
-  #    versioningScheme: byEnvVar
-  #    versionEnvVar: Version
-  #    packagesToPush: nuspec/**.nupkg
-
-#- job: Windows_Test
-#  displayName: 'Windows Tests'
-#  dependsOn: Windows_Build
-#  pool:
-#    vmImage: 'vs2017-win2016'
-#  steps:
-#  - task: DownloadBuildArtifacts@0
-#    inputs:
-#      buildType: 'current'
-#      downloadPath: '$(System.ArtifactsDirectory)' 
-
-#- task: VSTest@2
-#    inputs:
-#      platform: '$(buildPlatform)'
-#      configuration: '$(buildConfiguration)'
+- task: DotNetCoreCLI@2
+displayName: 'Run tests (netfx)'
+continueOnError: true
+condition: eq(variables['imageName'], '$(windowsImage)')
+inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netfxName)'
+    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
