@@ -1,4 +1,7 @@
 ﻿#if NETCOREAPP
+
+using System;
+
 namespace Spfx.Tests
 {
     /// <summary>
