@@ -18,20 +18,40 @@ namespace Spfx.Tests
         public const int DefaultTestTimeout = 30000;
 #endif
 
-        public static void Unwrap(Task task)
+        private static Task WrapWithUnhandledExceptions(Task task)
         {
             var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();
-            var choices = new[] { task, unhandledEx };
-            var winner = Task.WaitAny(choices, TimeSpan.FromSeconds(DefaultTestTimeout));
+            if (unhandledEx is null)
+                return task;
 
-            if (winner == -1)
+            return WrapWithUnhandledExceptions(task.ContinueWith(t => { t.GetAwaiter().GetResult(); return VoidType.Value; }));
+        }
+
+        private static Task<T> WrapWithUnhandledExceptions<T>(Task<T> task)
+        {
+            var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();
+            if (unhandledEx is null)
+                return task;
+
+            var combined = Task.WhenAny(task, unhandledEx);
+            return combined.ContinueWith(_ =>
+            {
+                if (ReferenceEquals(combined.Result, unhandledEx))
+                    return Task.FromException<T>(new Exception("Remote process had an unhandled exception", unhandledEx.ExtractException()));
+
+                return task;
+            }).Unwrap();
+        }
+
+        public static void Unwrap(Task task)
+        {
+            var wrapped = WrapWithUnhandledExceptions(task);
+
+            if (!wrapped.Wrap().Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
                 throw new TimeoutException();
 
             // to rethrow the original clean exception
-            if (winner == 0)
-                task.GetAwaiter().GetResult();
-            else
-                throw new Exception("Remote process had an unhandled exception", unhandledEx.ExtractException());
+            wrapped.GetAwaiter().GetResult();
         }
 
         public static T Unwrap<T>(Task<T> task)
@@ -40,14 +60,21 @@ namespace Spfx.Tests
             return task.Result;
         }
 
-        public static void UnwrapException<TException>(Task task, Action<TException> inspectException = null)
-            where TException : Exception
+        public static void ExpectException(Task task)
         {
-            UnwrapException(task, typeof(TException), exceptionCallback: ex => inspectException((TException)ex));
+            ExpectException<Exception>(task);
         }
 
-        public static void UnwrapException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null, Action<Exception> exceptionCallback = null)
+        public static void ExpectException<TException>(Task task, Action<TException> inspectException = null)
+            where TException : Exception
         {
+            ExpectException(task, typeof(TException), exceptionCallback: ex => inspectException?.Invoke((TException)ex));
+        }
+
+        public static void ExpectException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null, Action<Exception> exceptionCallback = null)
+        {
+            task = WrapWithUnhandledExceptions(task);
+
             if (!task.Wrap().Wait(TimeSpan.FromSeconds(30)))
                 throw new TimeoutException();
 

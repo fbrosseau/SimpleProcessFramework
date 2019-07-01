@@ -25,92 +25,9 @@ namespace Spfx.Tests.Integration
     [TestFixture(SanityTestOptions.UseIpcProxy)]
     public class GeneralEndToEndSanity : CommonTestClass
     {
-        public static bool IsInMsTest { get; set; } = true;
-
-        [Flags]
-        public enum SanityTestOptions
-        {
-            UseIpcProxy = 1,
-            UseTcpProxy = 2
-        }
-
-        private static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
-
-#if NETFRAMEWORK
-        private static readonly ProcessKind SimpleIsolationKind = ProcessKind.AppDomain;
-#else
-        private static readonly ProcessKind SimpleIsolationKind = ProcessKind.Netcore;
-#endif
-
-        private readonly SanityTestOptions m_options;
-
         public GeneralEndToEndSanity(SanityTestOptions options)
+            : base(options)
         {
-            m_options = options;
-        }
-
-        private ProcessCluster CreateTestCluster()
-        {
-            var config = new ProcessClusterConfiguration
-            {
-                EnableFakeProcesses = true,
-                EnableAppDomains = true,
-                EnableWsl = true,
-                Enable32Bit = true,
-                TypeResolverFactoryType = typeof(TestTypeResolverFactory)
-            };
-
-            var cluster = new ProcessCluster(config);
-
-            if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
-                cluster.AddListener(new TcpInterprocessConnectionListener(0));
-
-            var exceptionHandler = new ExceptionReportingEndpoint();
-            cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler);
-
-            return cluster;
-        }
-
-        private class TestTypeResolverFactory : DefaultTypeResolverFactory
-        {
-            public override ITypeResolver CreateRootResolver()
-            {
-                var typeResolver = base.CreateRootResolver();
-                typeResolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new TestUnhandledExceptionsHandler(r));
-                return typeResolver;
-            }
-        }
-
-        private ProcessProxy CreateProxy(ProcessCluster cluster)
-        {
-            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
-                return cluster.PrimaryProxy;
-            return new ProcessProxy(encryptConnections: false);
-        }
-
-        private T CreateProxyInterface<T>(ProcessProxy proxy, ProcessCluster cluster, string processId, string endpointId)
-        {
-            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
-            {
-                return proxy.CreateInterface<T>($"/{processId}/{endpointId}");
-            }
-            else
-            {
-                var ep = cluster.GetListenEndpoints().OfType<IPEndPoint>().First();
-                if (ep.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    if (ep.Address.Equals(IPAddress.Any))
-                        ep = new IPEndPoint(IPAddress.Loopback, ep.Port);
-                }
-                else
-                {
-                    if (ep.Address.Equals(IPAddress.IPv6Any))
-                        ep = new IPEndPoint(IPAddress.IPv6Loopback, ep.Port);
-                }
-
-                var addr = new ProcessEndpointAddress(ep.ToString(), processId, endpointId);
-                return proxy.CreateInterface<T>(addr);
-            }
         }
         
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
@@ -218,7 +135,7 @@ namespace Spfx.Tests.Integration
             using (var svc = CreateSuccessfulSubprocess(cluster, p => p.ProcessKind = ProcessKind.DirectlyInRootProcess))
             {
                 var text = Guid.NewGuid().ToString("N");
-                UnwrapException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
+                ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
             }
         }
 
@@ -288,7 +205,7 @@ namespace Spfx.Tests.Integration
 
                 Unwrap(cluster.ProcessBroker.CreateProcess(procInfo));
 
-                UnwrapException(cluster.ProcessBroker.CreateProcess(procInfo), (ProcessAlreadyExistsException ex) =>
+                ExpectException(cluster.ProcessBroker.CreateProcess(procInfo), (ProcessAlreadyExistsException ex) =>
                 {
                     Assert.AreEqual(procId, ex.ProcessId);
                     Assert.IsTrue(ex.ToString().Contains(procId));
@@ -319,7 +236,7 @@ namespace Spfx.Tests.Integration
                 };
 
                 Unwrap(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo));
-                UnwrapException(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo),
+                ExpectException(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo),
                     (EndpointAlreadyExistsException ex) =>
                 {
                     Assert.AreEqual(epId, ex.EndpointId);

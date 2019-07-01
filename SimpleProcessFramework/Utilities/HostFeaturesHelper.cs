@@ -19,6 +19,8 @@ namespace Spfx.Utilities
         public static bool IsNetCoreSupported { get; } = !IsWindows || NetCoreExists(true);
         public static bool IsNetCore32Supported { get; } = IsWindows && NetCoreExists(false);
 
+        public static bool IsAppDomainSupported => LocalProcessKind.IsNetfx();
+
         private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
         public static bool IsInsideWsl { get; } = !IsWindows && s_isInsideWsl.Value;
 
@@ -27,6 +29,12 @@ namespace Spfx.Utilities
         public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
         public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
         public static Version NetcoreVersion => s_netcoreVersion.Value;
+
+#if DEBUG
+        public const bool IsDebugBuild = true;
+#else
+        public const bool IsDebugBuild = false;
+#endif
 
         public static string GetNetCoreHostPath(bool anyCpu)
         {
@@ -160,7 +168,7 @@ namespace Spfx.Utilities
                 return false;
             }
 
-            if (kind == ProcessKind.AppDomain && !LocalProcessKind.IsNetfx())
+            if (kind == ProcessKind.AppDomain && !IsAppDomainSupported)
             {
                 details = "AppDomains can only be used in .Net Framework hosts";
                 return false;

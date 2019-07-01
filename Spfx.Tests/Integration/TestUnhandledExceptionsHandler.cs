@@ -2,6 +2,7 @@
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
 using Spfx.Utilities;
+using Spfx.Diagnostics;
 using Spfx.Utilities.Threading;
 using System;
 using System.Threading.Tasks;
@@ -24,8 +25,7 @@ namespace Spfx.Tests.Integration
 
         public static Task GetUnhandledExceptionTask()
         {
-            return t_current?.m_failureTcs.Task
-                ?? TaskEx.NeverCompletingTask;
+            return t_current?.m_failureTcs.Task;
         }
 
         public ExceptionReportingEndpoint()
