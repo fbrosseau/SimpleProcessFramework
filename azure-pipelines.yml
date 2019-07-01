@@ -11,54 +11,54 @@ variables:
   windowsImage: 'windows-2019'
 
 strategy:
-    matrix:
-        #windows:
-        #    imageName: $(windowsImage)
-        linux:
-            imageName: 'ubuntu-16.04'
+  matrix:
+    #windows:
+    #  imageName: $(windowsImage)
+    linux:
+      imageName: 'ubuntu-16.04'
 
 pool:
-    vmImage: $(imageName)
+  vmImage: $(imageName)
 
 steps:
 - task: NuGetToolInstaller@0
 
 - task: DotNetCoreInstaller@0
-    displayName: 'Install .net core 2.1.x'
-    inputs:
-        version: '2.1.300'
+  displayName: 'Install .net core 2.1.x'
+  inputs:
+    version: '2.1.300'
 
 - task: DotNetCoreCLI@2
-    displayName: 'Main Build without tests'
-    inputs:
-        command: build
-        projects: 'SimpleProcessFramework.sln'
-        arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
+  displayName: 'Main Build without tests'
+  inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
 
 - task: DotNetCoreCLI@2
-    displayName: 'Full Build'
-    inputs:
-        command: build
-        projects: 'SimpleProcessFramework.sln'
-        arguments: '-c $(buildConfiguration) -v $(verbosity)'
+  displayName: 'Full Build'
+  inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration) -v $(verbosity)'
 
 - task: DotNetCoreCLI@2
-    displayName: 'Run tests (netcore)'
-    continueOnError: true
-    inputs:
-        command: test
-        projects: 'SimpleProcessFramework.sln'
-        buildConfiguration: '$(buildConfiguration)'
-        testRunTitle: '$(buildConfiguration) $(netcoreName)'
-        arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
+  displayName: 'Run tests (netcore)'
+  continueOnError: true
+  inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
 
 - task: DotNetCoreCLI@2
-    displayName: 'Run tests (netfx)'
-    continueOnError: true
-    condition: eq(variables['imageName'], '$(windowsImage)')
-    inputs:
-        command: test
-        projects: 'SimpleProcessFramework.sln'
-        buildConfiguration: '$(buildConfiguration)'
-        testRunTitle: '$(buildConfiguration) $(netfxName)'
-        arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
+  displayName: 'Run tests (netfx)'
+  continueOnError: true
+  condition: eq(variables['imageName'], '$(windowsImage)')
+  inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netfxName)'
+    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
