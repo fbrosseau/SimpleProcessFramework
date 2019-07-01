@@ -66,6 +66,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
         {
+            wrappedMessage.SourceConnectionId = sourceConnectionId;
             m_rawProcessContainer.OnMessageReceived(wrappedMessage);
         }
 

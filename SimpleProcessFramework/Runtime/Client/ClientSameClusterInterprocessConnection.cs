@@ -87,7 +87,7 @@ namespace Spfx.Runtime.Client
             m_connectionManager.RegisterClientChannel(this);
         }
 
-        void IInterprocessClientChannel.Initialize(IClientRequestHandler clientConnectionsManager)
+        void IInterprocessClientChannel.Initialize()
         {
             // TODO - Bad code
         }

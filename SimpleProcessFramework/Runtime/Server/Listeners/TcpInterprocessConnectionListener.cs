@@ -1,4 +1,5 @@
-﻿using Spfx.Runtime.Messages;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
@@ -13,26 +14,25 @@ namespace Spfx.Runtime.Server.Listeners
     public class TcpInterprocessConnectionListener : BaseInterprocessConnectionListener, ITcpListener
     {
         private readonly TcpListener m_listener;
-        private readonly IBinarySerializer m_serializer;
         private Task m_listenLoop;
+        private IBinarySerializer m_serializer;
 
         public IPEndPoint ListenEndpoint => (IPEndPoint)m_listener.LocalEndpoint;
         EndPoint IExternalConnectionsListener.ListenEndpoint => ListenEndpoint;
 
-        public TcpInterprocessConnectionListener(int port, IBinarySerializer serializer = null)
-            : this(TcpListener.Create(port), serializer)
+        public TcpInterprocessConnectionListener(int port)
+            : this(TcpListener.Create(port))
         {
         }
 
-        public TcpInterprocessConnectionListener(IPEndPoint ep, IBinarySerializer serializer = null)
-            : this(new TcpListener(ep), serializer)
+        public TcpInterprocessConnectionListener(IPEndPoint ep)
+            : this(new TcpListener(ep))
         {
         }
 
-        protected TcpInterprocessConnectionListener(TcpListener tcpListener, IBinarySerializer serializer)
+        protected TcpInterprocessConnectionListener(TcpListener tcpListener)
         {
             m_listener = tcpListener;
-            m_serializer = serializer ?? new DefaultBinarySerializer();
         }
 
         public override void Dispose()
@@ -41,9 +41,10 @@ namespace Spfx.Runtime.Server.Listeners
             m_listenLoop.FireAndForget();
         }
 
-        public override void Start(IClientConnectionManager owner)
+        public override void Start(ITypeResolver typeResolver)
         {
-            base.Start(owner);
+            base.Start(typeResolver);
+            m_serializer = typeResolver.GetSingleton<IBinarySerializer>();
             m_listener.Start();
             m_listenLoop = ListenLoop();
         }
@@ -69,7 +70,7 @@ namespace Spfx.Runtime.Server.Listeners
 
                 var finalStream = await clientHandshakeTask;
 
-                var conn = new ServerInterprocessChannel(m_serializer, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
+                var conn = new ServerInterprocessChannel(TypeResolver, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
                 RaiseConnectionReceived(conn);
                 disposeBag.ReleaseAll();
             }

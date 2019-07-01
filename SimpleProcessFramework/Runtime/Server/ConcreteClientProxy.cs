@@ -8,6 +8,7 @@ namespace Spfx.Runtime.Server
         private readonly IInterprocessClientChannel m_actualChannel;
 
         public string UniqueId => m_actualChannel.UniqueId;
+        public bool IsExternalConnection => UniqueId.StartsWith(InterprocessConnectionId.ExternalConnectionIdPrefix);
 
         public ConcreteClientProxy(IInterprocessClientChannel actualChannel)
         {
@@ -23,5 +24,7 @@ namespace Spfx.Runtime.Server
         {
             m_actualChannel.SendMessage(msg);
         }
+
+        public override string ToString() => nameof(ConcreteClientProxy) + ": " + UniqueId;
     }
 }

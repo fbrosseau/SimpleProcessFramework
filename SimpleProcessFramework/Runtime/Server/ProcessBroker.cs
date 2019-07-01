@@ -15,15 +15,10 @@ using Spfx.Utilities.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {
-    public interface IInternalProcessBroker : IProcessBroker, IIncomingClientMessagesHandler, IAsyncDestroyable
+    public interface IInternalProcessBroker : IProcessBroker, IAsyncDestroyable
     {
         IProcess MasterProcess { get; }
-    }
-
-    public interface IInternalMessageDispatcher
-    {
-        string LocalProcessUniqueId { get; }
-        void ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct);
+        void ForwardMessageToProcess(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
     }
 
     internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IInternalMessageDispatcher
@@ -48,7 +43,6 @@ namespace Spfx.Runtime.Server
             m_owner = owner;
             m_typeResolver = owner.TypeResolver;
             m_typeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
-            m_typeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
             m_config = m_typeResolver.GetSingleton<ProcessClusterConfiguration>();
             m_logger = m_typeResolver.GetLogger(GetType(), uniqueInstance: true);
 
@@ -166,7 +160,8 @@ namespace Spfx.Runtime.Server
                     HostAuthority = m_owner.MasterProcess.HostAuthority,
                     ProcessKind = info.ProcessKind,
                     ProcessUniqueId = info.ProcessUniqueId,
-                    ParentProcessId = Process.GetCurrentProcess().Id
+                    ParentProcessId = Process.GetCurrentProcess().Id,
+                    TypeResolverFactory = m_config.TypeResolverFactoryType?.AssemblyQualifiedName
                 };
 
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
@@ -302,7 +297,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        void IIncomingClientMessagesHandler.ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
+        public void ForwardMessageToProcess(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(wrappedMessage, nameof(wrappedMessage));

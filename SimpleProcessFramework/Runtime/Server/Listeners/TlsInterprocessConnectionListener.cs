@@ -1,5 +1,4 @@
 ﻿using Spfx.Utilities;
-using Spfx.Serialization;
 using System.IO;
 using System.Net;
 using System.Net.Security;
@@ -14,18 +13,18 @@ namespace Spfx.Runtime.Server.Listeners
     {
         private X509Certificate2 m_certificate;
 
-        public TlsInterprocessConnectionListener(X509Certificate2 cert, int port, IBinarySerializer serializer = null)
-          : this(cert, TcpListener.Create(port), serializer)
+        public TlsInterprocessConnectionListener(X509Certificate2 cert, int port)
+          : this(cert, TcpListener.Create(port))
         {
         }
 
-        public TlsInterprocessConnectionListener(X509Certificate2 cert, IPEndPoint ep, IBinarySerializer serializer = null)
-            : this(cert, new TcpListener(ep), serializer)
+        public TlsInterprocessConnectionListener(X509Certificate2 cert, IPEndPoint ep)
+            : this(cert, new TcpListener(ep))
         {
         }
 
-        public TlsInterprocessConnectionListener(X509Certificate2 cert, TcpListener tcpListener, IBinarySerializer serializer)
-            : base(tcpListener, serializer)
+        public TlsInterprocessConnectionListener(X509Certificate2 cert, TcpListener tcpListener)
+            : base(tcpListener)
         {
             UpdateCertificate(cert);
         }

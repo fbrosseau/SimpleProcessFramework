@@ -104,7 +104,7 @@ namespace Spfx.Runtime.Server
             DefaultTypeResolver.RegisterSingleton<IInternalRequestsHandler>(new InternalRequestsHandler(hostAuthority));
             DefaultTypeResolver.RegisterSingleton<IProcess>(this);
             DefaultTypeResolver.RegisterSingleton<IProcessInternal>(this);
-            DefaultTypeResolver.RegisterSingleton<IClientConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
+            DefaultTypeResolver.RegisterSingleton<ILocalConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
 
             m_logger = DefaultTypeResolver.GetLogger(GetType(), uniqueInstance: true);
 
@@ -300,7 +300,7 @@ namespace Spfx.Runtime.Server
             if (ep is null)
                 throw new EndpointNotFoundException(callReq.Destination);
 
-            var requestContext = new InterprocessRequestContext(ep, source, callReq);
+            var requestContext = new InterprocessRequestContext(DefaultTypeResolver, ep, source, callReq);
             ep.HandleMessage(requestContext);
         }
 

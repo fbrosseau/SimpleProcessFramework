@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Utilities.Diagnostics;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
-using Spfx.Utilities.Diagnostics;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
@@ -17,7 +18,7 @@ namespace Spfx.Runtime.Server.Processes
         protected ITypeResolver TypeResolver { get; }
         protected ProcessClusterConfiguration Config { get; }
         public ProcessInformation ProcessInfo { get; private set; }
-        private readonly IInternalProcessBroker m_processBroker;
+        private readonly IIncomingClientMessagesHandler m_processBroker;
         protected ILogger Logger { get; }
 
         private readonly AsyncManualResetEvent m_initEvent = new AsyncManualResetEvent();
@@ -30,7 +31,7 @@ namespace Spfx.Runtime.Server.Processes
             TypeResolver = typeResolver;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
             BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
-            m_processBroker = typeResolver.GetSingleton<IInternalProcessBroker>();
+            m_processBroker = typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
         }
 

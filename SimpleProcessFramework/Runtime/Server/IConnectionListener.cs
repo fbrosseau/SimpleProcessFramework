@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Spfx.Reflection;
+using System;
 
 namespace Spfx.Runtime.Server
 {
     public interface IConnectionListener : IDisposable
     {
-        void Start(IClientConnectionManager clientConnectionsManager);
+        void Start(ITypeResolver typeResolver);
     }
 }

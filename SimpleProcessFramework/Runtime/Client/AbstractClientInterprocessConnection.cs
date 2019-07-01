@@ -24,8 +24,8 @@ namespace Spfx.Runtime.Client
         private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();
         private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
 
-        protected AbstractClientInterprocessConnection(IBinarySerializer serializer)
-            : base(serializer)
+        protected AbstractClientInterprocessConnection(ITypeResolver typeResolver)
+            : base(typeResolver)
         {
         }
 

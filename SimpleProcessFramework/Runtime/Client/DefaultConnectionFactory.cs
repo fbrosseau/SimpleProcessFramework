@@ -1,4 +1,5 @@
-﻿using Spfx.Serialization;
+﻿using Spfx.Reflection;
+using Spfx.Serialization;
 using System;
 using System.Collections.Generic;
 
@@ -7,22 +8,27 @@ namespace Spfx.Runtime.Client
     public interface IClientConnectionFactory
     {
         IClientInterprocessConnection GetConnection(ProcessEndpointAddress destination);
-        ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address);
     }
 
-    internal class DefaultClientConnectionFactory : IClientConnectionFactory
+    public abstract class DefaultClientConnectionFactory : IClientConnectionFactory
     {
         private readonly Dictionary<string, IClientInterprocessConnection> m_connections = new Dictionary<string, IClientInterprocessConnection>(StringComparer.OrdinalIgnoreCase);
-        private readonly IBinarySerializer m_serializer;
 
-        public DefaultClientConnectionFactory(IBinarySerializer serializer)
+        protected ITypeResolver TypeResolver { get; }
+
+        private readonly ILocalConnectionFactory m_loopbackConnectionProvider;
+
+        public DefaultClientConnectionFactory(ITypeResolver typeResolver)
         {
-            m_serializer = serializer;
+            TypeResolver = typeResolver;
+            m_loopbackConnectionProvider = typeResolver.CreateSingleton<ILocalConnectionFactory>();
         }
 
         public IClientInterprocessConnection GetConnection(ProcessEndpointAddress destination)
         {
-            var hostAuthority = NormalizeAddress(destination).HostAuthority;
+            bool isLoopback = m_loopbackConnectionProvider.IsLoopback(ref destination);
+
+            var hostAuthority = destination.HostAuthority;
 
             IClientInterprocessConnection conn;
 
@@ -32,7 +38,7 @@ namespace Spfx.Runtime.Client
                     return conn;
             }
 
-            var newConn = CreateNewConnection(destination);
+            var newConn = isLoopback ? m_loopbackConnectionProvider.GetLoopbackConnection() : CreateNewConnection(destination);
             var winner = TryRegisterConnection(destination, newConn);
 
             if (ReferenceEquals(winner, newConn))
@@ -57,14 +63,6 @@ namespace Spfx.Runtime.Client
             return newConn;
         }
 
-        protected virtual IClientInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
-        {
-            return new ClientRemoteInterprocessConnection(destination.HostEndpoint, m_serializer);
-        }
-
-        public virtual ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address)
-        {
-            return address;
-        }
+        protected abstract IClientInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination);
     }
 }

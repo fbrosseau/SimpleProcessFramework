@@ -1,4 +1,5 @@
-﻿using Spfx.Runtime.Messages;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Messages;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
@@ -60,9 +61,9 @@ namespace Spfx.Runtime.Common
             }
         }
 
-        public AbstractInterprocessConection(IBinarySerializer serializer)
+        public AbstractInterprocessConection(ITypeResolver typeResolver)
         {
-            BinarySerializer = serializer;
+            BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
 
             m_pendingWrites = new AsyncQueue<PendingOperation>
             {

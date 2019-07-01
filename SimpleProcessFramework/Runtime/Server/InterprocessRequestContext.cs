@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Serialization;
+using Spfx.Runtime.Server;
 
 namespace Spfx.Runtime.Server
 {
@@ -16,13 +17,15 @@ namespace Spfx.Runtime.Server
         private readonly IProcessEndpointHandler m_handler;
         private CancellationTokenSource m_cts;
         private readonly TaskCompletionSource<object> m_tcs;
+        private readonly ITypeResolver m_typeResolver;
+        private readonly IUnhandledExceptionsHandler m_unhandledExceptionsHandler;
 
         public IInterprocessRequest Request { get; }
         public IInterprocessClientProxy Client { get; }
         public CancellationToken Cancellation => m_cts?.Token ?? default;
         public Task<object> Completion => m_tcs.Task;
 
-        public InterprocessRequestContext(IProcessEndpointHandler endpointHandler, IInterprocessClientProxy client, IInterprocessRequest req)
+        public InterprocessRequestContext(ITypeResolver typeResolver, IProcessEndpointHandler endpointHandler, IInterprocessClientProxy client, IInterprocessRequest req)
         {
             Guard.ArgumentNotNull(endpointHandler, nameof(endpointHandler));
             Guard.ArgumentNotNull(client, nameof(client));
@@ -33,12 +36,14 @@ namespace Spfx.Runtime.Server
             m_handler = endpointHandler;
             m_tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+            m_typeResolver = typeResolver;
+
             m_tcs.Task.ContinueWith(s_rawOnRequestCompleted, this, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         private static void RawOnRequestCompleted(Task<object> t, object s)
         {
-            ((InterprocessRequestContext)s).MarkAsCompleted();
+            ((InterprocessRequestContext)s).SafeMarkAsCompleted();
         }
 
         public void Cancel()
@@ -94,6 +99,11 @@ namespace Spfx.Runtime.Server
                     Error = RemoteExceptionInfo.Create(Completion.ExtractException())
                 });
             }
+        }
+
+        private void SafeMarkAsCompleted()
+        {
+            CriticalTryCatch.Run(m_typeResolver, this, thisInstance => thisInstance.MarkAsCompleted());
         }
 
         public void CompleteWithTask(Task t) => CompleteWithTask<VoidType>(t);

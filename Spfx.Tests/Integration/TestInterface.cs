@@ -40,8 +40,11 @@ namespace Spfx.Tests.Integration
 
         protected override void OnDispose()
         {
-            Logger.Info?.Trace("OnDispose");
-            Logger.Dispose();
+            if (Logger != null)
+            {
+                Logger.Info?.Trace("OnDispose");
+                Logger.Dispose();
+            }
             base.OnDispose();
         }
 

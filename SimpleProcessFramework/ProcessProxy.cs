@@ -101,8 +101,23 @@ namespace Spfx
         private readonly ITypeResolver m_typeResolver;
 
         public ProcessProxy()
-            : this(ProcessCluster.DefaultTypeResolver)
+            : this(true)
         {
+        }
+
+        public ProcessProxy(bool encryptConnections)
+           : this(CreateTypeResolver(encryptConnections))
+        {
+        }
+
+        private static ITypeResolver CreateTypeResolver(bool encryptConnections)
+        {
+            var typeResolver = DefaultTypeResolverFactory.DefaultTypeResolver.CreateNewScope();
+            if (encryptConnections)
+                typeResolver.RegisterFactory<IClientConnectionFactory>(r => new TcpTlsClientConnectionFactory(r));
+            else
+                typeResolver.RegisterFactory<IClientConnectionFactory>(r => new TcpClientConnectionFactory(r));
+            return typeResolver;
         }
 
         public ProcessProxy(ITypeResolver resolver)
@@ -118,15 +133,9 @@ namespace Spfx
 
         public T CreateInterface<T>(ProcessEndpointAddress address)
         {
-            address = NormalizeAddress(address);
             var proxy = ProcessProxyFactory.CreateImplementation<T>();
             proxy.Initialize(m_connectionFactory.GetConnection(address), address);
             return (T)(object)proxy;
-        }
-
-        public ProcessEndpointAddress NormalizeAddress(ProcessEndpointAddress address)
-        {
-            return m_connectionFactory.NormalizeAddress(address);
         }
 
         public static ProcessEndpointAddress GetEndpointAddress(object proxyObject)

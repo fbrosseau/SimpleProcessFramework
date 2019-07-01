@@ -2,26 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Listeners;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {
-    public interface IIncomingClientMessagesHandler
-    {
-        void ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
-    }
-
-    internal class ClientConnectionManager : AsyncDestroyable, IClientConnectionManager, IClientRequestHandler
+    internal class ClientConnectionManager : AsyncDestroyable, IClientConnectionManager
     {
         private readonly Dictionary<string, IInterprocessClientChannel> m_activeChannels = new Dictionary<string, IInterprocessClientChannel>();
         private readonly HashSet<IConnectionListener> m_listeners = new HashSet<IConnectionListener>();
-        private readonly IIncomingClientMessagesHandler m_processManager;
+        private readonly ITypeResolver m_typeResolver;
+        private IIncomingClientMessagesHandler m_messagesHandler;
 
-        public ClientConnectionManager(IIncomingClientMessagesHandler processManager)
+        public ClientConnectionManager(ITypeResolver typeResolver)
         {
-            m_processManager = processManager;
+            m_typeResolver = typeResolver;
         }
 
         public void AddListener(IConnectionListener listener)
@@ -32,9 +29,12 @@ namespace Spfx.Runtime.Server
                     throw new InvalidOperationException("This listener was added twice");
             }
 
+            if (m_messagesHandler is null)
+                m_messagesHandler = m_typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
+
             try
             {
-                listener.Start(this);
+                listener.Start(m_typeResolver);
             }
             catch
             {
@@ -66,7 +66,7 @@ namespace Spfx.Runtime.Server
             }
 
             cli.ConnectionLost += OnConnectionLost;
-            cli.Initialize(this);
+            cli.Initialize();
         }
 
         private void OnConnectionLost(object sender, EventArgs e)
@@ -75,11 +75,6 @@ namespace Spfx.Runtime.Server
             {
                 m_activeChannels.Remove(((IInterprocessClientChannel)sender).UniqueId);
             }
-        }
-
-        void IClientRequestHandler.OnRequestReceived(IInterprocessClientChannel source, WrappedInterprocessMessage wrappedMessage)
-        {
-            m_processManager.ForwardMessage(source.GetWrapperProxy(), wrappedMessage);
         }
 
         public IInterprocessClientChannel GetClientChannel(string connectionId, bool mustExist)

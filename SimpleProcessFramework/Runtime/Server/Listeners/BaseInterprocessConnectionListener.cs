@@ -1,16 +1,21 @@
-﻿namespace Spfx.Runtime.Server.Listeners
+﻿using Spfx.Reflection;
+
+namespace Spfx.Runtime.Server.Listeners
 {
     public abstract class BaseInterprocessConnectionListener : IConnectionListener
     {
+        public ITypeResolver TypeResolver { get; private set; }
+
         private IClientConnectionManager m_connectionManager;
 
         public virtual void Dispose()
         {
         }
 
-        public virtual void Start(IClientConnectionManager owner)
+        public virtual void Start(ITypeResolver typeResolver)
         {
-            m_connectionManager = owner;
+            TypeResolver = typeResolver;
+            m_connectionManager = typeResolver.GetSingleton<IClientConnectionManager>();
         }
 
         protected void RaiseConnectionReceived(IInterprocessClientChannel client)

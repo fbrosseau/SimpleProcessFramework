@@ -1,4 +1,5 @@
-﻿using Spfx.Runtime.Common;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
 using Spfx.Utilities;
@@ -16,23 +17,25 @@ namespace Spfx.Runtime.Server
         private readonly Stream m_writeStream;
         private readonly string m_localEndpoint;
         private readonly string m_remoteEndpoint;
+        private readonly ITypeResolver m_typeResolver;
         private readonly IInterprocessClientProxy m_wrapperProxy;
-        private IClientRequestHandler m_owner;
+        private IIncomingClientMessagesHandler m_messagesHandler;
         private static readonly SimpleUniqueIdFactory<IInterprocessClientChannel> s_idFactory = new SimpleUniqueIdFactory<IInterprocessClientChannel>();
 
-        public ServerInterprocessChannel(IBinarySerializer serializer, Stream duplexStream, string localEndpoint, string remoteEndpoint)
-            : this(serializer, duplexStream, duplexStream, localEndpoint, remoteEndpoint)
+        public ServerInterprocessChannel(ITypeResolver typeResolver, Stream duplexStream, string localEndpoint, string remoteEndpoint)
+            : this(typeResolver, duplexStream, duplexStream, localEndpoint, remoteEndpoint)
         {
         }
 
-        public ServerInterprocessChannel(IBinarySerializer serializer, Stream readStream, Stream writeStream, string localEndpoint, string remoteEndpoint)
-            : base(serializer)
+        public ServerInterprocessChannel(ITypeResolver typeResolver, Stream readStream, Stream writeStream, string localEndpoint, string remoteEndpoint)
+            : base(typeResolver)
         {
-            UniqueId = "<out>/" + s_idFactory.GetNextId(this);
+            UniqueId = InterprocessConnectionId.ExternalConnectionIdPrefix + "/ " + s_idFactory.GetNextId(this) + "/" + remoteEndpoint;
             m_readStream = readStream;
             m_writeStream = writeStream;
             m_localEndpoint = localEndpoint;
             m_remoteEndpoint = remoteEndpoint;
+            m_typeResolver = typeResolver;
             m_wrapperProxy = new ConcreteClientProxy(this);
         }
 
@@ -41,12 +44,9 @@ namespace Spfx.Runtime.Server
             return Task.FromResult((m_readStream, m_writeStream));
         }
 
-        public virtual void Initialize(IClientRequestHandler clientConnectionsManager)
+        void IInterprocessClientChannel.Initialize()
         {
-            if (m_owner != null)
-                throw new InvalidOperationException("This channel is already registered");
-            m_owner = clientConnectionsManager;
-
+            m_messagesHandler = m_typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
             Initialize();
         }
 
@@ -55,7 +55,7 @@ namespace Spfx.Runtime.Server
             switch (msg)
             {
                 case WrappedInterprocessMessage wrapper:
-                    m_owner.OnRequestReceived(this, wrapper);
+                    m_messagesHandler.ForwardMessage(GetWrapperProxy(), wrapper);
                     break;
                 default:
                     base.HandleExternalMessage(msg);

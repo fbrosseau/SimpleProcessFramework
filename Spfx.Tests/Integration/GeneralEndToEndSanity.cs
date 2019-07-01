@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
+using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Server;
 using Spfx.Runtime.Server.Listeners;
@@ -50,25 +51,41 @@ namespace Spfx.Tests.Integration
 
         private ProcessCluster CreateTestCluster()
         {
-            var cluster = new ProcessCluster(new ProcessClusterConfiguration
+            var config = new ProcessClusterConfiguration
             {
                 EnableFakeProcesses = true,
                 EnableAppDomains = true,
                 EnableWsl = true,
-                Enable32Bit = true
-            });
+                Enable32Bit = true,
+                TypeResolverFactoryType = typeof(TestTypeResolverFactory)
+            };
+
+            var cluster = new ProcessCluster(config);
 
             if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 
+            var exceptionHandler = new ExceptionReportingEndpoint();
+            cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler);
+
             return cluster;
+        }
+
+        private class TestTypeResolverFactory : DefaultTypeResolverFactory
+        {
+            public override ITypeResolver CreateRootResolver()
+            {
+                var typeResolver = base.CreateRootResolver();
+                typeResolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new TestUnhandledExceptionsHandler(r));
+                return typeResolver;
+            }
         }
 
         private ProcessProxy CreateProxy(ProcessCluster cluster)
         {
             if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
                 return cluster.PrimaryProxy;
-            return new ProcessProxy();
+            return new ProcessProxy(encryptConnections: false);
         }
 
         private T CreateProxyInterface<T>(ProcessProxy proxy, ProcessCluster cluster, string processId, string endpointId)

@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Spfx.Tests.Integration;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
@@ -12,18 +13,25 @@ namespace Spfx.Tests
     internal static class TestUtilities
     {
 #if DEBUG
-        public const int DefaultTestTimeout = 30000;
+        public const int DefaultTestTimeout = 300000;
 #else
         public const int DefaultTestTimeout = 30000;
 #endif
 
         public static void Unwrap(Task task)
         {
-            if (!task.Wrap().Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
+            var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();
+            var choices = new[] { task, unhandledEx };
+            var winner = Task.WaitAny(choices, TimeSpan.FromSeconds(DefaultTestTimeout));
+
+            if (winner == -1)
                 throw new TimeoutException();
 
             // to rethrow the original clean exception
-            task.GetAwaiter().GetResult();
+            if (winner == 0)
+                task.GetAwaiter().GetResult();
+            else
+                throw new Exception("Remote process had an unhandled exception", unhandledEx.ExtractException());
         }
 
         public static T Unwrap<T>(Task<T> task)
