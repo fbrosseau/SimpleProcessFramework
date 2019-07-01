@@ -1,4 +1,4 @@
-﻿using Spfx.Utilities.Diagnostics;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;

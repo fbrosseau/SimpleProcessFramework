@@ -1,9 +1,9 @@
-﻿using Spfx.Utilities.Diagnostics;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Reflection;
 using System;
 using System.Diagnostics;
 
-namespace Spfx.Utilities
+namespace Spfx.Diagnostics
 {
     public interface IUnhandledExceptionsHandler
     {

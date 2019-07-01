@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Serialization;
 using Spfx.Runtime.Server;
+using Spfx.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {

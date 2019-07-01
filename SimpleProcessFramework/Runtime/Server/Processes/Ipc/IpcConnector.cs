@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 using Spfx.Io;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;

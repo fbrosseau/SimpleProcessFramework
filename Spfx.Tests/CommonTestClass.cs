@@ -1,5 +1,5 @@
 ﻿using Spfx.Reflection;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 
 namespace Spfx.Tests
 {

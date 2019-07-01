@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Spfx.Utilities.Diagnostics
+namespace Spfx.Diagnostics.Logging
 {
     internal class DefaultLogListener : ILogListener
     {

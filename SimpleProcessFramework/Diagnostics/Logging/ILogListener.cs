@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace Spfx.Utilities.Diagnostics
+namespace Spfx.Diagnostics.Logging
 {
     [EditorBrowsable(EditorBrowsableState.Never)] // marking as Browsable-Never to avoid polluting people's intellisense with very common names
     public interface ILogListener

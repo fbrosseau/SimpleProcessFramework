@@ -2,9 +2,9 @@
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
-using Spfx.Utilities;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 using System;
+using Spfx.Diagnostics;
 
 namespace Spfx.Reflection
 {

@@ -11,7 +11,7 @@ using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities.Threading;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 
 namespace Spfx.Runtime.Server
 {

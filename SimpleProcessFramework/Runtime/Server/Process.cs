@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 
 namespace Spfx.Runtime.Server
 {

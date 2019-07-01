@@ -15,7 +15,7 @@ using Spfx.Interfaces;
 using System.Net.Sockets;
 using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Reflection;
-using Spfx.Utilities.Diagnostics;
+using Spfx.Diagnostics.Logging;
 
 namespace Spfx.Runtime.Server.Processes
 {

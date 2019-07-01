@@ -1,7 +1,7 @@
 ﻿using Spfx.Utilities;
 using System;
 
-namespace Spfx.Utilities.Diagnostics
+namespace Spfx.Diagnostics.Logging
 {
     internal class DefaultLogger : ILogger
     {
