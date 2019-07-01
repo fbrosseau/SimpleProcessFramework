@@ -1,23 +1,18 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Utilities;
+using System;
 using System.ComponentModel;
 
 namespace Spfx
 {
     public class ProcessClusterConfiguration
     {
-        private ITypeResolver m_typeResolver = ProcessCluster.DefaultTypeResolver;
-
         public bool IsReadOnly { get; private set; }
 
         internal static ProcessClusterConfiguration Default { get; } = new ProcessClusterConfiguration();
 
-        public ITypeResolver TypeResolver
-        {
-            get => m_typeResolver;
-            set { m_typeResolver = value ?? ProcessCluster.DefaultTypeResolver; }
-        }
+        public Type TypeResolverFactoryType { get; set; } = typeof(DefaultTypeResolverFactory);
 
         public bool UseGenericProcessSpawnOnWindows { get; set; } = true;
         public bool EnableNetcore { get; set; } = true;

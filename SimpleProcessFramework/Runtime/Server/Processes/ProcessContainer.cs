@@ -64,7 +64,11 @@ namespace Spfx.Runtime.Server.Processes
             m_gcHandleToThis = GCHandle.Alloc(this);
             m_inputPayload = ProcessSpawnPunchPayload.Deserialize(input);
 
-            TypeResolver = ProcessCluster.DefaultTypeResolver.CreateNewScope();
+            var typeResolverFactoryType = string.IsNullOrWhiteSpace(m_inputPayload.TypeResolverFactory)
+                ? typeof(DefaultTypeResolverFactory)
+                : Type.GetType(m_inputPayload.TypeResolverFactory, true);
+
+            TypeResolver = DefaultTypeResolverFactory.CreateRootTypeResolver(typeResolverFactoryType);
             TypeResolver.RegisterSingleton<IIpcConnectorListener>(this);
             TypeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
             m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true);
