@@ -84,7 +84,7 @@ namespace Spfx.Utilities
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override object Box(byte val)
             {
-                if (val >= s_min && val <= s_max)
+                if (val <= s_max)
                     return s_boxedInts[val - s_min];
 
                 return val;
@@ -97,7 +97,7 @@ namespace Spfx.Utilities
             return TaskHelper<T>.DefaultSuccessTask;
         }
 
-        private class TaskHelper<T>
+        private static class TaskHelper<T>
         {
             public static readonly Task<T> DefaultSuccessTask = Task.FromResult(default(T));
         }

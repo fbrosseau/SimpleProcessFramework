@@ -6,14 +6,13 @@ namespace Spfx.Serialization
 {
     internal class EnumSerializer : ITypeSerializer
     {
-        private readonly Type m_underlying;
         private readonly int m_underlyingTypeBytes;
         private readonly Type m_enumType;
 
         private EnumSerializer(Type enumType)
         {
-            m_underlying = Enum.GetUnderlyingType(enumType);
-            m_underlyingTypeBytes = Marshal.SizeOf(m_underlying);
+            var underlying = Enum.GetUnderlyingType(enumType);
+            m_underlyingTypeBytes = Marshal.SizeOf(underlying);
             m_enumType = enumType;
         }
 

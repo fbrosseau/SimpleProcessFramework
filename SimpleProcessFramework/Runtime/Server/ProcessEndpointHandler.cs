@@ -40,7 +40,7 @@ namespace Spfx.Runtime.Server
             base.OnDispose();
         }
 
-        protected async override Task OnTeardownAsync(CancellationToken ct)
+        protected override async Task OnTeardownAsync(CancellationToken ct)
         {
             if (m_realTarget is IAsyncDestroyable d)
                 await d.TeardownAsync(ct).ConfigureAwait(false);
@@ -175,7 +175,7 @@ namespace Spfx.Runtime.Server
 
             internal void AddConsumer(IInterprocessClientProxy client, long registrationId)
             {
-                bool newSub = false;
+                bool newSub;
                 lock (this)
                 {
                     newSub = m_listeners.Count == 0;
@@ -193,7 +193,7 @@ namespace Spfx.Runtime.Server
 
             internal void RemoveConsumer(IInterprocessClientProxy client)
             {
-                bool unsubscribe = false;
+                bool unsubscribe;
                 lock (this)
                 {
                     var newList = m_listeners.ToList();

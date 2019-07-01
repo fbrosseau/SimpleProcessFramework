@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
@@ -39,7 +38,7 @@ namespace Spfx.Runtime.Server.Processes
         {
             try
             {
-                Logger.Debug?.Trace($"Starting CreateProcess...");
+                Logger.Debug?.Trace("Starting CreateProcess...");
                 ProcessInfo = await CreateActualProcessAsync(punchPayload);
                 m_initEvent.Set();
                 Logger.Info?.Trace($"CreateProcess succeeded (PID {ProcessInfo.OsPid})");

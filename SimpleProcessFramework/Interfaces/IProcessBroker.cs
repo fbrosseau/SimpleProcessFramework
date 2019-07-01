@@ -54,10 +54,11 @@ namespace Spfx.Interfaces
         Failure
     }
 
+    [Flags]
     public enum ProcessCreationOptions
     {
-        ContinueIfExists,
-        ThrowIfExists
+        ContinueIfExists = 1,
+        ThrowIfExists = 2
     }
 
     [DataContract]

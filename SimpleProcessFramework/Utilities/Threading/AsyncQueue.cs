@@ -85,10 +85,7 @@ namespace Spfx.Utilities.Threading
             if (isAddingCompleted && DisposeIgnoredItems)
                 TryDisposeItem(item);
 
-            if (completedWaiter != null)
-            {
-                completedWaiter.SetDequeueResult(item); // we marked it as RunContinuationsAsynchronously, no need to possibly double-queue on threadpool
-            }
+            completedWaiter?.SetDequeueResult(item); // we marked it as RunContinuationsAsynchronously, no need to possibly double-queue on threadpool
         }
 
         public ValueTask<T> Dequeue()

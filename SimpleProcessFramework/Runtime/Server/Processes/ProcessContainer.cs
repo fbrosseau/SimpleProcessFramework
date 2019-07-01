@@ -1,8 +1,6 @@
-﻿using Microsoft.Win32.SafeHandles;
-using Spfx.Utilities;
+﻿using Spfx.Utilities;
 using Spfx.Io;
 using Spfx.Runtime.Messages;
-using Spfx.Serialization;
 using Spfx.Utilities.Threading;
 using System;
 using System.IO.Pipes;

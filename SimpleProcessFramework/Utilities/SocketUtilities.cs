@@ -61,7 +61,7 @@ namespace Spfx.Utilities
             {
                 Type t = Type.GetType("System.Net.Sockets.UnixDomainSocketEndPoint, System.Net.Sockets");
                 if (t != null)
-                    return (EndPoint)Activator.CreateInstance(t, new[] { addr });
+                    return (EndPoint)Activator.CreateInstance(t, addr);
             }
 
             return new UnixEndpoint(addr);

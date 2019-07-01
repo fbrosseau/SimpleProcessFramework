@@ -67,7 +67,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             Logger.Dispose();
         }
 
-        protected async override Task OnTeardownAsync(CancellationToken ct)
+        protected override async Task OnTeardownAsync(CancellationToken ct)
         {
             Logger.Info?.Trace("OnTeardownAsync");
             if (!Shutdown1ReceivedEvent.IsSet)

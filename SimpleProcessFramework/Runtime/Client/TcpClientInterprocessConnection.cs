@@ -56,7 +56,7 @@ namespace Spfx.Runtime.Client
 
         protected virtual Task<Stream> CreateFinalStream(Stream ns)
         {
-            return Task.FromResult((Stream)ns);
+            return Task.FromResult(ns);
         }
 
         private async Task Authenticate(Stream tlsStream)

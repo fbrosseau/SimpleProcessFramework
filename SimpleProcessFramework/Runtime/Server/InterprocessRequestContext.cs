@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Serialization;
-using Spfx.Runtime.Server;
 using Spfx.Diagnostics;
 
 namespace Spfx.Runtime.Server
@@ -19,7 +18,6 @@ namespace Spfx.Runtime.Server
         private CancellationTokenSource m_cts;
         private readonly TaskCompletionSource<object> m_tcs;
         private readonly ITypeResolver m_typeResolver;
-        private readonly IUnhandledExceptionsHandler m_unhandledExceptionsHandler;
 
         public IInterprocessRequest Request { get; }
         public IInterprocessClientProxy Client { get; }

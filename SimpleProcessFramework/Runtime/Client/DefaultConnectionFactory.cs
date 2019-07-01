@@ -1,5 +1,4 @@
 ﻿using Spfx.Reflection;
-using Spfx.Serialization;
 using System;
 using System.Collections.Generic;
 
@@ -30,11 +29,9 @@ namespace Spfx.Runtime.Client
 
             var hostAuthority = destination.HostAuthority;
 
-            IClientInterprocessConnection conn;
-
             lock (m_connections)
             {
-                if (m_connections.TryGetValue(hostAuthority, out conn))
+                if (m_connections.TryGetValue(hostAuthority, out var conn))
                     return conn;
             }
 

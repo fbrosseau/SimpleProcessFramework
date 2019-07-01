@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿#if NETCOREAPP
 namespace Spfx.Tests
 {
-#if NETCOREAPP
     /// <summary>
     /// https://github.com/nunit/nunit/issues/3282
     /// </summary>
@@ -14,5 +10,6 @@ namespace Spfx.Tests
         {
         }
     }
-#endif
 }
+#endif
+

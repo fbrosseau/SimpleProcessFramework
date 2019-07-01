@@ -1,7 +1,5 @@
-﻿using Spfx.Diagnostics.Logging;
-using Spfx.Reflection;
+﻿using Spfx.Reflection;
 using System;
-using System.Diagnostics;
 
 namespace Spfx.Diagnostics
 {

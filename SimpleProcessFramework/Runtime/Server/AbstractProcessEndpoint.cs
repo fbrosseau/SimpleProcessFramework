@@ -1,5 +1,4 @@
 ﻿using Spfx.Utilities.Threading;
-using System;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server

@@ -151,7 +151,7 @@ namespace Spfx.Runtime.Server
             m_logger.Dispose();
         }
 
-        protected async override Task OnTeardownAsync(CancellationToken ct)
+        protected override async Task OnTeardownAsync(CancellationToken ct)
         {
             List<IProcessEndpointHandler> endpoints;
             lock (m_endpointHandlers)
@@ -170,7 +170,7 @@ namespace Spfx.Runtime.Server
 
             await Task.WhenAll(disposeTasks);
 
-            m_logger.Info?.Trace($"OnTeardownAsync of endpoints completed");
+            m_logger.Info?.Trace("OnTeardownAsync of endpoints completed");
 
             await base.OnTeardownAsync(ct);
         }
@@ -271,7 +271,7 @@ namespace Spfx.Runtime.Server
                 }
 
                 await wrapper.InitializeAsync(this);
-                m_logger.Info?.Trace($"InitializeEndpointAsync succeeded");
+                m_logger.Info?.Trace("InitializeEndpointAsync succeeded");
                 return ProcessCreationOutcome.CreatedNew;
             }
             catch

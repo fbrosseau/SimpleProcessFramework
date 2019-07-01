@@ -1,10 +1,6 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 using static Spfx.Tests.TestUtilities;
 
@@ -16,7 +12,11 @@ namespace Spfx.Tests.Integration
         public class BombClassOnSerialize
         {
             [DataMember]
-            public int Asdf { get => throw new TestException(); set { } }
+            public int ThrowingProperty
+            {
+                get => throw new TestException();
+                set => _ = value;
+            }
         }
 
         public interface ITestInterface

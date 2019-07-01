@@ -1,8 +1,6 @@
-﻿using Spfx.Interfaces;
-using Spfx.Runtime.Server;
+﻿using Spfx.Runtime.Server;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -46,24 +44,23 @@ namespace Spfx.Utilities
             int nullsReceivedCount = 0;
             var completionEvent = new ManualResetEventSlim();
 
-            DataReceivedEventHandler handler = (sender, e) =>
+            void LogHandler(object sender, DataReceivedEventArgs e)
             {
                 lock (output)
                 {
                     if (e.Data is null)
                     {
-                        if (++nullsReceivedCount == 2)
-                            completionEvent.Set();
+                        if (++nullsReceivedCount == 2) completionEvent.Set();
                     }
                     else
                     {
                         output.AppendLine(e.Data);
                     }
                 }
-            };
+            }
 
-            proc.OutputDataReceived += handler;
-            proc.ErrorDataReceived += handler;
+            proc.OutputDataReceived += LogHandler;
+            proc.ErrorDataReceived += LogHandler;
 
             proc.BeginErrorReadLine();
             proc.BeginOutputReadLine();

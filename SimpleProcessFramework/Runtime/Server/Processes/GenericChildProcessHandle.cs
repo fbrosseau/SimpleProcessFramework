@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
@@ -11,7 +10,6 @@ using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Ipc;
-using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
@@ -211,8 +209,6 @@ namespace Spfx.Runtime.Server.Processes
                 startInfo.Environment[kvp.Key] = kvp.Value;
             }
 
-            string serializedPayloadForOtherProcess;
-
             try
             {
                 RemotePunchPayload.HandshakeTimeout = 120000;
@@ -243,7 +239,7 @@ namespace Spfx.Runtime.Server.Processes
                     m_targetProcess.BeginOutputReadLine();
                 }
 
-                serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);            
+                var serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(m_targetProcess, RemotePunchPayload);            
 
                 m_targetProcess.EnableRaisingEvents = true;
                 m_targetProcess.Exited += (sender, args) => OnProcessLost("The process has exited with code " + ((Process)sender).ExitCode);

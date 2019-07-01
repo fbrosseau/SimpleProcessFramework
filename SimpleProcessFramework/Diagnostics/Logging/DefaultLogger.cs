@@ -13,7 +13,7 @@ namespace Spfx.Diagnostics.Logging
         public ConfiguredLogger? Warn => FromLevel(LogTraceLevel.Warn);
         public ConfiguredLogger? Error => FromLevel(LogTraceLevel.Error);
 
-        internal LogTraceLevel EnabledLevels { get; private set; }
+        internal LogTraceLevel EnabledLevels { get; }
 
         public DefaultLogger(ILogListener listener, string loggerName)
         {

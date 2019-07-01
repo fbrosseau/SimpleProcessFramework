@@ -109,7 +109,7 @@ namespace Spfx.Tests.LowLevel.Serialization
                 return MakeList(o.GetType());
             });
 
-            return values.Concat(arrays).Concat(lists).Concat(emptyLists).Select(o => new object[] { o.GetType(), o }).ToArray();
+            return values.Concat(arrays).Concat(lists).Concat(emptyLists).Select(o => new[] { o.GetType(), o }).ToArray();
         }
     }
 }

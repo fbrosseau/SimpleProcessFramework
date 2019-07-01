@@ -3,7 +3,6 @@ using Spfx.Runtime.Server;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Diagnostics;
-using Spfx.Utilities.Threading;
 using System;
 using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ namespace Spfx.Tests.Integration
         [ThreadStatic]
         private static ExceptionReportingEndpoint t_current;
 
-        private TaskCompletionSource<VoidType> m_failureTcs = new TaskCompletionSource<VoidType>();
+        private readonly TaskCompletionSource<VoidType> m_failureTcs = new TaskCompletionSource<VoidType>();
 
         public static Task GetUnhandledExceptionTask()
         {

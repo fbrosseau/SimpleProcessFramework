@@ -80,7 +80,7 @@ namespace Spfx.Tests
 
             Assert.AreEqual(TaskStatus.Faulted, task.Status);
             var ex = task.ExtractException();
-            if (!expectedExceptionType.IsAssignableFrom(ex.GetType()))
+            if (!expectedExceptionType.IsInstanceOfType(ex))
                 Assert.Fail("Expected an exception of type " + expectedExceptionType.FullName + ", got " + ex.GetType().FullName);
 
             if (!string.IsNullOrWhiteSpace(expectedText))

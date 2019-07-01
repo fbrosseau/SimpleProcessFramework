@@ -92,8 +92,8 @@ namespace Spfx.Utilities
         private static string[] GetInstalledNetcoreRuntimesInternal(bool anyCpu)
         {
             if (anyCpu)
-                return GetInstalledNetcoreRuntimes(anyCpu, ref s_installedNetcoreRuntimes);
-            return GetInstalledNetcoreRuntimes(anyCpu, ref s_installedNetcore32Runtimes);
+                return GetInstalledNetcoreRuntimes(true, ref s_installedNetcoreRuntimes);
+            return GetInstalledNetcoreRuntimes(false, ref s_installedNetcore32Runtimes);
         }
 
         private static string[] GetInstalledNetcoreRuntimes(bool anyCpu, ref string[] cachedResult)

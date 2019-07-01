@@ -98,7 +98,7 @@ namespace Spfx.Runtime.Client
 
         protected void AddEventSubscription(Delegate handler, ProcessProxyEventSubscriptionInfo eventInfo)
         {
-            bool add = false;
+            bool add;
             lock (eventInfo)
             {
                 add = eventInfo.EventHandler is null;
@@ -116,7 +116,7 @@ namespace Spfx.Runtime.Client
 
         protected void RemoveEventSubscription(Delegate handler, ProcessProxyEventSubscriptionInfo eventInfo)
         {
-            bool delete = false;
+            bool delete;
             lock (eventInfo)
             {
                 delete = eventInfo.EventHandler != null;

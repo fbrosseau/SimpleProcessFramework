@@ -68,7 +68,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface1>();
 
-            object expectedResult = null;
+            const object expectedResult = null;
 
             ProcessEndpointAddress actualAddress = null;
             var handler = new TestConnection((req, ct) =>
@@ -92,7 +92,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface3>();
 
-            object expectedResult = null;
+            const object expectedResult = null;
 
             long longval = 191919191919;
             var expectedArgs = new object[] { longval };
@@ -119,7 +119,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface4>();
 
-            object expectedResult = null;
+            const object expectedResult = null;
 
             long longval = 191919191919;
             var expectedArgs = new object[] { longval };

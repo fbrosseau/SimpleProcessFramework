@@ -92,7 +92,7 @@ namespace Spfx.Serialization
                 members.Add(member);
             }
 
-            members.Sort((m1, m2) => m1.Name.CompareTo(m2.Name));
+            members.Sort((m1, m2) => string.CompareOrdinal(m1.Name, m2.Name));
             Members = members.ToArray();
         }
 

@@ -71,7 +71,7 @@ namespace Spfx.Runtime.Server
             base.OnDispose();
         }
 
-        protected async override Task OnTeardownAsync(CancellationToken ct)
+        protected override async Task OnTeardownAsync(CancellationToken ct)
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
 
@@ -92,11 +92,11 @@ namespace Spfx.Runtime.Server
 
             await Task.WhenAll(teardownTasks);
 
-            m_logger.Info?.Trace($"Teardown of processes completed");
+            m_logger.Info?.Trace("Teardown of processes completed");
 
             await m_masterProcess.TeardownAsync(ct);
 
-            m_logger.Info?.Trace($"Teardown of master process completed");
+            m_logger.Info?.Trace("Teardown of master process completed");
 
             await base.OnTeardownAsync(ct);
         }
@@ -129,7 +129,7 @@ namespace Spfx.Runtime.Server
 
             try
             {
-                IProcessHandle existingHandle = null;
+                IProcessHandle existingHandle;
                 lock (m_subprocesses)
                 {
                     ThrowIfDisposing();

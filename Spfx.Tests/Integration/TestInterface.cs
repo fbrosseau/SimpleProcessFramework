@@ -1,7 +1,6 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Diagnostics.Logging;
 using Spfx.Reflection;
-using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server;
 using Spfx.Utilities;
 using System;
@@ -103,7 +102,7 @@ namespace Spfx.Tests.Integration
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void ThrowException_ThisMethodNameShouldBeInExceptionCallstack(ReflectedTypeInfo exceptionToThrow, string exceptionText)
         {
-            throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, new object[] { exceptionText ?? "<no exception text>" });
+            throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, exceptionText ?? "<no exception text>");
         }
 
         public Task<string> GetEnvironmentVariable(string key) => Task.FromResult(Environment.GetEnvironmentVariable(key));

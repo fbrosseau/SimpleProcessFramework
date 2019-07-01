@@ -116,6 +116,10 @@ namespace Spfx.Runtime.Common
             ReadStream?.Dispose();
             WriteStream?.Dispose();
             m_pendingWrites.Dispose();
+
+            m_writeFlow?.FireAndForget();
+            m_readFlow?.FireAndForget();
+            m_keepAliveTask?.FireAndForget();
         }
 
         public void Initialize()

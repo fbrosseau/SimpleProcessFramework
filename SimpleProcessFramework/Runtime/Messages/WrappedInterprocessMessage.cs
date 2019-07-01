@@ -37,8 +37,7 @@ namespace Spfx.Runtime.Messages
 
             long callId = 0;
 
-            var request = msg as IInterprocessRequest;
-            if (request != null)
+            if (msg is IInterprocessRequest request)
             {
                 callId = request.CallId;
             }

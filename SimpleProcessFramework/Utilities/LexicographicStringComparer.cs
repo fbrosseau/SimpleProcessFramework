@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Spfx.Utilities
 {
@@ -166,12 +165,12 @@ namespace Spfx.Utilities
             /// The remainder, that is, the part of the number that
             /// didn't overflow int.MaxValue.
             /// </summary>
-            public int Remainder;
+            public readonly int Remainder;
 
             /// <summary>
             /// How often did the number overflow int.MaxValue during parsing?
             /// </summary>
-            public int Overflows;
+            public readonly int Overflows;
 
             /// <summary>
             /// How many leading zeroes were there in the string during parsing?
@@ -181,12 +180,12 @@ namespace Spfx.Utilities
             /// 
             /// This is important, because 001 comes before 01 comes before 1.
             /// </summary>
-            public int LeadingZeroesCount;
+            public readonly int LeadingZeroesCount;
 
             /// <summary>
             /// How many characters were read from the input during parsing?
             /// </summary>
-            public int NumCharsRead;
+            public readonly int NumCharsRead;
 
             public ParsedNumber(int remainder, int overflows, int leadingZeroes, int numChars)
             {

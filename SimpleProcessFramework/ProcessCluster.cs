@@ -1,10 +1,7 @@
 ﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
-using Spfx.Runtime.Client;
 using Spfx.Runtime.Server;
-using Spfx.Serialization;
-using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System.Collections.Generic;
 using System.Net;
@@ -66,7 +63,7 @@ namespace Spfx
             return m_connectionsManager.GetListenEndpoints();
         }
 
-        protected async override Task OnTeardownAsync(CancellationToken ct = default)
+        protected override async Task OnTeardownAsync(CancellationToken ct = default)
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
             await m_processBroker.TeardownAsync(ct).ConfigureAwait(false);
