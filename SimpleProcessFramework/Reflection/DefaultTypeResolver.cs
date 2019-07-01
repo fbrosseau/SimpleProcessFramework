@@ -102,7 +102,7 @@ namespace Spfx.Reflection
             return service;
         }
 
-        public T GetSingleton<T>()
+        public T GetSingleton<T>(bool ignoreErrors = false)
         {
             object s;
             lock (m_services)
@@ -113,7 +113,10 @@ namespace Spfx.Reflection
             if (s is null)
             {
                 if (m_parent != null)
-                    return m_parent.GetSingleton<T>();
+                    return m_parent.GetSingleton<T>(ignoreErrors);
+                if (ignoreErrors)
+                    return default;
+
                 throw new InvalidOperationException("Unable to build a service of type " + ReflectionUtilities.GetType<T>().FullName);
             }
 

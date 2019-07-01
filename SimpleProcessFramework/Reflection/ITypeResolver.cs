@@ -6,7 +6,7 @@ namespace Spfx.Reflection
     {
         T CreateSingleton<T>(bool addResultToCache = true);
         T CreateSingleton<T>(ITypeResolver scope, bool addResultToCache = true);
-        T GetSingleton<T>();
+        T GetSingleton<T>(bool ignoreErrors = false);
 
         ITypeResolver CreateNewScope();
 
