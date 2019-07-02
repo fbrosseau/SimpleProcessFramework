@@ -48,7 +48,7 @@ steps:
   continueOnError: true
   inputs:
     command: test
-    projects: 'SimpleProcessFramework.sln'
+    projects: 'Spfx.Tests'
     buildConfiguration: '$(buildConfiguration)'
     testRunTitle: '$(buildConfiguration) $(netcoreName)'
     arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
