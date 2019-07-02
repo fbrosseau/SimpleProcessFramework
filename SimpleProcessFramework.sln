@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Utilities", "Build Ut
 		azure-pipelines.yml = azure-pipelines.yml
 		nuspec\BuildNuget.bat = nuspec\BuildNuget.bat
 		Directory.Build.props = Directory.Build.props
+		nuspec\SimpleProcessFramework.Core.nuspec = nuspec\SimpleProcessFramework.Core.nuspec
+		nuspec\SimpleProcessFramework.Core.targets = nuspec\SimpleProcessFramework.Core.targets
 		nuspec\SimpleProcessFramework.nuspec = nuspec\SimpleProcessFramework.nuspec
 		nuspec\SimpleProcessFramework.targets = nuspec\SimpleProcessFramework.targets
 	EndProjectSection

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <DefineConstants>TRACE;WINDOWS_BUILD</DefineConstants>
@@ -19,7 +19,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.1" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
-    <PackageReference Include="SimpleProcessFramework" Version="$(Version)" />
+    <PackageReference Include="SimpleProcessFramework" Version="$(Version)" Condition="'$(SpfxBuildNet472)'=='true'" />
+    <PackageReference Include="SimpleProcessFramework.Core" Version="$(Version)" Condition="'$(SpfxBuildNet472)'=='false'" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
   </ItemGroup>
 

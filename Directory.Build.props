@@ -7,4 +7,19 @@
     <ProductVersion>$(Version)</ProductVersion>
     <PackageVersion>$(Version)</PackageVersion>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)'=='Windows_NT' AND '$(SpfxBuildNet472)'==''">
+    <SpfxBuildNet472>true</SpfxBuildNet472>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(SpfxBuildNet472)'==''">
+    <SpfxBuildNet472>false</SpfxBuildNet472>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(SpfxBuildNet472)'=='true'">
+    <SfpxAllTargetPlatforms>net472;netcoreapp2.1</SfpxAllTargetPlatforms>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SpfxBuildNet472)'=='false'">
+    <SfpxAllTargetPlatforms>netcoreapp2.1</SfpxAllTargetPlatforms>
+  </PropertyGroup>  
 </Project>

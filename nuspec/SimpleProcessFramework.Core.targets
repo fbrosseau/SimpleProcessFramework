@@ -1,8 +1,5 @@
 <Project>
-  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
-    <SpfxExtraOutputs Include="$(MSBuildThisFileDirectory)../tools/net472/*.*" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp2.1'">
+  <ItemGroup>
     <SpfxExtraOutputs Include="$(MSBuildThisFileDirectory)../tools/netcoreapp2.1/*.*" />
   </ItemGroup>
 
