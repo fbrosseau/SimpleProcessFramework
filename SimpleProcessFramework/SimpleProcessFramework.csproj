@@ -41,7 +41,7 @@
     <Folder Include="Codegen\" />
   </ItemGroup>
 
-  <ItemGroup Condition="false">
+  <ItemGroup Condition="'$(TargetFramework)'=='test'">
     <ProjectReference Include="..\Subprocess.Netcore\Subprocess.Netcore.csproj" />
     <ProjectReference Include="..\Subprocess.Netfx32\Subprocess.Netfx32.csproj" />
     <ProjectReference Include="..\Subprocess.Netfx\Subprocess.Netfx.csproj" />
