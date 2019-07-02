@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if NETCOREAPP
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -76,3 +78,15 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
         }
     }
 }
+#else
+namespace Spfx.Runtime.Server.Processes.NetcoreHost
+{
+    public class SpfxProgram
+    {
+        public static void Main(string[] args)
+        {
+            throw null;
+        }
+    }
+}
+#endif
