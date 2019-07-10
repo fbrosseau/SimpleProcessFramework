@@ -25,18 +25,6 @@ namespace TestApp234
     {
         static void Main(string[] args)
         {
-            System.Console.WriteLine(string.Join(", ", HostFeaturesHelper.GetInstalledNetcoreRuntimes()));
-            System.Console.WriteLine(HostFeaturesHelper.IsWindows);
-            System.Console.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("\"/usr/bin/whereis\" \"dotnet\"")
-            {
-                UseShellExecute = false
-            }).WaitForExit();
-
-            Console.ReadLine();
-
-            HostFeaturesHelper.GetInstalledNetcoreRuntimes();
-
             var c = new ProcessCluster();
             c.MasterProcess.ProcessBroker.CreateProcessAndEndpoint(new ProcessCreationRequest
             {
