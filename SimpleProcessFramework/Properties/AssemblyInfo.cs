@@ -5,6 +5,7 @@ using Spfx.Reflection;
 
 [assembly: InternalsVisibleTo("Spfx.Tests" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo("Spfx.TestApp" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
+[assembly: InternalsVisibleTo("TestApp.Netcore" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo(DynamicCodeGenModule.DynamicModuleAssemblyIdentity)]
 
 namespace Spfx.Properties

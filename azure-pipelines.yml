@@ -11,12 +11,12 @@ variables:
 
 strategy:
   matrix:
-    #windows:
-    #  imageName: $(windowsImage)
-    #  buildConfiguration: 'Release'
-    linux:
-      imageName: 'ubuntu-16.04'
-      buildConfiguration: 'Netcore_Release'
+    windows:
+      imageName: $(windowsImage)
+      buildConfiguration: 'Release'
+    #linux:
+    #  imageName: 'ubuntu-16.04'
+    #  buildConfiguration: 'Netcore_Release'
 
 pool:
   vmImage: $(imageName)

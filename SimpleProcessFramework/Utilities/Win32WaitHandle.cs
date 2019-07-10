@@ -1,20 +1,47 @@
 ﻿using Microsoft.Win32.SafeHandles;
+using Spfx.Runtime.Server.Processes;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Spfx.Utilities
 {
-    internal class Win32WaitHandle : WaitHandle
+    internal static class SafeHandleUtilities
     {
-        public Win32WaitHandle(IntPtr h)
+        public static string SerializeHandle(SafeHandle safeHandle)
         {
-            SafeWaitHandle = new SafeWaitHandle(h, true);
+            return SerializeHandle(safeHandle.DangerousGetHandle());
         }
 
-        public Win32WaitHandle(SafeHandle h)
+        public static string SerializeHandle(IntPtr intPtr)
         {
-            SafeWaitHandle = new SafeWaitHandle(h.DangerousGetHandle(), false);
+            return intPtr.ToInt64().ToString();
+        }
+
+        public static SafeHandle DeserializeHandleFromString(string str)
+        {
+            var intptr = new IntPtr(long.Parse(str));
+            return HostFeaturesHelper.IsWindows
+                ? new SafeWaitHandle(intptr, true)
+                : throw new NotImplementedException();
+        }
+        
+        public static WaitHandle CreateWaitHandleFromString(string str)
+        {
+            return CreateWaitHandle(DeserializeHandleFromString(str));
+        }
+
+        public static WaitHandle CreateWaitHandle(SafeHandle handle)
+        {
+            return new SimpleWaitHandle((SafeWaitHandle)handle);
+        }
+
+        private class SimpleWaitHandle : WaitHandle
+        {
+            public SimpleWaitHandle(SafeWaitHandle h)
+            {
+                SafeWaitHandle = h;
+            }
         }
     }
 }

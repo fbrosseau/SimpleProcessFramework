@@ -14,10 +14,10 @@ namespace Spfx.Interfaces
         public string ProcessName { get; set; }
 
         [DataMember]
-        public List<KeyValuePair> ExtraEnvironmentVariables { get; set; }
+        public KeyValuePair[] ExtraEnvironmentVariables { get; set; }
 
         [DataMember]
-        public string ExtraCommandLine { get; set; }
+        public string[] ExtraCommandLineArguments { get; set; }
 
         [DataMember]
         public string ProcessUniqueId { get; set; }

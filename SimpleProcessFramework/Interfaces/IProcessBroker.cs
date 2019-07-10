@@ -40,7 +40,7 @@ namespace Spfx.Interfaces
                 OSDescription = RuntimeInformation.OSDescription,
                 OSKind = HostFeaturesHelper.LocalMachineOsKind,
                 FrameworkDescription = RuntimeInformation.FrameworkDescription,
-                AvailableNetcoreRuntimes = HostFeaturesHelper.GetInstalledNetcoreRuntimes()
+                AvailableNetcoreRuntimes = NetcoreHelper.GetInstalledNetcoreRuntimes()
             };
 
             return s_current;

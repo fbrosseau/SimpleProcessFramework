@@ -6,7 +6,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 {
     internal class MasterProcessIpcConnector : IpcConnector
     {
-        public MasterProcessIpcConnector(GenericChildProcessHandle owner, IProcessSpawnPunchHandles remoteProcessHandles, ITypeResolver typeResolver)
+        public MasterProcessIpcConnector(GenericRemoteTargetHandle owner, IProcessSpawnPunchHandles remoteProcessHandles, ITypeResolver typeResolver)
             : base(
                   owner,
                   LengthPrefixedStream.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),

@@ -5,6 +5,11 @@ namespace Spfx.Utilities
 {
     internal static class PathHelper
     {
+        public static string RealSystem32Folder { get; } =
+            Environment.Is64BitProcess || !Environment.Is64BitOperatingSystem
+                ? Environment.SystemDirectory
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative");
+
         public static readonly DirectoryInfo CurrentBinFolder = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); // new FileInfo(new Uri(typeof(PathHelper).Assembly.Location, UriKind.Absolute).LocalPath).Directory;
 
         public static string GetPathRelativeToBin(string filePath)
@@ -17,9 +22,12 @@ namespace Spfx.Utilities
             return new FileInfo(GetPathRelativeToBin(filePath));
         }
 
-        public static string RealSystem32Folder { get; } =
-            Environment.Is64BitProcess || !Environment.Is64BitOperatingSystem
-                ? Environment.SystemDirectory 
-                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative");
+        internal static string GetFullPath(string relativeCodebase)
+        {
+            if (Path.IsPathRooted(relativeCodebase))
+                return relativeCodebase;
+
+            return GetPathRelativeToBin(relativeCodebase);
+        }
     }
 }

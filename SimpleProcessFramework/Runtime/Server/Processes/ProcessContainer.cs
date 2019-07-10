@@ -76,7 +76,7 @@ namespace Spfx.Runtime.Server.Processes
             {
                 var shutdownHandles = new List<WaitHandle>();
                 if (!string.IsNullOrWhiteSpace(m_inputPayload.ShutdownEvent))
-                    shutdownHandles.Add(new Win32WaitHandle(ProcessSpawnPunchPayload.DeserializeHandleFromString(m_inputPayload.ShutdownEvent)));
+                    shutdownHandles.Add(SafeHandleUtilities.CreateWaitHandleFromString(m_inputPayload.ShutdownEvent));
 
                 m_process = new Process2(m_inputPayload.HostAuthority, m_inputPayload.ProcessUniqueId, TypeResolver);
                 shutdownHandles.Add(m_process.TerminateEvent);

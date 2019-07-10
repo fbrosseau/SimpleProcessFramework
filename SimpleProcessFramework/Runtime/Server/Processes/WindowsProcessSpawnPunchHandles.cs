@@ -2,7 +2,6 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using Spfx.Interfaces;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -27,13 +26,6 @@ namespace Spfx.Runtime.Server.Processes
             const int SYNCHRONIZE = 0x00100000;
             DuplicateHandle((IntPtr)(-1), (IntPtr)(-1), TargetProcess.SafeHandle, out var result, SYNCHRONIZE, false, 0);
             return result;
-        }
-
-        internal static IProcessSpawnPunchHandles Create(ProcessKind processKind)
-        {
-            return processKind != ProcessKind.Wsl
-                ? (IProcessSpawnPunchHandles)new WindowsProcessSpawnPunchHandles()
-                : new WslProcessSpawnPunchHandles();
         }
     }
 }

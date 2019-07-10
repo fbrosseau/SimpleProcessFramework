@@ -20,7 +20,7 @@ namespace Spfx.Utilities.Threading
         {
             public EventWaiter Next;
             public EventWaiter Previous;
-            private IDisposable m_ctRegistration; // boxing it because it's a large valuetype and I don't want tearing.
+            private IDisposable m_ctRegistration; // boxing to avoid tearing
             private Timer m_timer;
             private readonly AsyncManualResetEvent m_owner;
 

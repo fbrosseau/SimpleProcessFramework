@@ -246,9 +246,7 @@ namespace Spfx.Runtime.Server
                 case ProcessKind.Netcore32:
                 case ProcessKind.Default:
                 case ProcessKind.Wsl:
-                    if (HostFeaturesHelper.IsWindows && !m_config.UseGenericProcessSpawnOnWindows)
-                        return new GenericChildProcessHandle(info, m_typeResolver);
-                    return new GenericChildProcessHandle(info, m_typeResolver);
+                    return GenericRemoteTargetHandle.Create(m_config, info, m_typeResolver);
                 default:
                     throw new PlatformNotSupportedException($"ProcessKind {info.ProcessKind} is not supported");
             }

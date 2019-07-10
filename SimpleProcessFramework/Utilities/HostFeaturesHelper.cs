@@ -9,66 +9,29 @@ namespace Spfx.Utilities
 {
     public static class HostFeaturesHelper
     {
-        private static string[] s_installedNetcoreRuntimes;
-        private static string[] s_installedNetcore32Runtimes;
+        public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
+        public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
+        public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
 
         public static bool IsWindows => LocalMachineOsKind == OsKind.Windows;
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
         public static bool Is32BitSupported => IsWindows;
 
-        public static bool IsNetCoreSupported { get; } = !IsWindows || NetCoreExists(true);
-        public static bool IsNetCore32Supported { get; } = IsWindows && NetCoreExists(false);
+        public static bool IsNetCoreSupported { get; } = !IsWindows || NetcoreHelper.NetCoreExists(true);
+        public static bool IsNetCore32Supported { get; } = IsWindows && NetcoreHelper.NetCoreExists(false);
 
         public static bool IsAppDomainSupported => LocalProcessKind.IsNetfx();
 
         private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
         public static bool IsInsideWsl { get; } = !IsWindows && s_isInsideWsl.Value;
 
-        public static OsKind LocalMachineOsKind { get; } = GetLocalOs();
         public static bool IsNetFxSupported { get; } = IsWindows;
-        public static ProcessKind LocalProcessKind { get; } = GetLocalProcessKind();
-        public static string CurrentProcessRuntimeDescription { get; } = GetRuntimeDescription();
-        public static Version NetcoreVersion => s_netcoreVersion.Value;
-
+     
 #if DEBUG
         public const bool IsDebugBuild = true;
 #else
         public const bool IsDebugBuild = false;
 #endif
-
-        public static string GetNetCoreHostPath(bool anyCpu)
-        {
-            if (!IsWindows)
-                return "dotnet";
-
-            var suffix = "dotnet\\dotnet.exe";
-            if (!anyCpu && Environment.Is64BitOperatingSystem)
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), suffix);
-
-            return Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramW6432%"), suffix);
-        }
-
-        private static readonly Lazy<Version> s_netcoreVersion = new Lazy<Version>(() =>
-        {
-            var m = Regex.Match(RuntimeInformation.FrameworkDescription, @"\.NET Core (?<v>[\d\.]+)", RegexOptions.IgnoreCase);
-            if (!m.Success)
-                throw new InvalidOperationException("Could not determine version");
-
-            var ver = new Version(m.Groups["v"].Value);
-            if(ver.Major == 4)
-            {
-                if (ver.Minor == 6)
-                    return new Version(2, 1, 0);
-                throw new InvalidOperationException("Could not determine version");
-            }
-
-            return ver;
-        });
-
-        private static bool NetCoreExists(bool anyCpu)
-        {
-            return new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
-        }
 
         private static string GetRuntimeDescription()
         {
@@ -82,47 +45,6 @@ namespace Spfx.Utilities
             {
                 return RuntimeInformation.FrameworkDescription;
             }
-        }
-
-        public static string[] GetInstalledNetcoreRuntimes(bool anyCpu = true)
-        {
-            return (string[])GetInstalledNetcoreRuntimesInternal(anyCpu).Clone();
-        }
-
-        private static string[] GetInstalledNetcoreRuntimesInternal(bool anyCpu)
-        {
-            if (anyCpu)
-                return GetInstalledNetcoreRuntimes(true, ref s_installedNetcoreRuntimes);
-            return GetInstalledNetcoreRuntimes(false, ref s_installedNetcore32Runtimes);
-        }
-
-        private static string[] GetInstalledNetcoreRuntimes(bool anyCpu, ref string[] cachedResult)
-        {
-            var runtimes = cachedResult;
-            if (runtimes != null)
-                return runtimes;
-
-            var cmdLine = $"{ProcessUtilities.EscapeArg(GetNetCoreHostPath(anyCpu))} \"--list-runtimes\"";
-            var versions = ProcessUtilities.ExecAndGetConsoleOutput(cmdLine, TimeSpan.FromSeconds(30));
-            var lines = versions.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-            var regex = new Regex(@"\s*Microsoft\.NETCore\.App\s+(?<ver>[a-z0-9.-]+)\s*\[.*?\]", RegexOptions.IgnoreCase);
-            string ParseLine(string l)
-            {
-                var m = regex.Match(l);
-                if (!m.Success)
-                    return null;
-                return m.Groups["ver"].Value;
-            }
-
-            cachedResult = lines.Select(ParseLine).Where(l => l != null).OrderByDescending(l => l, LexicographicStringComparer.Instance).ToArray();
-            return cachedResult;
-        }
-
-        public static string GetBestNetcoreRuntime(string requestedVersion, bool anyCpu = true)
-        {
-            var choices = GetInstalledNetcoreRuntimesInternal(anyCpu);
-            return choices.FirstOrDefault(runtime => runtime.StartsWith(requestedVersion, StringComparison.OrdinalIgnoreCase));
         }
 
         private static ProcessKind GetLocalProcessKind()
@@ -162,7 +84,7 @@ namespace Spfx.Utilities
 
         public static bool IsProcessKindSupportedByCurrentProcess(ProcessKind kind, out string details)
         {
-            if (kind.IsNetfx() && !IsWindows)
+            if (kind.IsNetfx() && !IsNetFxSupported)
             {
                 details = ".Net Framework is only supported on Windows";
                 return false;
@@ -186,7 +108,7 @@ namespace Spfx.Utilities
                 return false;
             }
 
-            if (kind == ProcessKind.Netcore && !IsNetCoreSupported)
+            if (kind.IsNetcore() && !IsNetCoreSupported)
             {
                 details = ".Net core is not supported on this host";
                 return false;
@@ -276,6 +198,11 @@ namespace Spfx.Utilities
             }
 
             return true;
+        }
+
+        internal static string GetCodeBase(ProcessKind processKind, ProcessClusterConfiguration config)
+        {
+            throw new NotImplementedException();
         }
     }
 }

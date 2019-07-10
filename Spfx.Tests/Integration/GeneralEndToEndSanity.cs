@@ -74,9 +74,9 @@ namespace Spfx.Tests.Integration
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicNetcore_Runtime21() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2.1"; });
+        public void BasicNetcore_Runtime2X() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "2"; });
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicNetcore_Runtime30() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3.0"; });
+        public void BasicNetcore_Runtime3X() => CreateAndDestroySuccessfulSubprocess(p => { p.ProcessKind = ProcessKind.Netcore; p.SpecificRuntimeVersion = "3"; });
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicEnvironmentVariableSubprocess()
@@ -433,11 +433,11 @@ namespace Spfx.Tests.Integration
             if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
                 if (HostFeaturesHelper.GetBestNetcoreRuntime(requestedRuntime) == null)
-                    Assert.Ignore(".net core runtime " + requestedRuntime + " is not supported by this host");
+                    Assert.Fail(".net core runtime " + requestedRuntime + " is not supported by this host");
             }
 
-            if (!HostFeaturesHelper.IsProcessKindSupportedByCurrentProcess(expectedProcessKind))
-                Assert.Ignore("ProcessKind " + expectedProcessKind + " is not supported by this host");
+            if (!HostFeaturesHelper.IsProcessKindSupportedByCurrentProcess(expectedProcessKind, out var details))
+                Assert.Fail(details);
             
             var expectedProcessName = req.ProcessInfo.ProcessName;
             if (string.IsNullOrWhiteSpace(expectedProcessName)
@@ -497,9 +497,11 @@ namespace Spfx.Tests.Integration
             if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
                 var ver = Unwrap(iface.GetNetCoreVersion());
-                var requestedVersion = new Version(requestedRuntime);
+                var requestedVersion = HostFeaturesHelper.ParseNetcoreVersion(requestedRuntime);
                 Assert.AreEqual(requestedVersion.Major, ver.Major, "Unexpected runtime version");
-                Assert.AreEqual(requestedVersion.Minor, ver.Minor, "Unexpected runtime version");
+
+                if (requestedVersion.Minor > 0)
+                    Assert.AreEqual(requestedVersion.Minor, ver.Minor, "Unexpected runtime version");
             }
 
             Log("CreateSuccessfulSubprocess success");

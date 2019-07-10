@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -49,7 +50,7 @@ namespace Spfx.Runtime.Server.Processes
             // those are inverted on purpose.
             initData.WritePipe = CreateHandleForOtherProcess(ReadPipe);
             initData.ReadPipe = CreateHandleForOtherProcess(WritePipe);
-            initData.ShutdownEvent = ProcessSpawnPunchPayload.SerializeHandle(GetShutdownHandleForOtherProcess());
+            initData.ShutdownEvent = SafeHandleUtilities.SerializeHandle(GetShutdownHandleForOtherProcess());
         }
 
         public virtual string FinalizeInitDataAndSerialize(Process remoteProcess, ProcessSpawnPunchPayload initData)

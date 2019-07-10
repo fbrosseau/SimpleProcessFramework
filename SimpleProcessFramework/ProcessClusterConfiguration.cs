@@ -39,11 +39,13 @@ namespace Spfx
         public const string DefaultDefaultNetfxCodeBase = "../net472";
         public string DefaultNetfxCodeBase { get; set; } = DefaultDefaultNetfxCodeBase;
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public const string DefaultDefaultNetcoreCodeBase = "../netcoreapp2.1";
-        public string DefaultNetcoreCodeBase { get; set; } = DefaultDefaultNetcoreCodeBase;
+        public string DefaultNetcoreCodeBase { get; set; } 
 
         public bool FallbackToBestAvailableProcessKind { get; set; }
+
+        public TimeSpan CreateProcessTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+        public bool AppendProcessIdToCommandLine { get; set; } = true;
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

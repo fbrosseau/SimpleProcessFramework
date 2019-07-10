@@ -7,7 +7,12 @@ namespace Spfx.Utilities
         public bool HasDisposeStarted { get; private set; }
         public bool IsDisposed { get; private set; }
 
-        protected readonly object m_disposeLock = new object();
+        protected readonly object m_disposeLock;
+
+        protected Disposable(object disposeLockObject = null)
+        {
+            m_disposeLock = disposeLockObject ?? new object();
+        }
 
         public void Dispose()
         {

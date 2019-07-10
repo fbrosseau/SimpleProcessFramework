@@ -1,8 +1,10 @@
 ﻿using Spfx.Runtime.Server;
+using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {
@@ -23,9 +25,28 @@ namespace Spfx.Utilities
             }
         }
 
-        internal static string ExecAndGetConsoleOutput(string commandLine, TimeSpan timeout)
+        internal static void SetCommandLine(this ProcessStartInfo startInfo, string executable, string cmdLine)
         {
-            var procInfo = new ProcessStartInfo(commandLine)
+            if (string.IsNullOrWhiteSpace(executable))
+            {
+                startInfo.FileName = cmdLine;
+                startInfo.Arguments = "";
+            }
+            else
+            {
+                startInfo.FileName = executable;
+                startInfo.Arguments = cmdLine;
+            }
+        }
+
+        internal static Task<string> ExecAndGetConsoleOutput(string commandLine, TimeSpan timeout)
+        {
+            return ExecAndGetConsoleOutput(null, commandLine, timeout);
+        }
+
+        internal static async Task<string> ExecAndGetConsoleOutput(string executable, string commandLine, TimeSpan timeout)
+        {
+            var procInfo = new ProcessStartInfo
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -34,15 +55,17 @@ namespace Spfx.Utilities
                 WorkingDirectory = PathHelper.CurrentBinFolder.FullName
             };
 
-            Process proc;
-            lock (ProcessCreationUtilities.ProcessCreationLock)
+            procInfo.SetCommandLine(executable, commandLine);
+
+            Process proc = null;
+            await ProcessCreationUtilities.InvokeCreateProcess(() =>
             {
                 proc = Process.Start(procInfo);
-            }
+            });
 
             var output = new StringBuilder();
             int nullsReceivedCount = 0;
-            var completionEvent = new ManualResetEventSlim();
+            var completionEvent = new AsyncManualResetEvent();
 
             void LogHandler(object sender, DataReceivedEventArgs e)
             {
@@ -50,7 +73,8 @@ namespace Spfx.Utilities
                 {
                     if (e.Data is null)
                     {
-                        if (++nullsReceivedCount == 2) completionEvent.Set();
+                        if (++nullsReceivedCount == 2)
+                            completionEvent.Set();
                     }
                     else
                     {
@@ -65,15 +89,13 @@ namespace Spfx.Utilities
             proc.BeginErrorReadLine();
             proc.BeginOutputReadLine();
 
-            if (!proc.WaitForExit((int)timeout.TotalMilliseconds))
-                throw new TimeoutException();
-            if (!completionEvent.Wait(timeout))
+            if (!await completionEvent.WaitAsync(timeout).ConfigureAwait(false))
                 throw new TimeoutException();
 
             return output.ToString();
         }
 
-        internal static string EscapeArg(string a)
+        internal static string FormatArgument(string a)
         {
             return "\"" + a + "\"";
         }

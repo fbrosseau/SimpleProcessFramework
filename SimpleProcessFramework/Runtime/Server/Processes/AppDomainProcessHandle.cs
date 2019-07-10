@@ -11,7 +11,7 @@ using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class AppDomainProcessHandle : GenericChildProcessHandle
+    internal class AppDomainProcessHandle : GenericRemoteTargetHandle
     {
         [Serializable]
         private class AppDomainStartData
@@ -29,7 +29,7 @@ namespace Spfx.Runtime.Server.Processes
         {
         }
 
-        protected override Task<Process> SpawnProcess(IProcessSpawnPunchHandles handles, CancellationToken ct)
+        protected override async Task<Process> SpawnProcess(IProcessSpawnPunchHandles handles, CancellationToken ct)
         {
             // So far this is the only place in the entire project where I had to break the abstraction of netstandard.
             // So... for a dying feature like appdomains a little bit of reflection sounds perfectly fine instead of going into a
@@ -44,11 +44,11 @@ namespace Spfx.Runtime.Server.Processes
                 null,
                 new [] { ProcessUniqueId, null, appDomainSetup });
 
-            lock (ProcessCreationUtilities.ProcessCreationLock)
+            await ProcessCreationUtilities.InvokeCreateProcess(() =>
             {
                 handles.InitializeInLock();
                 handles.HandleProcessCreatedInLock(Process.GetCurrentProcess(), RemotePunchPayload);
-            }
+            });
 
             var serializedHandles = handles.FinalizeInitDataAndSerialize(Process.GetCurrentProcess(), RemotePunchPayload);
 
@@ -67,9 +67,11 @@ namespace Spfx.Runtime.Server.Processes
                     null,
                     dom,
                     new object[] { typedCallback });
-            }, CancellationToken.None).ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.ExtractException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            }, CancellationToken.None)
+                .ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.ExtractException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
+                .FireAndForget();
 
-            return Task.FromResult(Process.GetCurrentProcess());
+            return Process.GetCurrentProcess();
         }
     }
 }
