@@ -76,7 +76,7 @@ namespace Spfx.Tests.Integration
 
         public Task<Version> GetNetCoreVersion()
         {
-            return Task.FromResult(HostFeaturesHelper.NetcoreVersion);
+            return Task.FromResult(NetcoreHelper.NetcoreVersion);
         }
 
         public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)

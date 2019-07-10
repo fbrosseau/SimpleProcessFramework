@@ -88,7 +88,7 @@ namespace Spfx.Tests.Integration
             {
                 var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
                 {
-                    procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) }.ToList();
+                    procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) };
                 });
 
                 using (iface)
@@ -432,7 +432,7 @@ namespace Spfx.Tests.Integration
             var requestedRuntime = req.ProcessInfo.SpecificRuntimeVersion;
             if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
-                if (HostFeaturesHelper.GetBestNetcoreRuntime(requestedRuntime) == null)
+                if (NetcoreHelper.GetBestNetcoreRuntime(requestedRuntime) == null)
                     Assert.Fail(".net core runtime " + requestedRuntime + " is not supported by this host");
             }
 
@@ -443,7 +443,7 @@ namespace Spfx.Tests.Integration
             if (string.IsNullOrWhiteSpace(expectedProcessName)
                 && !expectedProcessKind.IsFakeProcess()
                 && !expectedProcessKind.IsNetcore())
-                expectedProcessName = GenericChildProcessHandle.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
+                expectedProcessName = GenericProcessStartupParameters.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
 
             Log("CreateProcess...");
             var createdNew = Unwrap(cluster.ProcessBroker.CreateProcess(req));
@@ -497,7 +497,7 @@ namespace Spfx.Tests.Integration
             if (!string.IsNullOrWhiteSpace(requestedRuntime))
             {
                 var ver = Unwrap(iface.GetNetCoreVersion());
-                var requestedVersion = HostFeaturesHelper.ParseNetcoreVersion(requestedRuntime);
+                var requestedVersion = NetcoreHelper.ParseNetcoreVersion(requestedRuntime);
                 Assert.AreEqual(requestedVersion.Major, ver.Major, "Unexpected runtime version");
 
                 if (requestedVersion.Minor > 0)
