@@ -12,7 +12,7 @@ variables:
 strategy:
   matrix:
     windows:
-      imageName: '$(windowsImage)'
+      imageName: 'windows-2019'
       buildConfiguration: 'Release'
     #linux:
     #  imageName: 'ubuntu-16.04'
