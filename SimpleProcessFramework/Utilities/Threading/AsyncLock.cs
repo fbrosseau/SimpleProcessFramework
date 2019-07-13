@@ -8,13 +8,22 @@ namespace Spfx.Utilities.Threading
 {
     internal sealed class AsyncLock : Disposable
     {
-        private class LockSession : TaskCompletionSource<IDisposable>, IDisposable
+        private class LockSession : ValueTaskCompletionSource<IDisposable>, IDisposable, IThreadPoolItem
         {
             private AsyncLock m_asyncLock;
+            private volatile bool m_markAsCancelled;
 
             public LockSession(AsyncLock asyncLock)
             {
                 m_asyncLock = asyncLock;
+            }
+
+            void IThreadPoolItem.Execute()
+            {
+                if (m_markAsCancelled)
+                    TrySetCanceled();
+                else
+                    Unblock(true);
             }
 
             public void Unblock(bool canCompleteSynchronously = false)
@@ -22,21 +31,19 @@ namespace Spfx.Utilities.Threading
                 if (canCompleteSynchronously)
                     TrySetResult(this);
                 else
-                    ThreadPool.QueueUserWorkItem(s => ((LockSession)s).Unblock(true), this);
+                    ThreadPoolHelper.QueueItem(this);
             }
 
-            public void Cancel(bool canCompleteSynchronously, Func<Exception> exceptionFactory = null)
+            public void Cancel(bool canCompleteSynchronously)
             {
                 if (canCompleteSynchronously)
                 {
-                    if (exceptionFactory == null)
-                        TrySetCanceled();
-                    else
-                        TrySetException(exceptionFactory());
+                    TrySetCanceled();
                 }
                 else
                 {
-                    ThreadPool.QueueUserWorkItem(s => ((LockSession)s).Cancel(true, exceptionFactory), this);
+                    m_markAsCancelled = true;
+                    ThreadPoolHelper.QueueItem(this);
                 }
             }
 
@@ -58,9 +65,9 @@ namespace Spfx.Utilities.Threading
             m_waiters = new Queue<LockSession>();
         }
 
-        public Task<IDisposable> LockAsync()
+        public ValueTask<IDisposable> LockAsync()
         {
-            LockSession session = new LockSession(this);
+            var session = new LockSession(this);
 
             lock (m_waiters)
             {
@@ -79,7 +86,7 @@ namespace Spfx.Utilities.Threading
                 }
             }
 
-            return session.Task;
+            return session.ValueTask;
         }
 
         private void ExitLock()
