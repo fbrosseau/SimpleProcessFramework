@@ -75,6 +75,7 @@ namespace Spfx.Runtime.Client
 
         public void Dispose()
         {
+            ConnectionLost?.Invoke(this, EventArgs.Empty);
         }
 
         public ValueTask<ProcessEndpointMethodDescriptor> GetRemoteMethodDescriptor(ProcessEndpointAddress destination, ReflectedMethodInfo calledMethod)
