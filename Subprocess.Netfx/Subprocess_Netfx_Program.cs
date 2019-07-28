@@ -5,7 +5,7 @@ namespace Spfx.Runtime.Server.Processes.NetfxHost
 {
     public class SpfxProgram
     {
-        public static void Main()
+        public static void Main(string[] args = null)
         {
             var asm = Assembly.Load("Spfx");
             if (asm is null)
