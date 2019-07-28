@@ -27,7 +27,7 @@ namespace Spfx.Runtime.Server
         IProcessBroker ProcessBroker { get; }
         IEndpointBroker LocalEndpointBroker { get; }
         ITypeResolver DefaultTypeResolver { get; }
-        WaitHandle TerminateEvent { get; }
+        Task TerminateEvent { get; }
 
         X509Certificate2 DefaultServerCertificate { get; }
 
@@ -50,7 +50,7 @@ namespace Spfx.Runtime.Server
         void ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req);
     }
 
-    internal class Process2 : AsyncDestroyable, IProcessInternal
+    internal class ProcessCore : AsyncDestroyable, IProcessInternal
     {
         internal const string MasterProcessUniqueId = WellKnownEndpoints.MasterProcessUniqueId;
 
@@ -65,8 +65,8 @@ namespace Spfx.Runtime.Server
         public ProcessCreationInfo ProcessCreationInfo { get; }
         public ITypeResolver DefaultTypeResolver { get; }
         public X509Certificate2 DefaultServerCertificate { get; }
-        public WaitHandle TerminateEvent => m_terminateEvent;
-        private readonly ManualResetEvent m_terminateEvent = new ManualResetEvent(false);
+        public Task TerminateEvent { get; }
+        private readonly AsyncManualResetEvent m_terminateEvent = new AsyncManualResetEvent(false);
 
         private readonly IBinarySerializer m_binarySerializer;
         private readonly Dictionary<string, IProcessEndpointHandler> m_endpointHandlers = new Dictionary<string, IProcessEndpointHandler>(ProcessEndpointAddress.StringComparer);
@@ -75,20 +75,20 @@ namespace Spfx.Runtime.Server
         private IProcessBroker m_processBroker;
         private IEndpointBroker m_localEndpointBroker;
 
-        internal Process2(ProcessCluster root)
+        internal ProcessCore(ProcessCluster root)
             : this("localhost", MasterProcessUniqueId, root.TypeResolver)
         {
             ProcessCreationInfo = new ProcessCreationInfo
             {
                 ProcessUniqueId = MasterProcessUniqueId,
                 ProcessName = Process.GetCurrentProcess().ProcessName,
-                ProcessKind = HostFeaturesHelper.LocalProcessKind
+                TargetFramework = TargetFramework.CurrentFrameworkWithoutRuntime
             };
 
             InitializeAsync().ExpectAlreadyCompleted();
         }
 
-        internal Process2(string hostAuthority, string uniqueId, ITypeResolver typeResolver)
+        internal ProcessCore(string hostAuthority, string uniqueId, ITypeResolver typeResolver)
         {
             Guard.ArgumentNotNullOrEmpty(hostAuthority, nameof(hostAuthority));
             Guard.ArgumentNotNullOrEmpty(uniqueId, nameof(uniqueId));
@@ -114,6 +114,7 @@ namespace Spfx.Runtime.Server
             m_connectionManager = DefaultTypeResolver.CreateSingleton<IClientConnectionManager>();
 
             ClusterProxy = new ProcessProxy(DefaultTypeResolver);
+            TerminateEvent = m_terminateEvent.WaitAsync().AsTask();
         }
 
         protected override void OnDispose()

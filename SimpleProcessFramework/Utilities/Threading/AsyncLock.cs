@@ -8,7 +8,7 @@ namespace Spfx.Utilities.Threading
 {
     internal sealed class AsyncLock : Disposable
     {
-        private class LockSession : ValueTaskCompletionSource<IDisposable>, IDisposable, IThreadPoolItem
+        private class LockSession : ValueTaskCompletionSource<IDisposable>, IDisposable, IThreadPoolWorkItem
         {
             private AsyncLock m_asyncLock;
             private volatile bool m_markAsCancelled;
@@ -18,7 +18,7 @@ namespace Spfx.Utilities.Threading
                 m_asyncLock = asyncLock;
             }
 
-            void IThreadPoolItem.Execute()
+            void IThreadPoolWorkItem.Execute()
             {
                 if (m_markAsCancelled)
                     TrySetCanceled();

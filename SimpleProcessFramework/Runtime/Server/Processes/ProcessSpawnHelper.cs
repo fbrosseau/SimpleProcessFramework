@@ -1,9 +1,6 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Utilities;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -14,7 +11,7 @@ namespace Spfx.Runtime.Server.Processes
             if (processKind == HostFeaturesHelper.LocalProcessKind)
                 return PathHelper.CurrentBinFolder.FullName;
 
-            if (HostFeaturesHelper.LocalProcessKind.IsNetfx() && processKind.IsNetfx())
+            if (HostFeaturesHelper.LocalProcessKind.IsNetfxProcess() && processKind.IsNetfxProcess())
                 return PathHelper.CurrentBinFolder.FullName;
 
             string relativeCodebase;
@@ -28,7 +25,8 @@ namespace Spfx.Runtime.Server.Processes
                 case ProcessKind.Netcore:
                 case ProcessKind.Netcore32:
                 case ProcessKind.Wsl:
-                    relativeCodebase = "../netcoreapp" + NetcoreHelper.GetBestNetcoreRuntime("2");
+                    var runtime = NetcoreHelper.GetBestNetcoreRuntime("2", processKind);
+                    relativeCodebase = "../" + NetcoreHelper.GetDefaultNetcoreBinSubfolderName(runtime);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(processKind));

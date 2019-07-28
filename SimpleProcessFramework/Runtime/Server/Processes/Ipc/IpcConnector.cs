@@ -52,6 +52,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             Owner = owner;
             ReadPipe = readPipe;
             WritePipe = writePipe;
+            WritePipe.WriteException += OnWriterExceptionCaught;
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
         }
 
@@ -59,10 +60,11 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         {
             Logger.Info?.Trace("OnDispose");
             ReadPipe.Dispose();
+            WritePipe.WriteException -= OnWriterExceptionCaught;
             WritePipe.Dispose();
             Shutdown1ReceivedEvent.Set();
             Shutdown2ReceivedEvent.Set();
-            Owner.OnRemoteEndLost("IpcConnector disposed");
+            RaiseFinalDisconnect("IpcConnector disposed");
             base.OnDispose();
             Logger.Dispose();
         }
@@ -89,7 +91,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         protected abstract Task DoInitialize();
 
-        internal async Task InitializeAsync(CancellationToken ct)
+        public async Task InitializeAsync(CancellationToken ct)
         {
             Logger.Info?.Trace("InitializeAsync");
             await DoInitialize();
@@ -125,11 +127,11 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             }
             catch(EndOfStreamException ex)
             {
-                Owner.OnRemoteEndLost("The IPC stream was closed", ex);
+                RaiseFinalDisconnect("The IPC stream was closed", ex);
             }
             catch(Exception ex)
             {
-                Owner.OnRemoteEndLost("Exception in IpcConnector::ReadLoop", ex);
+                RaiseFinalDisconnect("Exception in IpcConnector::ReadLoop", ex);
             }
             finally
             {
@@ -137,6 +139,17 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             }
         }
 
+        private void OnWriterExceptionCaught(object sender, StreamWriterExceptionEventArgs e)
+        {
+            RaiseFinalDisconnect("An exception occured writing to the remote process", e.CaughtException);
+        }
+
+        private void RaiseFinalDisconnect(string description, Exception caughtException = null)
+        {
+            Logger.Debug?.Trace(caughtException, "RaiseFinalDisconnect: " + description);
+            Owner.OnRemoteEndLost(description, caughtException);
+        }
+        
         public void ForwardMessage(IInterprocessMessage msg)
         {
             if(!(msg is WrappedInterprocessMessage wrapped))

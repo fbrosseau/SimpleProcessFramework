@@ -101,13 +101,13 @@ namespace Spfx.Interfaces
         public int OsPid { get; }
 
         [DataMember]
-        public ProcessKind ProcessKind { get; }
+        public TargetFramework Framework { get; }
 
-        public ProcessInformation(string name, int pid, ProcessKind kind)
+        public ProcessInformation(string name, int pid, TargetFramework fx)
         {
             ProcessName = name;
             OsPid = pid;
-            ProcessKind = kind;
+            Framework = fx;
         }
     }
 

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Spfx.Io;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Hosting;
 
 namespace Spfx.Runtime.Server.Processes.Ipc
 {

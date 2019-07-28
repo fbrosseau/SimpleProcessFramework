@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using Spfx.Interfaces;
 
 namespace Spfx.Utilities
@@ -20,22 +18,24 @@ namespace Spfx.Utilities
         public static bool IsNetCoreSupported { get; } = !IsWindows || NetcoreHelper.NetCoreExists(true);
         public static bool IsNetCore32Supported { get; } = IsWindows && NetcoreHelper.NetCoreExists(false);
 
-        public static bool IsAppDomainSupported => LocalProcessKind.IsNetfx();
+        public static bool IsAppDomainSupported => LocalProcessKind.IsNetfxProcess();
 
         private static readonly Lazy<bool> s_isInsideWsl = new Lazy<bool>(() => LocalMachineOsKind == OsKind.Linux && File.ReadAllText("/proc/sys/kernel/osrelease").IndexOf("microsoft", StringComparison.OrdinalIgnoreCase) != -1);
         public static bool IsInsideWsl { get; } = !IsWindows && s_isInsideWsl.Value;
 
         public static bool IsNetFxSupported { get; } = IsWindows;
-     
+
 #if DEBUG
-        public const bool IsDebugBuild = true;
+        public static readonly bool IsDebugBuildConstant = true;
 #else
-        public const bool IsDebugBuild = false;
+        public static readonly bool IsDebugBuildConstant = false;
 #endif
+
+        public static readonly bool IsDebugBuild = IsDebugBuildConstant;
 
         private static string GetRuntimeDescription()
         {
-            if (LocalProcessKind.IsNetfx())
+            if (LocalProcessKind.IsNetfxProcess())
             {
                 var currentDomain = AppDomain.CurrentDomain;
                 var setupInfo = typeof(AppDomain).GetProperty("SetupInformation").GetValue(currentDomain);
@@ -84,7 +84,7 @@ namespace Spfx.Utilities
 
         public static bool IsProcessKindSupportedByCurrentProcess(ProcessKind kind, out string details)
         {
-            if (kind.IsNetfx() && !IsNetFxSupported)
+            if (kind.IsNetfxProcess() && !IsNetFxSupported)
             {
                 details = ".Net Framework is only supported on Windows";
                 return false;
@@ -145,18 +145,18 @@ namespace Spfx.Utilities
                     return anyCpu;
             }
 
-            if(processKind.IsNetcore() && IsNetFxSupported)
-            {
-                if (IsProcessKindSupportedByCurrentProcess(ProcessKind.Netfx, config, out _))
-                    return ProcessKind.Netfx;
-            }
-
-            if (processKind.IsNetfx() && IsNetCoreSupported)
+            if (processKind.IsNetfxProcess() || processKind == ProcessKind.Wsl && IsNetCoreSupported)
             {
                 if (IsNetCoreSupported && IsProcessKindSupportedByCurrentProcess(ProcessKind.Netcore, config, out _))
                     return ProcessKind.Netcore;
                 if (IsNetCore32Supported && IsProcessKindSupportedByCurrentProcess(ProcessKind.Netcore32, config, out _))
                     return ProcessKind.Netcore32;
+            }
+
+            if (processKind.IsNetcore() && IsNetFxSupported)
+            {
+                if (IsProcessKindSupportedByCurrentProcess(ProcessKind.Netfx, config, out _))
+                    return ProcessKind.Netfx;
             }
 
             throw new PlatformNotSupportedException($"ProcessKind {processKind} is not supported: {originalError}");
@@ -173,7 +173,7 @@ namespace Spfx.Utilities
                 return false;
             }
 
-            if (processKind.IsNetfx() && !config.EnableNetfx)
+            if (processKind.IsNetfxProcess() && !config.EnableNetfx)
             {
                 error = "This current configuration does not support .Net Framework";
                 return false;
@@ -200,9 +200,30 @@ namespace Spfx.Utilities
             return true;
         }
 
-        internal static string GetCodeBase(ProcessKind processKind, ProcessClusterConfiguration config)
+        internal static string GetCodeBase(TargetFramework framework, ProcessClusterConfiguration config)
         {
-            throw new NotImplementedException();
+            if (config.CodeBaseOverrides.TryGetValue(framework, out var dir))
+                return dir.FullName;
+
+            if (framework == TargetFramework.CurrentFramework || framework.ProcessKind.IsFakeProcess())
+                return PathHelper.CurrentBinFolder.FullName;
+
+            string relativeFolder;
+            if (framework.ProcessKind.IsNetfx())
+            {
+                relativeFolder = "..\\net472";
+            }
+            else if (framework.ProcessKind.IsNetcore())
+            {
+                var runtime = NetcoreHelper.GetBestNetcoreRuntime((framework as NetcoreTargetFramework)?.TargetRuntime, framework.ProcessKind);
+                relativeFolder = "../" + NetcoreHelper.GetDefaultNetcoreBinSubfolderName(runtime);
+            }
+            else
+            {
+                throw new ArgumentException("Framework not handled: " + framework);
+            }
+
+            return PathHelper.GetFullPath(relativeFolder);
         }
     }
 }

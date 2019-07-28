@@ -29,7 +29,7 @@ namespace TestApp234
                 Options = ProcessCreationOptions.ThrowIfExists,
                 ProcessInfo = new ProcessCreationInfo
                 {
-                    ProcessKind = ProcessKind.Netfx32,
+                    TargetFramework = TargetFramework.Create(ProcessKind.Netfx32),
                     ProcessUniqueId = "LOL"
                 }
             }, new EndpointCreationRequest

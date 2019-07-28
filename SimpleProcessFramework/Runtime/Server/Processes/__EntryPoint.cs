@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Runtime.Server.Processes.Hosting;
+using System;
 using System.IO;
 
 namespace Spfx.Runtime.Server.Processes
@@ -19,7 +20,6 @@ namespace Spfx.Runtime.Server.Processes
             {
                 container = new ProcessContainer();
                 container.Initialize(input);
-                container.InitializeConnector();
                 if (isStandaloneProcess)
                     container.Run();
                 graceful = true;

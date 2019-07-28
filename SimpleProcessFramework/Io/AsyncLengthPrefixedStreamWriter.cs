@@ -13,6 +13,8 @@ namespace Spfx.Io
         private readonly AsyncQueue<LengthPrefixedStream> m_pendingWrites;
         private readonly byte[] m_temp = new byte[4];
 
+        public event EventHandler<StreamWriterExceptionEventArgs> WriteException;
+
         public AsyncLengthPrefixedStreamWriter(Stream stream)
         {
             Guard.ArgumentNotNull(stream, nameof(stream));
@@ -46,7 +48,12 @@ namespace Spfx.Io
             }
             catch (Exception ex)
             {
+                WriteException?.Invoke(this, new StreamWriterExceptionEventArgs(ex));
                 m_pendingWrites.Dispose(ex);
+            }
+            finally
+            {
+                Dispose();
             }
         }
 

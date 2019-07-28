@@ -1,17 +1,26 @@
 ﻿using System.Threading;
 
-namespace Spfx.Utilities.Threading
+#if !NETCOREAPP3_0_PLUS
+namespace System.Threading
 {
-    internal interface IThreadPoolItem
+    internal interface IThreadPoolWorkItem
     {
         void Execute();
     }
+}
+#endif
 
+namespace Spfx.Utilities.Threading
+{
     internal static class ThreadPoolHelper
     {
-        public static void QueueItem(IThreadPoolItem item)
+        public static void QueueItem(IThreadPoolWorkItem item)
         {
-            ThreadPool.UnsafeQueueUserWorkItem(s => ((IThreadPoolItem)s).Execute(), item);
+#if !NETCOREAPP3_0_PLUS
+            ThreadPool.UnsafeQueueUserWorkItem(s => ((IThreadPoolWorkItem)s).Execute(), item);
+#else
+            ThreadPool.UnsafeQueueUserWorkItem(item, false);
+#endif
         }
     }
 }

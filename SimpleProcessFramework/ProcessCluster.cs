@@ -15,11 +15,12 @@ namespace Spfx
         public const int DefaultRemotePort = 41412;
 
         internal ITypeResolver TypeResolver { get; }
-        private readonly ProcessClusterConfiguration m_config;
+
         private readonly IInternalProcessBroker m_processBroker;
         private readonly IClientConnectionManager m_connectionsManager;
         private readonly ILogger m_logger;
 
+        public ProcessClusterConfiguration Configuration { get; }
         public ProcessProxy PrimaryProxy => MasterProcess.ClusterProxy;
         public IProcess MasterProcess => m_processBroker.MasterProcess;
         public IProcessBroker ProcessBroker => m_processBroker;
@@ -31,9 +32,9 @@ namespace Spfx
 
         public ProcessCluster(ProcessClusterConfiguration cfg)
         {
-            m_config = (cfg ?? ProcessClusterConfiguration.Default).Clone(makeReadonly: true);
-            TypeResolver = DefaultTypeResolverFactory.CreateRootTypeResolver(m_config.TypeResolverFactoryType);
-            TypeResolver.RegisterSingleton(m_config);
+            Configuration = (cfg ?? ProcessClusterConfiguration.Default).Clone(makeReadonly: true);
+            TypeResolver = DefaultTypeResolverFactory.CreateRootTypeResolver(Configuration.TypeResolverFactoryType);
+            TypeResolver.RegisterSingleton(Configuration);
             TypeResolver.RegisterSingleton(this);
             m_processBroker = TypeResolver.CreateSingleton<IInternalProcessBroker>();
             m_connectionsManager = TypeResolver.GetSingleton<IClientConnectionManager>();

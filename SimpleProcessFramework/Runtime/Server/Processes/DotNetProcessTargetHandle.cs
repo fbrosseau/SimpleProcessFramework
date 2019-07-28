@@ -1,24 +1,50 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
     internal class DotNetProcessTargetHandle : GenericRemoteTargetHandle
     {
+        private volatile StringBuilder m_remoteProcessInitOutput = new StringBuilder();
+        private AsyncManualResetEvent m_outStreamClosed = new AsyncManualResetEvent();
+        private AsyncManualResetEvent m_errStreamClosed = new AsyncManualResetEvent();
+
         public DotNetProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
         }
 
-        protected override async Task<Process> SpawnProcess(IProcessSpawnPunchHandles punchHandles, CancellationToken ct)
+        protected override async Task<Exception> GetInitFailureException(Exception caughtException)
         {
-            var startupParameters = GenericProcessStartupParameters.Create(ProcessKind);
+            var outputsClosedTask = Task.WhenAll(m_errStreamClosed.WaitAsync().AsTask(), m_outStreamClosed.WaitAsync().AsTask());
+            if (await outputsClosedTask.WaitAsync(TimeSpan.FromMilliseconds(500)))
+            {
+                throw new ProcessInitializationException("The process initialization failed", caughtException)
+                {
+                    ProcessOutput = m_remoteProcessInitOutput.ToString()
+                };
+            }
+
+            throw await base.GetInitFailureException(caughtException);
+        }
+
+        protected override void OnInitializationCompleted()
+        {
+            m_remoteProcessInitOutput = null;
+        }
+
+        protected override async Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct)
+        {
+            var startupParameters = GenericProcessStartupParameters.Create(TargetFramework);
             startupParameters.Initialize(Config, ProcessCreationInfo);
 
             var startInfo = new ProcessStartInfo(startupParameters.ExecutableName, startupParameters.CommandLineArguments)
@@ -58,18 +84,42 @@ namespace Spfx.Runtime.Server.Processes
 
                 if (ProcessCreationInfo.ManuallyRedirectConsole)
                 {
-                    var idStr = process.Id.ToString();
-                    DataReceivedEventHandler GetLogHandler(TextWriter w)
+                    DataReceivedEventHandler GetLogHandler(bool isOut)
                     {
+                        TextWriter w;
+                        if (isOut || Config.PrintErrorInRegularOutput)
+                            w = Console.Out;
+                        else
+                            w = Console.Error;
+
+                        var name = isOut ? "Out" : "Err";
+                        var fmt = process.Id + ">{0}";
+
                         return (sender, e) =>
                         {
-                            if (e.Data != null)
-                                w.WriteLine("{0}>{1}", idStr, e.Data);
+                            if (e.Data is null)
+                            {
+                                var evt = isOut ? m_outStreamClosed : m_errStreamClosed;
+                                evt.Set();
+                                Logger.Debug?.Trace($"The [{name}] console has closed");
+                                return;
+                            }
+
+                            var initialSb = m_remoteProcessInitOutput;
+                            if (initialSb != null)
+                            {
+                                lock (initialSb)
+                                {
+                                    initialSb.AppendLine(e.Data);
+                                }
+                            }
+
+                            w.WriteLine(fmt, e.Data);
                         };
                     }
 
-                    process.OutputDataReceived += GetLogHandler(Console.Out);
-                    process.ErrorDataReceived += GetLogHandler(Console.Error);
+                    process.OutputDataReceived += GetLogHandler(true);
+                    process.ErrorDataReceived += GetLogHandler(false);
 
                     process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
@@ -78,10 +128,11 @@ namespace Spfx.Runtime.Server.Processes
                 var serializedPayloadForOtherProcess = punchHandles.FinalizeInitDataAndSerialize(process, RemotePunchPayload);
 
                 process.EnableRaisingEvents = true;
-                process.Exited += (sender, args) => OnProcessLost("The process has exited with code " + ((Process)sender).ExitCode);
+                process.Exited += OnProcessExited;
 
                 if (process.HasExited)
                 {
+                    HandleProcessExit(process);
                     throw new InvalidOperationException("The process has exited during initialization");
                 }
 
@@ -101,6 +152,25 @@ namespace Spfx.Runtime.Server.Processes
             }
 
             return process;
+        }
+
+        private void HandleProcessExit(Process process)
+        {
+            int exitCode = -1;
+            try
+            {
+                exitCode = process.ExitCode;
+            }
+            catch
+            {
+            }
+
+            OnProcessLost("The process has exited with code " + exitCode);
+        }
+
+        private void OnProcessExited(object sender, EventArgs e)
+        {
+            HandleProcessExit(sender as Process);
         }
     }
 }

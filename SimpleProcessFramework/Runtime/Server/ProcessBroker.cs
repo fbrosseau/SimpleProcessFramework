@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +45,7 @@ namespace Spfx.Runtime.Server
             m_config = m_typeResolver.GetSingleton<ProcessClusterConfiguration>();
             m_logger = m_typeResolver.GetLogger(GetType(), uniqueInstance: true);
 
-            m_masterProcess = new Process2(owner);
+            m_masterProcess = new ProcessCore(owner);
             m_typeResolver.RegisterSingleton<IProcess>(m_masterProcess);
         }
 
@@ -120,10 +119,10 @@ namespace Spfx.Runtime.Server
             var info = req.ProcessInfo;
             m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}");
 
-            if (ProcessEndpointAddress.StringComparer.Equals(info.ProcessUniqueId, Process2.MasterProcessUniqueId))
+            if (ProcessEndpointAddress.StringComparer.Equals(info.ProcessUniqueId, ProcessCore.MasterProcessUniqueId))
                 throw new InvalidOperationException("The master process cannot be created this way");
 
-            ApplyConfigToProcessRequest(req);
+            req.EnsureIsValid();
 
             var handle = CreateNewProcessHandle(info);
 
@@ -155,17 +154,8 @@ namespace Spfx.Runtime.Server
                     return ProcessCreationOutcome.AlreadyExists;
                 }
 
-                var punchPayload = new ProcessSpawnPunchPayload
-                {
-                    HostAuthority = m_owner.MasterProcess.HostAuthority,
-                    ProcessKind = info.ProcessKind,
-                    ProcessUniqueId = info.ProcessUniqueId,
-                    ParentProcessId = Process.GetCurrentProcess().Id,
-                    TypeResolverFactory = m_config.TypeResolverFactoryType?.AssemblyQualifiedName
-                };
-
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
-                await handle.CreateProcess(punchPayload);
+                await handle.CreateProcess();
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Creation complete. PID is {handle.ProcessInfo.OsPid}");
 
                 return ProcessCreationOutcome.CreatedNew;
@@ -222,19 +212,11 @@ namespace Spfx.Runtime.Server
             return new ProcessAndEndpointCreationOutcome(processOutcome, endpointOutcome);
         }
 
-        private void ApplyConfigToProcessRequest(ProcessCreationRequest req)
-        {
-            if (req.ProcessInfo.ProcessKind == ProcessKind.Default)
-                req.ProcessInfo.ProcessKind = m_config.DefaultProcessKind;
-
-            req.ProcessInfo.EnsureIsValid();
-        }
-
         private IProcessHandle CreateNewProcessHandle(ProcessCreationInfo info)
         {
-            info.ProcessKind = HostFeaturesHelper.GetBestAvailableProcessKind(info.ProcessKind, m_config);
+            info.TargetFramework = info.TargetFramework.GetBestAvailableFramework(m_config);
 
-            switch (info.ProcessKind)
+            switch (info.TargetFramework.ProcessKind)
             {
                 case ProcessKind.AppDomain:
                     return new AppDomainProcessHandle(info, m_typeResolver);
@@ -248,7 +230,7 @@ namespace Spfx.Runtime.Server
                 case ProcessKind.Wsl:
                     return GenericRemoteTargetHandle.Create(m_config, info, m_typeResolver);
                 default:
-                    throw new PlatformNotSupportedException($"ProcessKind {info.ProcessKind} is not supported");
+                    throw new PlatformNotSupportedException($"ProcessKind {info.TargetFramework} is not supported");
             }
         }
 
@@ -256,7 +238,7 @@ namespace Spfx.Runtime.Server
         {
             m_logger.Info?.Trace($"DestroyProcess {processUniqueId}");
 
-            if (ProcessEndpointAddress.StringComparer.Equals(processUniqueId, Process2.MasterProcessUniqueId))
+            if (ProcessEndpointAddress.StringComparer.Equals(processUniqueId, ProcessCore.MasterProcessUniqueId))
                 throw new InvalidOperationException("The master process cannot be destroyed this way");
 
             using (var target = GetSubprocess(processUniqueId, throwIfMissing: false))
@@ -283,7 +265,7 @@ namespace Spfx.Runtime.Server
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));
 
-            if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.TargetProcess, Process2.MasterProcessUniqueId))
+            if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.TargetProcess, ProcessCore.MasterProcessUniqueId))
             {
                 var sourceProxy = source.GetWrapperProxy();
                 m_masterProcess.ProcessIncomingMessage(sourceProxy, req);
@@ -310,7 +292,7 @@ namespace Spfx.Runtime.Server
                 targetProcess = wrappedMessage.SourceConnectionId.Substring(0, wrappedMessage.SourceConnectionId.IndexOf('/'));
             }
 
-            if (ProcessEndpointAddress.StringComparer.Equals(targetProcess, Process2.MasterProcessUniqueId))
+            if (ProcessEndpointAddress.StringComparer.Equals(targetProcess, ProcessCore.MasterProcessUniqueId))
             {
                 m_masterProcess.ProcessIncomingMessage(source, wrappedMessage);
             }

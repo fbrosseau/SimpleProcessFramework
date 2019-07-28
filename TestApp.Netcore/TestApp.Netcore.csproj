@@ -6,6 +6,7 @@
     <OutputPath>../bin/$(Configuration)</OutputPath>
 	<AssemblyName>TestApp</AssemblyName>
     <RootNamespace>TestApp</RootNamespace>
+    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

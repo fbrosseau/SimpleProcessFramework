@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Utilities;
@@ -49,36 +49,58 @@ namespace Spfx.Runtime.Server.Processes
 
                 try
                 {
-                    var spawnTask = SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
-                    m_targetProcess = spawnTask.Result;
+                    m_targetProcess = await SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
                 }
                 catch (Exception ex)
                 {
                     OnProcessLost("SpawnProcess failed: " + ex.Message);
-                    throw;
+                    throw await GetInitFailureException(ex);
                 }
 
                 var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, TypeResolver);
                 disposeBag.Add(connector);
 
                 var initTask = connector.InitializeAsync(ct).WithCancellation(ct);
-                await TaskEx.ExpectFirstTask(initTask, m_processExitEvent.Task);
+                var failureTask = m_processExitEvent.Task;
+                var winnerTask = await Task.WhenAny(initTask, failureTask);
+                if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
+                {
+                    var ex = initTask.IsFaultedOrCanceled() ? initTask.GetExceptionOrCancel() : null;
+                    throw await GetInitFailureException(ex);
+                }
 
                 m_ipcConnector = connector;
                 disposeBag.ReleaseAll();
 
-                return new ProcessInformation(ProcessUniqueId, m_targetProcess.Id, ProcessCreationInfo.ProcessKind);
+                OnInitializationCompleted();
+
+                return new ProcessInformation(ProcessUniqueId, m_targetProcess.Id, ProcessCreationInfo.TargetFramework);
             }
         }
 
-        protected virtual IProcessSpawnPunchHandles CreatePunchHandles()
+        protected virtual void OnInitializationCompleted()
         {
-            return HostFeaturesHelper.IsWindows
-                ? new WindowsProcessSpawnPunchHandles()
-                : throw new NotImplementedException();
         }
 
-        protected abstract Task<Process> SpawnProcess(IProcessSpawnPunchHandles punchHandles, CancellationToken ct);
+        protected virtual Task<Exception> GetInitFailureException(Exception caughtException)
+        {
+            caughtException?.Rethrow();
+            throw new ProcessInitializationException();
+        }
+
+        protected virtual IRemoteProcessInitializer CreatePunchHandles()
+        {
+            if (HostFeaturesHelper.IsWindows)
+            {
+                if (ProcessCreationInfo.TargetFramework.ProcessKind == ProcessKind.Wsl)
+                    return new WslProcessSpawnPunchHandles();
+                return new WindowsProcessSpawnPunchHandles();
+            }
+
+            throw new NotImplementedException();
+        }
+
+        protected abstract Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct);
         
         protected void OnProcessLost(string reason, Exception ex = null)
         {

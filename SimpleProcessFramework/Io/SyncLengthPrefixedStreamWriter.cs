@@ -1,4 +1,5 @@
 ﻿using Spfx.Utilities;
+using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
@@ -10,6 +11,8 @@ namespace Spfx.Io
         private readonly Stream m_stream;
         private readonly Thread m_writeThread;
         private readonly BlockingCollection<LengthPrefixedStream> m_pendingWrites = new BlockingCollection<LengthPrefixedStream>();
+
+        public event EventHandler<StreamWriterExceptionEventArgs> WriteException;
 
         public SyncLengthPrefixedStreamWriter(Stream stream, string name)
         {
@@ -47,8 +50,9 @@ namespace Spfx.Io
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                WriteException?.Invoke(this, new StreamWriterExceptionEventArgs(ex));
             }
             finally
             {

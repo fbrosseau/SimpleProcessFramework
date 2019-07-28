@@ -8,6 +8,7 @@ namespace Spfx.Utilities
     internal static class WslUtilities
     {
         private static string[] s_installedRuntimesInWsl;
+        private static ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new ThreadSafeAppendOnlyDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly Lazy<bool> s_isWslSupported = new Lazy<bool>(() =>
         {
@@ -16,7 +17,7 @@ namespace Spfx.Utilities
 
             try
             {
-                using (var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified))
+                using (var s = SocketUtilities.CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified))
                 {
                     s.Bind(SocketUtilities.CreateUnixEndpoint(tempFile));
                     tryCleanupFile = true;
@@ -59,6 +60,16 @@ namespace Spfx.Utilities
             return s_installedRuntimesInWsl;
         }
 
+        internal static string GetCachedLinuxPath(string windowsName)
+        {
+            if (s_windowsToLinuxPathMappings.TryGetValue(windowsName, out var linuxPath))
+                return linuxPath;
+
+            linuxPath = GetLinuxPath(windowsName);
+            s_windowsToLinuxPathMappings[windowsName] = linuxPath;
+            return linuxPath;
+        }
+
         internal static string GetLinuxPath(string fullName)
         {
             if (fullName.EndsWith("\\"))
@@ -74,8 +85,7 @@ namespace Spfx.Utilities
 
         private static string ExecuteWslExe(string linuxCommand)
         {
-            var cmd = $"{ProcessUtilities.FormatArgument(WslExeFullPath)} {linuxCommand}";
-            return ProcessUtilities.ExecAndGetConsoleOutput(cmd, TimeSpan.FromSeconds(30)).Result;
+            return ProcessUtilities.ExecAndGetConsoleOutput(WslExeFullPath, linuxCommand, TimeSpan.FromSeconds(30)).Result;
         }
     }
 }

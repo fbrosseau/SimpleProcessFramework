@@ -8,13 +8,13 @@ namespace Spfx.Runtime.Server.Processes
     public interface IProcessHandle : IAsyncDestroyable
     {
         string ProcessUniqueId { get; }
-        ProcessKind ProcessKind { get; }
+        TargetFramework TargetFramework { get; }
         ProcessInformation ProcessInfo { get; }
 
         void HandleMessage(string connectionId, WrappedInterprocessMessage wrappedMessage);
         void HandleMessage(string connectionId, IInterprocessMessage wrappedMessage);
 
-        Task CreateProcess(ProcessSpawnPunchPayload punchPayload);
+        Task CreateProcess();
         ValueTask WaitForInitializationComplete();
     }
 }

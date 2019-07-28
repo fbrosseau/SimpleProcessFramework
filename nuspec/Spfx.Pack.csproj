@@ -9,6 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>.</OutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SimpleProcessFramework\SimpleProcessFramework.csproj" />

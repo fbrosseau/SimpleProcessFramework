@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal abstract class PipeBasedProcessSpawnPunchHandles : IProcessSpawnPunchHandles
+    internal abstract class PipeBasedProcessSpawnPunchHandles : IRemoteProcessInitializer
     {
         protected Process TargetProcess { get; private set; }
 
@@ -17,8 +17,8 @@ namespace Spfx.Runtime.Server.Processes
         public AnonymousPipeServerStream ReadPipe { get; protected set; }
         public AnonymousPipeServerStream WritePipe { get; protected set; }
 
-        Stream IProcessSpawnPunchHandles.ReadStream => ReadPipe;
-        Stream IProcessSpawnPunchHandles.WriteStream => WritePipe;
+        Stream IRemoteProcessInitializer.ReadStream => ReadPipe;
+        Stream IRemoteProcessInitializer.WriteStream => WritePipe;
 
         public void Dispose()
         {
@@ -45,7 +45,7 @@ namespace Spfx.Runtime.Server.Processes
         public void HandleProcessCreatedInLock(Process targetProcess, ProcessSpawnPunchPayload initData)
         {
             TargetProcess = targetProcess;
-            m_disposeClientHandles = targetProcess.Id != Process.GetCurrentProcess().Id;
+            m_disposeClientHandles = targetProcess.Id != ProcessUtilities.CurrentProcessId;
 
             // those are inverted on purpose.
             initData.WritePipe = CreateHandleForOtherProcess(ReadPipe);
@@ -73,7 +73,7 @@ namespace Spfx.Runtime.Server.Processes
                 stream?.DisposeLocalCopyOfClientHandle();
         }
 
-        Task IProcessSpawnPunchHandles.CompleteHandshakeAsync(CancellationToken ct)
+        Task IRemoteProcessInitializer.CompleteHandshakeAsync(CancellationToken ct)
         {
             return Task.CompletedTask;
         }

@@ -19,9 +19,22 @@
             return k == ProcessKind.Netcore || k == ProcessKind.Netcore32 || k == ProcessKind.Wsl;
         }
 
-        public static bool IsNetfx(this ProcessKind k)
+        public static bool IsNetfxProcess(this ProcessKind k)
         {
             return k == ProcessKind.Netfx || k == ProcessKind.Netfx32;
+        }
+
+        public static bool IsNetfx(this ProcessKind k)
+        {
+            switch(k)
+            {
+                case ProcessKind.Netfx:
+                case ProcessKind.Netfx32:
+                case ProcessKind.AppDomain:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         public static bool IsFakeProcess(this ProcessKind k)

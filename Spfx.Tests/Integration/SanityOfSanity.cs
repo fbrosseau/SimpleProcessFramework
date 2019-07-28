@@ -43,7 +43,7 @@ namespace Spfx.Tests.Integration
 
                 var procInfo = new ProcessCreationRequest
                 {
-                    ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId, ProcessKind = SimpleIsolationKind }
+                    ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId, TargetFramework = SimpleIsolationKind }
                 };
 
                 var epInfo = new EndpointCreationRequest

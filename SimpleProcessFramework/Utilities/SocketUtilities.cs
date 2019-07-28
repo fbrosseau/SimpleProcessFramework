@@ -1,13 +1,73 @@
 ﻿using Spfx.Interfaces;
+using Spfx.Runtime.Server;
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Spfx.Utilities
 {
     internal static class SocketUtilities
     {
+        [Flags]
+        private enum HANDLE_FLAGS : uint
+        {
+            None = 0,
+            INHERIT = 1,
+            PROTECT_FROM_CLOSE = 2
+        }
+
+        [DllImport("kernel32.dll", SetLastError = false)]
+        private static extern bool SetHandleInformation(IntPtr hObject, HANDLE_FLAGS dwMask, HANDLE_FLAGS dwFlags);
+
+        internal static Socket CreateSocket(AddressFamily af, SocketType sockType, ProtocolType protocol)
+        {
+            if (NetcoreHelper.IsNetcoreAtLeastVersion(3) || !HostFeaturesHelper.IsWindows)
+                return new Socket(af, sockType, protocol);
+
+            lock (ProcessCreationUtilities.ProcessCreationLock)
+            {
+                var sock = new Socket(af, sockType, protocol);
+                SetNotInheritable(sock);
+                return sock;
+            }
+        }
+
+        internal static Socket CreateSocket(SocketType sockType, ProtocolType protocol)
+        {
+            if (NetcoreHelper.IsNetcoreAtLeastVersion(3) || !HostFeaturesHelper.IsWindows)
+                return new Socket(sockType, protocol);
+
+            lock (ProcessCreationUtilities.ProcessCreationLock)
+            {
+                var sock = new Socket(sockType, protocol);
+                SetNotInheritable(sock);
+                return sock;
+            }
+        }
+
+        private static void SetNotInheritable(Socket sock)
+        {
+            SetHandleInformation(sock.Handle, HANDLE_FLAGS.INHERIT, 0);
+        }
+
+        public static EndPoint CreateUnixEndpoint(string addr)
+        {
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
+            return new UnixDomainSocketEndPoint(addr);
+#else
+            if (HostFeaturesHelper.LocalProcessKind.IsNetcore())
+            {
+                Type t = Type.GetType("System.Net.Sockets.UnixDomainSocketEndPoint, System.Net.Sockets");
+                if (t != null)
+                    return (EndPoint)Activator.CreateInstance(t, addr);
+            }
+
+            return new UnixEndpoint(addr);
+#endif
+        }
+
         public class UnixEndpoint : EndPoint
         {
             private static readonly UTF8Encoding s_rawUtf8 = new UTF8Encoding(false, false);
@@ -53,18 +113,6 @@ namespace Spfx.Utilities
             {
                 return "unix:" + Address;
             }
-        }
-
-        public static EndPoint CreateUnixEndpoint(string addr)
-        {
-            if (HostFeaturesHelper.LocalProcessKind.IsNetcore())
-            {
-                Type t = Type.GetType("System.Net.Sockets.UnixDomainSocketEndPoint, System.Net.Sockets");
-                if (t != null)
-                    return (EndPoint)Activator.CreateInstance(t, addr);
-            }
-
-            return new UnixEndpoint(addr);
         }
     }
 }

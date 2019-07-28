@@ -32,7 +32,7 @@ namespace Spfx.Runtime.Client
         {
             using (var disposeBag = new DisposeBag())
             {
-                var client = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                var client = SocketUtilities.CreateSocket(SocketType.Stream, ProtocolType.Tcp);
                 disposeBag.Add(client);
 
                 await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination, cb, s), client.EndConnect, null);

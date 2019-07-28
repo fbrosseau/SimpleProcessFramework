@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal sealed class WslProcessSpawnPunchHandles : IProcessSpawnPunchHandles
+    internal sealed class WslProcessSpawnPunchHandles : IRemoteProcessInitializer
     {
         private readonly Socket m_listenSocket;
         private Socket m_acceptedSocket;
@@ -17,7 +17,7 @@ namespace Spfx.Runtime.Server.Processes
 
         public WslProcessSpawnPunchHandles()
         {
-            m_listenSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+            m_listenSocket = SocketUtilities.CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             var filename = Guid.NewGuid().ToString("N");
             m_linuxAddressName = s_tempFolderWslPath.Value + filename;
             var tempAddress = Path.Combine(Path.GetTempPath(), filename);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Spfx.Interfaces
@@ -8,7 +7,7 @@ namespace Spfx.Interfaces
     public class ProcessCreationInfo
     {
         [DataMember]
-        public ProcessKind ProcessKind { get; set; } = ProcessKind.Default;
+        public TargetFramework TargetFramework { get; set; } = TargetFramework.Default;
 
         [DataMember]
         public string ProcessName { get; set; }
@@ -23,16 +22,14 @@ namespace Spfx.Interfaces
         public string ProcessUniqueId { get; set; }
 
         [DataMember]
-        // TODO - sanitize
-        public string SpecificRuntimeVersion { get; set; }
-
-        [DataMember]
         public bool ManuallyRedirectConsole { get; set; }
 
         public void EnsureIsValid()
         {
             if (string.IsNullOrWhiteSpace(ProcessUniqueId))
                 throw new InvalidOperationException(nameof(ProcessUniqueId) + " is mandatory");
+            if (TargetFramework is null)
+                throw new InvalidOperationException(nameof(TargetFramework) + " is mandatory");
         }
 
         [DataContract]

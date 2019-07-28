@@ -2,7 +2,9 @@
 using Spfx.Reflection;
 using Spfx.Utilities;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 namespace Spfx
 {
@@ -29,7 +31,7 @@ namespace Spfx
         public string DefaultNetcoreProcessName { get; set; } = "Spfx.Process.Netcore";
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static readonly ProcessKind DefaultDefaultProcessKind = HostFeaturesHelper.LocalProcessKind;
+        public static readonly ProcessKind DefaultDefaultProcessKind = HostFeaturesHelper.LocalProcessKind.IsNetfx() ? ProcessKind.Netfx : ProcessKind.Netcore;
         public ProcessKind DefaultProcessKind { get; set; } = DefaultDefaultProcessKind;
 
         public bool EnableFakeProcesses { get; set; }
@@ -46,6 +48,14 @@ namespace Spfx
         public TimeSpan CreateProcessTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         public bool AppendProcessIdToCommandLine { get; set; } = true;
+
+        public bool EnableDebugChecks { get; set; } = HostFeaturesHelper.IsDebugBuild;
+
+        public Dictionary<TargetFramework, DirectoryInfo> CodeBaseOverrides { get; set; } 
+            = new Dictionary<TargetFramework, DirectoryInfo>();
+
+        public string DefaultNetcoreRuntime { get; set; } = "2";
+        public bool PrintErrorInRegularOutput { get; set; }
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

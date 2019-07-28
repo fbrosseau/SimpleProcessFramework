@@ -54,7 +54,7 @@ namespace Spfx.Tests.Integration
         {
             try
             {
-                var addr = $"/{Process2.MasterProcessUniqueId}/{ExceptionReportingEndpoint.EndpointId}";
+                var addr = $"/{ProcessCore.MasterProcessUniqueId}/{ExceptionReportingEndpoint.EndpointId}";
                 var ep = m_localProcess.ClusterProxy.CreateInterface<IExceptionReportingEndpoint>(addr);
                 _ = ep.ReportException(RemoteExceptionInfo.Create(ex));
             }

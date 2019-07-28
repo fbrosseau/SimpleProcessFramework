@@ -1,7 +1,7 @@
 ﻿using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
+using Spfx.Utilities;
 using System;
-using System.Runtime.ExceptionServices;
 using System.Runtime.Serialization;
 
 namespace Spfx.Serialization
@@ -30,7 +30,7 @@ namespace Spfx.Serialization
 
         public void Rethrow()
         {
-            ExceptionDispatchInfo.Capture(ExceptionObject).Throw();
+            ExceptionObject.Rethrow();
         }
     }
 

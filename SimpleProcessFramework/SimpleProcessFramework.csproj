@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <TargetFrameworks>netstandard2.0;$(AllNetCoreVersions)</TargetFrameworks>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>    
     <AssemblyName>Spfx</AssemblyName>
@@ -12,6 +12,7 @@
     <NuspecFile>../nuspec/SimpleProcessFramework.nuspec</NuspecFile>
     <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

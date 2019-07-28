@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,11 +17,16 @@ namespace Spfx.Runtime.Server.Processes
         public string CommandLineArguments { get; protected set; }
         public IReadOnlyDictionary<string, string> EnvironmentBlock { get; protected set; }
 
+        protected TargetFramework TargetFramework { get; private set; }
+        protected ProcessKind ProcessKind => TargetFramework.ProcessKind;
+        protected ProcessClusterConfiguration Config { get; private set; }
+        protected string RealExecutable { get; set; }
+
         protected ProcessCreationInfo ProcessCreationInfo { get; private set; }
 
-        internal static IProcessStartupParameters Create(ProcessKind processKind)
+        internal static IProcessStartupParameters Create(TargetFramework framework)
         {
-            switch(processKind)
+            switch(framework.ProcessKind)
             {
                 case ProcessKind.Wsl:
                     return new WslProcessStartupParameters();
@@ -33,43 +37,39 @@ namespace Spfx.Runtime.Server.Processes
                 case ProcessKind.Netfx32:
                     return new NetfxProcessStartupParameters();
                 default:
-                    throw new ArgumentException("Unexpected kind " + processKind);
+                    throw new ArgumentException("Unexpected kind " + framework);
             }
         }
-
-        protected ProcessKind ProcessKind { get; private set; }
-        protected ProcessClusterConfiguration Config { get; private set; }
-        protected string RealExecutable { get; set; }
 
         public virtual void Initialize(ProcessClusterConfiguration config, ProcessCreationInfo processCreationInfo)
         {
             ProcessCreationInfo = processCreationInfo;
-            ProcessKind = processCreationInfo.ProcessKind;
+            TargetFramework = processCreationInfo.TargetFramework;
             Config = config;
 
             var name = processCreationInfo.ProcessName;
-            var ext = GetExecutableExtension(ProcessKind);
-
-            name = GetFullExecutableName(name, ext);
-
             if (string.IsNullOrWhiteSpace(name))
                 name = GetDefaultExecutableFileName(ProcessKind, Config);
+
+            var ext = GetExecutableExtension(TargetFramework.ProcessKind);
+
+            name = GetFullExecutableName(name, ext);
 
             if (!File.Exists(name))
             {
                 if (!Config.CreateExecutablesIfMissing)
                     throw new InvalidProcessParametersException("The target executable does not exist");
 
-                CreateMissingExecutable();
+                CreateMissingExecutable(name);
             }
 
-            RealExecutable = GetFinalExecutableName(GetFullExecutableName(name, ext));
+            RealExecutable = GetUserExecutableFullPath(GetFullExecutableName(name, ext));
 
             var processArguments = new List<string>();
             processArguments.Add(RealExecutable);
 
             if (config.AppendProcessIdToCommandLine)
-                processArguments.Add(Process.GetCurrentProcess().Id.ToString());
+                processArguments.Add(ProcessUtilities.CurrentProcessId.ToString());
 
             if (processCreationInfo.ExtraCommandLineArguments?.Any() == true)
             {
@@ -88,7 +88,7 @@ namespace Spfx.Runtime.Server.Processes
         {
         }
 
-        protected virtual string GetFinalExecutableName(string executableName)
+        protected virtual string GetUserExecutableFullPath(string executableName)
         {
             return executableName;
         }
@@ -125,6 +125,29 @@ namespace Spfx.Runtime.Server.Processes
 
             return PathHelper.CurrentBinFolder.FullName;
         }
+
+        protected void CreateNetcoreArguments(List<string> processArguments)
+        {
+            processArguments.Insert(0, DotNetPath);
+
+            if (!ProcessCreationInfo.TargetFramework.IsSupportedByCurrentProcess(Config, out var reason))
+                throw new PlatformNotSupportedException(reason);
+
+            if (ProcessCreationInfo.TargetFramework is NetcoreTargetFramework netcore
+                && !string.IsNullOrWhiteSpace(netcore.TargetRuntime))
+            {
+                var selectedVersion = NetcoreHelper.GetBestNetcoreRuntime(netcore.TargetRuntime, ProcessKind);
+
+                if (string.IsNullOrWhiteSpace(selectedVersion))
+                    throw new InvalidOperationException("There is no installed runtime matching " + netcore.TargetRuntime);
+
+                processArguments.Insert(1, "--fx-version");
+                processArguments.Insert(2, selectedVersion);
+            }
+        }
+
+        protected virtual string DotNetPath => NetcoreHelper.GetNetCoreHostPath(ProcessKind != ProcessKind.Netcore32);
+
 
         internal static string GetDefaultExecutableFileName(ProcessKind processKind, ProcessClusterConfiguration config)
         {
@@ -174,10 +197,10 @@ namespace Spfx.Runtime.Server.Processes
             if (Path.IsPathRooted(baseFilename))
                 return baseFilename;
 
-            return Path.Combine(HostFeaturesHelper.GetCodeBase(ProcessKind, Config), baseFilename);
+            return Path.Combine(HostFeaturesHelper.GetCodeBase(TargetFramework, Config), baseFilename);
         }
 
-        private void CreateMissingExecutable()
+        private string CreateMissingExecutable(string requestedName)
         {
             var defaultExe = GetDefaultExecutable();
 
@@ -186,12 +209,13 @@ namespace Spfx.Runtime.Server.Processes
                 var existingFile = new FileInfo(defaultExe);
                 var existingFileSecurity = existingFile.GetAccessControl();
                 existingFileSecurity.SetAccessRuleProtection(true, true);
-                var copiedFile = existingFile.CopyTo(RealExecutable, true);
+                var copiedFile = existingFile.CopyTo(requestedName, true);
                 copiedFile.SetAccessControl(existingFileSecurity);
+                return requestedName;
             }
             catch
             {
-                RealExecutable = defaultExe;
+                return defaultExe;
             }
         }
 

@@ -1,11 +1,14 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Utilities;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -17,29 +20,74 @@ namespace Spfx.Runtime.Server.Processes
         public SameProcessFakeHandle(ProcessCreationInfo info, ITypeResolver typeResolver) 
             : base(info, typeResolver)
         {
-            m_processContainer = new ProcessContainer();
+            m_processContainer = new FakeProcessContainer(this);
             m_rawProcessContainer = m_processContainer;
         }
 
         protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
         {
             m_processContainer.Initialize(new StringReader(punchPayload.SerializeToString()));
-            m_processContainer.SetConnector(new FakeSubprocessConnector(this));
-
             await m_rawProcessContainer.CompleteInitialization();
+            return new ProcessInformation(ProcessUniqueId, ProcessUtilities.CurrentProcessId, ProcessCreationInfo.TargetFramework);
+        }
 
-            return new ProcessInformation(ProcessUniqueId, Process.GetCurrentProcess().Id, ProcessCreationInfo.ProcessKind);
+        protected override void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
+        {
+            wrappedMessage.SourceConnectionId = sourceConnectionId;
+            m_rawProcessContainer.OnMessageReceived(wrappedMessage);
+        }
+
+        protected override void OnDispose()
+        {
+            m_processContainer.Dispose();
+        }
+
+        protected override Task OnTeardownAsync(CancellationToken ct)
+        {
+            return m_processContainer.TeardownAsync(ct);
+        }
+
+        private class FakeProcessContainer : ProcessContainer
+        {
+            private readonly SameProcessFakeHandle m_parentHandle;
+
+            public FakeProcessContainer(SameProcessFakeHandle parentHandle)
+            {
+                m_parentHandle = parentHandle;
+            }
+
+            protected override ProcessContainerInitializer CreateInitializer()
+            {
+                return new FakeProcessContainerInitializer(InputPayload, TypeResolver, m_parentHandle);
+            }
+        }
+
+        private class FakeProcessContainerInitializer : ProcessContainerInitializer
+        {
+            private readonly SameProcessFakeHandle m_parentHandle;
+
+            public FakeProcessContainerInitializer(ProcessSpawnPunchPayload payload, ITypeResolver typeResolver, SameProcessFakeHandle parentHandle)
+                : base(payload, typeResolver)
+            {
+                m_parentHandle = parentHandle;
+            }
+
+            internal override ISubprocessConnector CreateConnector(ProcessContainer owner)
+            {
+                return new FakeSubprocessConnector(m_parentHandle);
+            }
+
+            internal override IEnumerable<Task> GetShutdownEvents()
+                => Enumerable.Empty<Task>();
         }
 
         private class FakeSubprocessConnector : ISubprocessConnector
         {
             private readonly SameProcessFakeHandle m_owner;
-            private readonly IProcessHandle m_rawOwner;
 
             public FakeSubprocessConnector(SameProcessFakeHandle owner)
             {
                 m_owner = owner;
-                m_rawOwner = owner;
             }
 
             public void Dispose()
@@ -58,26 +106,10 @@ namespace Spfx.Runtime.Server.Processes
                 m_owner.OnMessageReceivedFromProcess(wrapped);
             }
 
+            public Task InitializeAsync(CancellationToken ct)
+                => Task.CompletedTask;
             public Task TeardownAsync(CancellationToken ct = default)
-            {
-                return Task.CompletedTask;
-            }
+                => Task.CompletedTask;
         }
-
-        protected override void TransferMessageToRemote(string sourceConnectionId, WrappedInterprocessMessage wrappedMessage)
-        {
-            wrappedMessage.SourceConnectionId = sourceConnectionId;
-            m_rawProcessContainer.OnMessageReceived(wrappedMessage);
-        }
-
-        protected override void OnDispose()
-        {
-            m_processContainer.Dispose();
-        }
-
-        protected override Task OnTeardownAsync(CancellationToken ct)
-        {
-            return m_processContainer.TeardownAsync(ct);
-        }
-    }    
+    }
 }

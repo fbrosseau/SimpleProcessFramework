@@ -17,8 +17,9 @@ namespace Spfx.Tests
 
         public static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
 
-        public static readonly ProcessKind SimpleIsolationKind = HostFeaturesHelper.IsAppDomainSupported
-            ? ProcessKind.AppDomain : ProcessKind.Netcore;
+        public static readonly TargetFramework SimpleIsolationKind = TargetFramework.Create(
+            HostFeaturesHelper.IsAppDomainSupported
+            ? ProcessKind.AppDomain : ProcessKind.Netcore);
 
         public const int DefaultTestTimeout = TestUtilities.DefaultTestTimeout;
 

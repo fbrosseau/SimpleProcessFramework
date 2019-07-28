@@ -3,13 +3,14 @@ using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {
     internal static class ProcessUtilities
     {
+        public static int CurrentProcessId { get; } = Process.GetCurrentProcess().Id;
+
         public static bool TryKill(this Process proc)
         {
             try

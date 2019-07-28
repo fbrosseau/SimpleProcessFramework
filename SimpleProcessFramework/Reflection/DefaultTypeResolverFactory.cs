@@ -26,6 +26,7 @@ namespace Spfx.Reflection
             resolver.RegisterFactory<IEndpointBroker>(r => new EndpointBroker());
             resolver.RegisterFactory<IInternalRequestsHandler>(r => new NullInternalRequestsHandler());
             resolver.RegisterFactory<ILocalConnectionFactory>(r => new NullLocalConnectionFactory());
+            resolver.RegisterFactory(r => new SubProcessConfiguration());
             DefaultTypeResolver = resolver;
         }
 
@@ -38,7 +39,10 @@ namespace Spfx.Reflection
             }
             else
             {
-                factory = (ITypeResolverFactory)Activator.CreateInstance(typeResolverFactoryType);
+                var rawFactory = Activator.CreateInstance(typeResolverFactoryType);
+                factory = rawFactory as ITypeResolverFactory;
+                if (factory is null)
+                    throw new ArgumentException("Type does not implement ITypeResolverFactory: " + typeResolverFactoryType.AssemblyQualifiedName, nameof(typeResolverFactoryType));
             }
 
             return factory.CreateRootResolver().CreateNewScope();

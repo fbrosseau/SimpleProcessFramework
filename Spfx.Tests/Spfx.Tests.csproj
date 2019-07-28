@@ -4,9 +4,9 @@
     <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
-    <DefineConstants>TRACE;WINDOWS_BUILD</DefineConstants>
     <OutputPath>bin/$(Configuration)</OutputPath>
     <IsTestProject>true</IsTestProject>
+    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

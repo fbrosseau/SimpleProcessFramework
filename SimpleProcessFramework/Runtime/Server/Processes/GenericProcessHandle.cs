@@ -4,14 +4,16 @@ using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Serialization;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
     internal abstract class GenericProcessHandle : AsyncDestroyable, IProcessHandle, IMessageCallbackChannel
     {
-        public ProcessKind ProcessKind => ProcessCreationInfo.ProcessKind;
+        public TargetFramework TargetFramework => ProcessCreationInfo.TargetFramework;
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
         protected ITypeResolver TypeResolver { get; }
@@ -34,8 +36,19 @@ namespace Spfx.Runtime.Server.Processes
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
         }
 
-        public async Task CreateProcess(ProcessSpawnPunchPayload punchPayload)
+        public async Task CreateProcess()
         {
+            var masterProcess = TypeResolver.GetSingleton<IInternalProcessBroker>().MasterProcess;
+
+            var punchPayload = new ProcessSpawnPunchPayload
+            {
+                HostAuthority = masterProcess.HostAuthority,
+                ProcessKind = ProcessCreationInfo.TargetFramework.ProcessKind,
+                ProcessUniqueId = ProcessCreationInfo.ProcessUniqueId,
+                ParentProcessId = ProcessUtilities.CurrentProcessId,
+                TypeResolverFactory = Config.TypeResolverFactoryType?.AssemblyQualifiedName
+            };
+
             try
             {
                 Logger.Debug?.Trace("Starting CreateProcess...");

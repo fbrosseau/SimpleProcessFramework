@@ -2,10 +2,15 @@
   <PropertyGroup>
     <LangVersion>7.2</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.170</Version>
+    <Version>0.0.219</Version>
     <ProductName>The SimpleProcessFramework</ProductName>
     <ProductVersion>$(Version)</ProductVersion>
     <PackageVersion>$(Version)</PackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Netcore_Debug' OR '$(Configuration)'=='Netcore_Release'">
+    <DefineConstants>$(DefineConstants);UNIX_TESTS_BUILD_ONLY</DefineConstants>
+    <SpfxBuildNet472>false</SpfxBuildNet472>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)'=='Windows_NT' AND '$(SpfxBuildNet472)'==''">
@@ -16,10 +21,22 @@
     <SpfxBuildNet472>false</SpfxBuildNet472>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(AllNetCoreVersions)'==''">
+    <AllNetCoreVersions>netcoreapp2.1;netcoreapp2.2;netcoreapp3.0</AllNetCoreVersions>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.0'">
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_1_PLUS</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(SpfxBuildNet472)'=='true'">
-    <SfpxAllTargetPlatforms>net472;netcoreapp2.1</SfpxAllTargetPlatforms>
+    <SfpxAllTargetPlatforms>net472;$(AllNetCoreVersions)</SfpxAllTargetPlatforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(SpfxBuildNet472)'=='false'">
-    <SfpxAllTargetPlatforms>netcoreapp2.1</SfpxAllTargetPlatforms>
+    <SfpxAllTargetPlatforms>$(AllNetCoreVersions)</SfpxAllTargetPlatforms>
   </PropertyGroup>  
 </Project>

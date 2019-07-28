@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Utilities.Threading
 {
-    internal static class TaskEx
+    internal static partial class TaskEx
     {
         public static Task NeverCompletingTask { get; } = new TaskCompletionSource<VoidType>().Task;
 
@@ -106,6 +107,29 @@ namespace Spfx.Utilities.Threading
                 return;
 
             throw new TaskCanceledException("The expected task did not complete first");
+        }
+
+        public static bool IsFaultedOrCanceled(this Task t)
+        {
+            Guard.ArgumentNotNull(t, nameof(t));
+            return t.IsFaulted || t.IsCanceled;
+        }
+
+        public static Exception GetExceptionOrCancel(this Task t)
+        {
+            Guard.ArgumentNotNull(t, nameof(t));
+            if (t.IsFaulted)
+                return t.ExtractException();
+            if (t.IsCanceled)
+                return new TaskCanceledException(t);
+
+            throw new InvalidOperationException("This task is not fauled or canceled");
+        }
+
+        public static void RethrowException(this Task t)
+        {
+            Debug.Assert(t.IsFaultedOrCanceled());
+            t.GetExceptionOrCancel().Rethrow();
         }
 
         public static void FireAndForget(this Task t)
