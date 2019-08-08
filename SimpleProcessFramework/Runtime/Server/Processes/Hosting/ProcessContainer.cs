@@ -21,7 +21,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         private List<Task> m_shutdownEvents = new List<Task>();
         protected ProcessSpawnPunchPayload InputPayload { get; private set; }
         private GCHandle m_gcHandleToThis;
-        private ILogger m_logger;
+        private ILogger m_logger = NullLogger.Logger;
 
         public string LocalProcessUniqueId => m_processCore.UniqueId;
 
