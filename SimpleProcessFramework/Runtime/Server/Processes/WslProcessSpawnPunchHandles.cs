@@ -21,7 +21,7 @@ namespace Spfx.Runtime.Server.Processes
             var filename = Guid.NewGuid().ToString("N");
             m_linuxAddressName = s_tempFolderWslPath.Value + filename;
             var tempAddress = Path.Combine(Path.GetTempPath(), filename);
-            m_listenSocket.Bind(SocketUtilities.CreateUnixEndpoint(tempAddress));
+            m_listenSocket.Bind(new UnixDomainSocketEndPoint(tempAddress));
             m_listenSocket.Listen(5);
         }
 

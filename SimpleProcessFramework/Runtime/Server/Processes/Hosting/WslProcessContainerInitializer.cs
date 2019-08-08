@@ -16,7 +16,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         {
             Logger.Info?.Trace("Creating Unix socket to " + payload.ReadPipe);
             var sock = SocketUtilities.CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            sock.Connect(SocketUtilities.CreateUnixEndpoint(payload.ReadPipe));
+            sock.Connect(new UnixDomainSocketEndPoint(payload.ReadPipe));
             m_stream = new NetworkStream(sock);
         }
 

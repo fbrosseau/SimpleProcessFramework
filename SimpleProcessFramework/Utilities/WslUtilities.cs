@@ -19,7 +19,7 @@ namespace Spfx.Utilities
             {
                 using (var s = SocketUtilities.CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified))
                 {
-                    s.Bind(SocketUtilities.CreateUnixEndpoint(tempFile));
+                    s.Bind(new UnixDomainSocketEndPoint(tempFile));
                     tryCleanupFile = true;
                     // this will throw when not supported
                 }
