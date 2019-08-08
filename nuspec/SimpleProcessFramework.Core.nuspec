@@ -7,7 +7,7 @@
     <authors>francis@malagauche.com</authors>
     <dependencies>
       <dependency id="System.IO.FileSystem.AccessControl" version="4.5.0" />
-      <dependency id="System.Memory" version="4.5.2" />
+      <dependency id="System.Memory" version="4.5.3" />
       <dependency id="System.Reflection.Emit" version="4.3.0" />
       <dependency id="System.Reflection.Emit.ILGeneration" version="4.3.0" />
       <dependency id="System.Reflection.Emit.Lightweight" version="4.3.0" />

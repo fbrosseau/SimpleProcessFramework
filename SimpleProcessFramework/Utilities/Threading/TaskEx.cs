@@ -174,6 +174,11 @@ namespace Spfx.Utilities.Threading
                 throw new TimeoutException();
         }
 
+        public static void WaitOrRethrow(this Task t)
+        {
+            t.GetAwaiter().GetResult();
+        }
+
         public static void ExpectAlreadyCompleted(this Task t)
         {
             if (!t.IsCompleted)
