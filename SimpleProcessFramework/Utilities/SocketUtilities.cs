@@ -1,10 +1,7 @@
-﻿using Spfx.Interfaces;
-using Spfx.Runtime.Server;
-using System;
-using System.Net;
+﻿using System;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Spfx.Utilities
 {
@@ -47,6 +44,7 @@ namespace Spfx.Utilities
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void SetNotInheritable(Socket sock)
         {
             SetHandleInformation(sock.Handle, HANDLE_FLAGS.INHERIT, 0);
