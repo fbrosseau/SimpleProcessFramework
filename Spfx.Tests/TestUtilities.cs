@@ -13,7 +13,7 @@ namespace Spfx.Tests
     internal static class TestUtilities
     {
 #if DEBUG
-        public const int DefaultTestTimeout = 300000;
+        public const int DefaultTestTimeout = 30000;
 #else
         public const int DefaultTestTimeout = 30000;
 #endif
