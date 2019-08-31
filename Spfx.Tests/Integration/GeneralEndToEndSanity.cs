@@ -220,7 +220,8 @@ namespace Spfx.Tests.Integration
             {
                 targetNetcoreRuntime = netcore.TargetRuntime;
                 if (NetcoreHelper.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
-                    Assert.Fail(".net core runtime " + requestedRuntime + " is not supported by this host");
+                    Assert.Fail($".net core runtime {requestedRuntime} is not supported by this host. The supported runtimes are: \r\n"
+                        + NetcoreHelper.GetInstalledNetcoreRuntimes());
             }
 
             if (!requestedRuntime.IsSupportedByCurrentProcess(cluster.Configuration, out var details))
