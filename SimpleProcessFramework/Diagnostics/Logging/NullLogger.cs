@@ -10,6 +10,8 @@ namespace Spfx.Diagnostics.Logging
         public ConfiguredLogger? Info => null;
         public ConfiguredLogger? Warn => null;
         public ConfiguredLogger? Error => null;
+        string ILogger.LoggerName => "<null>";
+
         public ConfiguredLogger? FromLevel(LogTraceLevel level) => null;
 
         public void Dispose()

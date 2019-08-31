@@ -7,5 +7,6 @@ namespace Spfx.Diagnostics.Logging
     public interface ILogListener
     {
         void Log(string name, LogTraceLevel level, string message, Exception ex = null);
+        LogTraceLevel GetEnabledLevels(ILogger l);
     }
 }

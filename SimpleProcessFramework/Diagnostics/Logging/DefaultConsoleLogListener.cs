@@ -9,5 +9,7 @@ namespace Spfx.Diagnostics.Logging
             var now = DateTime.Now;
             Console.WriteLine($"{now:T}|{name} [{level}]: {message}");
         }
+
+        public LogTraceLevel GetEnabledLevels(ILogger l) => LogTraceLevel.All;
     }
 }

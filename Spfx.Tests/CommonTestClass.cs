@@ -59,7 +59,7 @@ namespace Spfx.Tests
             {
                 var typeResolver = base.CreateRootResolver();
                 typeResolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new TestUnhandledExceptionsHandler(r));
-                typeResolver.RegisterFactory<ILogListener>(r => new DefaultConsoleLogListener());
+                typeResolver.RegisterFactory<ILoggerFactory>(r => new DefaultLoggerFactory(r));
                 return typeResolver;
             }
         }
