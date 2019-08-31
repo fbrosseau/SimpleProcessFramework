@@ -115,6 +115,16 @@ namespace Spfx.Utilities.Threading
             return t.IsFaulted || t.IsCanceled;
         }
 
+        public static bool IsFaultedOrCanceled(this ValueTask t)
+        {
+            return t.IsFaulted || t.IsCanceled;
+        }
+
+        public static bool IsFaultedOrCanceled<T>(this ValueTask<T> t)
+        {
+            return t.IsFaulted || t.IsCanceled;
+        }
+
         public static Exception GetExceptionOrCancel(this Task t)
         {
             Guard.ArgumentNotNull(t, nameof(t));
@@ -126,9 +136,40 @@ namespace Spfx.Utilities.Threading
             throw new InvalidOperationException("This task is not fauled or canceled");
         }
 
+        public static Exception GetExceptionOrCancel(this ValueTask t)
+        {
+            if (t.IsFaulted)
+                return t.ExtractException();
+            if (t.IsCanceled)
+                return new TaskCanceledException(t.AsTask());
+
+            throw new InvalidOperationException("This task is not fauled or canceled");
+        }
+
+        public static Exception GetExceptionOrCancel<T>(this ValueTask<T> t)
+        {
+            if (t.IsFaulted)
+                return t.ExtractException();
+            if (t.IsCanceled)
+                return new TaskCanceledException(t.AsTask());
+
+            throw new InvalidOperationException("This task is not fauled or canceled");
+        }
+
         public static void RethrowException(this Task t)
         {
             Debug.Assert(t.IsFaultedOrCanceled());
+            t.GetExceptionOrCancel().Rethrow();
+        }
+
+        public static void RethrowException(this ValueTask t)
+        {
+            Debug.Assert(t.IsFaultedOrCanceled());
+            t.GetExceptionOrCancel().Rethrow();
+        }
+
+        public static void RethrowException<T>(this ValueTask<T> t)
+        {
             t.GetExceptionOrCancel().Rethrow();
         }
 
@@ -191,6 +232,16 @@ namespace Spfx.Utilities.Threading
             while (ex is AggregateException && ex.InnerException != null)
                 ex = ex.InnerException;
             return ex;
+        }
+
+        public static Exception ExtractException(this ValueTask t)
+        {
+            return t.AsTask().ExtractException();
+        }
+
+        public static Exception ExtractException<T>(this ValueTask<T> t)
+        {
+            return t.AsTask().ExtractException();
         }
     }
 }

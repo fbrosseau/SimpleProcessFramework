@@ -11,7 +11,7 @@ namespace Spfx.Utilities.Threading
         private class LockSession : ValueTaskCompletionSource<IDisposable>, IDisposable, IThreadPoolWorkItem
         {
             private AsyncLock m_asyncLock;
-            private volatile bool m_markAsCancelled;
+            private volatile bool m_completeSynchronously;
 
             public LockSession(AsyncLock asyncLock)
             {
@@ -20,7 +20,7 @@ namespace Spfx.Utilities.Threading
 
             void IThreadPoolWorkItem.Execute()
             {
-                if (m_markAsCancelled)
+                if (!m_completeSynchronously)
                     TrySetCanceled();
                 else
                     Unblock(true);
@@ -28,30 +28,31 @@ namespace Spfx.Utilities.Threading
 
             public void Unblock(bool canCompleteSynchronously = false)
             {
-                if (canCompleteSynchronously)
-                    TrySetResult(this);
+                if (!canCompleteSynchronously)
+                    RequeueThis(true);
                 else
-                    ThreadPoolHelper.QueueItem(this);
+                    TrySetResult(this);
             }
 
             public void Cancel(bool canCompleteSynchronously)
             {
-                if (canCompleteSynchronously)
-                {
-                    TrySetCanceled();
-                }
+                if (!canCompleteSynchronously)
+                    RequeueThis(false);
                 else
-                {
-                    m_markAsCancelled = true;
-                    ThreadPoolHelper.QueueItem(this);
-                }
+                    TrySetCanceled();
+            }
+
+            private void RequeueThis(bool completedSuccessfully)
+            {
+                m_completeSynchronously = completedSuccessfully;
+                ThreadPoolHelper.QueueItem(this);
             }
 
             void IDisposable.Dispose()
             {
                 // it's very important that we don't ExitLock more than once
                 // from this instance! 
-                var lockInstance = Interlocked.Exchange(ref m_asyncLock, null);
+                var lockInstance = m_asyncLock != null ? Interlocked.Exchange(ref m_asyncLock, null) : null;
                 lockInstance?.ExitLock();
             }
         }
