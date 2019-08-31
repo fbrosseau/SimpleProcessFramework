@@ -16,6 +16,8 @@ namespace Spfx.Serialization
     {
         internal const int MagicHeader = unchecked((int)0xBEEF1234);
 
+        private static Dictionary<Type, Type> s_typeSubstitutions;
+
         public T Deserialize<T>(Stream s)
         {
             var reader = new DeserializerSession(s);
@@ -94,6 +96,10 @@ namespace Spfx.Serialization
             }
 
             var actualType = graph.GetType();
+            Type replacement = null;
+            if (s_typeSubstitutions?.TryGetValue(actualType, out replacement) == true)
+                actualType = replacement;
+
             if (actualType != expectedType)
             {
                 bw.WriteType(actualType);
@@ -143,50 +149,51 @@ namespace Spfx.Serialization
                 s_knownSerializers.Add(t, s);
             }
 
-            void AddSerializer2<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession, T> deserializer)
+            void AddGeneric<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession, T> deserializer, bool discoverAllImplementations = false)
             {
-                AddSerializer(typeof(T), new SimpleTypeSerializer(
+                var thisT = typeof(T);
+                var serializerInstance = new SimpleTypeSerializer(
                     (bw, o) => serializer(bw, (T)o),
-                    br => BoxHelper.Box(deserializer(br))));
+                    br => BoxHelper.Box(deserializer(br)));
+
+                AddSerializer(thisT, serializerInstance);
+
+                if (discoverAllImplementations)
+                {
+                    foreach (var t in thisT.Assembly.DefinedTypes)
+                    {
+                        if (t != thisT && thisT.IsAssignableFrom(t))
+                        {
+                            AddSerializer(t, serializerInstance);
+                            if (s_typeSubstitutions is null)
+                                s_typeSubstitutions = new Dictionary<Type, Type>();
+                            s_typeSubstitutions[t] = thisT;
+                        }
+                    }
+                }
             }
 
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadByte());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSByte());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt16());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt16());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt32());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt32());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt64());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt64());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSingle());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDouble());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDecimal());
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadChar());
-            AddSerializer2((bw, o) => bw.Writer.Write(o.ToUniversalTime().Ticks), br => new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc));
-            AddSerializer2((bw, o) => bw.Writer.Write(o.Ticks), br => new TimeSpan(br.Reader.ReadInt64()));
-            AddSerializer2((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadString());
-            AddSerializer2((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0), br => br.Reader.ReadByte() != 0);
-            AddSerializer2((bw, o) => { }, br => CancellationToken.None);
-            AddSerializer2((bw, o) => { }, br => EventArgs.Empty);
-            AddSerializer2(UnsafeWriteGuid, UnsafeReadGuid);
-            AddSerializer2(WriteIPAddress, ReadIPAddress);
-            AddSerializer2(WriteVersion, ReadVersion);
-        }
-
-        private static unsafe void UnsafeWriteGuid(SerializerSession session, Guid val)
-        {
-            long* int64 = (long*)&val;
-            session.Writer.Write(int64[0]);
-            session.Writer.Write(int64[1]);
-        }
-
-        private static unsafe Guid UnsafeReadGuid(DeserializerSession session)
-        {
-            Guid g = default;
-            long* int64 = (long*)&g;
-            int64[0] = session.Reader.ReadInt64();
-            int64[1] = session.Reader.ReadInt64();
-            return g;
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadByte());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSByte());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt16());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt16());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt32());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt32());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadInt64());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadUInt64());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadSingle());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDouble());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadDecimal());
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadChar());
+            AddGeneric((bw, o) => bw.Writer.Write(o.ToUniversalTime().Ticks), br => new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc));
+            AddGeneric((bw, o) => bw.Writer.Write(o.Ticks), br => new TimeSpan(br.Reader.ReadInt64()));
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadString());
+            AddGeneric((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0), br => br.Reader.ReadByte() != 0);
+            AddGeneric((bw, o) => { }, br => CancellationToken.None);
+            AddGeneric((bw, o) => { }, br => EventArgs.Empty);
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadGuid());
+            AddGeneric(WriteIPAddress, ReadIPAddress, discoverAllImplementations: true);
+            AddGeneric(WriteVersion, ReadVersion);
         }
 
         private static void WriteVersion(SerializerSession session, Version val)
@@ -199,20 +206,72 @@ namespace Spfx.Serialization
             return new Version(session.Reader.ReadString());
         }
 
-        private static void WriteIPAddress(SerializerSession session, IPAddress val)
+        private static unsafe void WriteIPAddress(SerializerSession session, IPAddress val)
         {
             session.Writer.Write((byte)val.AddressFamily);
+
+#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+            Span<byte> buf = stackalloc byte[16];
+            val.TryWriteBytes(buf, out var count);
+            session.Writer.Write(buf.Slice(0, count));
+#else
             session.Writer.Write(val.GetAddressBytes());
+#endif
         }
 
-        private static IPAddress ReadIPAddress(DeserializerSession session)
+        private static ReadOnlySpan<byte> s_sixteenZeroBytes => new byte[16];
+        private static ReadOnlySpan<byte> s_ipv6LoopbackBytes => new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+        private static ReadOnlySpan<byte> s_ipv4To6LoopbackBytes => new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1 };
+        private static readonly IPAddress s_ipv4To6 = new IPAddress(s_ipv4To6LoopbackBytes.ToArray());
+
+        private static unsafe IPAddress ReadIPAddress(DeserializerSession session)
         {
             var af = (AddressFamily)session.Reader.ReadByte();
             if (af == AddressFamily.InterNetwork)
-                return new IPAddress(session.Reader.ReadBytes(4));
-            if (af == AddressFamily.InterNetworkV6)
-                return new IPAddress(session.Reader.ReadBytes(16));
-            throw new SerializationException("Only IPv4 and IPv6 are supported");
+            {
+                var ipInt = session.Reader.ReadUInt32();
+                switch (ipInt)
+                {
+                    case 0:
+                        return IPAddress.Any;
+                    case 0x0100007F:
+                        return IPAddress.Loopback;
+                    case 0xFFFFFFFF:
+                        return IPAddress.Broadcast;
+                    default:
+                        return new IPAddress(ipInt);
+                }
+            }
+
+            if (af != AddressFamily.InterNetworkV6)
+                throw new InvalidOperationException("The endpoint must be IPv4 or IPv6");
+
+#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+            Span<byte> span = stackalloc byte[16];
+            session.Reader.ReadAll(span);
+#else
+            var bytes = session.Reader.ReadBytes(16);
+            var span = new ReadOnlySpan<byte>(bytes);
+#endif
+            switch(span[15])
+            {
+                case 1:
+                    if (span.SequenceEqual(s_ipv6LoopbackBytes))
+                        return IPAddress.IPv6Loopback;
+                    if (span.SequenceEqual(s_ipv4To6LoopbackBytes))
+                        return s_ipv4To6;
+                    break;
+                case 0:
+                    if (span.SequenceEqual(s_sixteenZeroBytes))
+                        return IPAddress.IPv6None;
+                    break;
+            }
+
+#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+            return new IPAddress(span);
+#else
+            return new IPAddress(bytes);
+#endif
         }
 
         internal static ITypeSerializer GetSerializer(Type actualType)

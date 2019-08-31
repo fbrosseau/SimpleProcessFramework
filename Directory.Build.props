@@ -2,7 +2,7 @@
   <PropertyGroup>
     <LangVersion>7.2</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.240</Version>
+    <Version>0.0.247</Version>
     <ProductName>The SimpleProcessFramework</ProductName>
     <ProductVersion>$(Version)</ProductVersion>
     <PackageVersion>$(Version)</PackageVersion>

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using Spfx.Utilities;
+using System.Net;
 
 namespace Spfx.Tests.LowLevel.Serialization
 {
@@ -30,6 +31,10 @@ namespace Spfx.Tests.LowLevel.Serialization
             if (value is ICollection a && deserialized is ICollection b)
             {
                 Assert.AreEqual(a.Count, b.Count, "Count not equal");
+                if (a.Count == 0 && a.GetType().IsArray)
+                {
+                    Assert.AreSame(a, b, "Not deserialized as Array.Empty");
+                }
                 foreach (var (i1, i2) in a.Cast<object>().Zip(b.Cast<object>()))
                 {
                     CompareEquality(i1, i2);
@@ -79,6 +84,11 @@ namespace Spfx.Tests.LowLevel.Serialization
                 new TestContract(),
                 new TestContract{ Value = "Value" },
                 new TestContract{ Value = new TestContract() },
+                new IPAddress(new byte[]{1,2,3,4}),
+                new IPAddress(new byte[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}),
+                IPAddress.Loopback,
+                IPAddress.IPv6Loopback,
+                Array.Empty<string>()
             };
 
             var arrays = values.Select(o =>

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Spfx.Serialization
 {
@@ -30,6 +31,13 @@ namespace Spfx.Serialization
         internal static uint Zig(int n)
         {
             return unchecked((uint)((n << 1) ^ (n >> 31)));
+        }
+
+        public unsafe void Write(Guid val)
+        {
+            long* int64 = (long*)&val;
+            Write(int64[0]);
+            Write(int64[1]);
         }
     }
 }
