@@ -59,7 +59,7 @@ namespace Spfx.Runtime.Server.Processes
             catch (Exception ex)
             {
                 Logger.Warn?.Trace(ex, "CreateProcess failed: " + ex.Message);
-                m_initEvent.Dispose(ex);
+                m_initEvent.Dispose();
                 throw;
             }
         }
