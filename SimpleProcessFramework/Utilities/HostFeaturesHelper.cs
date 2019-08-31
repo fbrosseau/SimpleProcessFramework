@@ -211,7 +211,7 @@ namespace Spfx.Utilities
             string relativeFolder;
             if (framework.ProcessKind.IsNetfx())
             {
-                relativeFolder = "..\\net472";
+                relativeFolder = "..\\net48";
             }
             else if (framework.ProcessKind.IsNetcore())
             {

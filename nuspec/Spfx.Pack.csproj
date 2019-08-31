@@ -3,8 +3,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <NoBuild>true</NoBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NuspecFile Condition="'$(SpfxBuildNet472)'=='true'">SimpleProcessFramework.nuspec</NuspecFile>
-    <NuspecFile Condition="'$(SpfxBuildNet472)'=='false'">SimpleProcessFramework.Core.nuspec</NuspecFile>
+    <NuspecFile Condition="'$(SpfxBuildNet48)'=='true'">SimpleProcessFramework.nuspec</NuspecFile>
+    <NuspecFile Condition="'$(SpfxBuildNet48)'=='false'">SimpleProcessFramework.Core.nuspec</NuspecFile>
     <NuspecProperties>configuration=$(Configuration);ver=$(ProductVersion)</NuspecProperties>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>.</OutputPath>

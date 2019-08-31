@@ -38,7 +38,7 @@ namespace Spfx
         public string DefaultWslNetcoreHost { get; set; } = "dotnet";
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public const string DefaultDefaultNetfxCodeBase = "../net472";
+        public const string DefaultDefaultNetfxCodeBase = "../net48";
         public string DefaultNetfxCodeBase { get; set; } = DefaultDefaultNetfxCodeBase;
 
         public string DefaultNetcoreCodeBase { get; set; } 

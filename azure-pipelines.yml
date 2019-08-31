@@ -6,7 +6,7 @@ variables:
   buildPlatform: 'Any CPU'
   verbosity: 'normal'
   netcoreName: 'netcoreapp2.1'
-  netfxName: 'net472'
+  netfxName: 'net48'
   windowsImage: 'windows-2019'
 
 strategy:
