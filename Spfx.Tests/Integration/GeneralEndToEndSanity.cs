@@ -6,6 +6,7 @@ using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
@@ -221,7 +222,7 @@ namespace Spfx.Tests.Integration
                 targetNetcoreRuntime = netcore.TargetRuntime;
                 if (NetcoreHelper.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
                     Assert.Fail($".net core runtime {requestedRuntime} is not supported by this host. The supported runtimes are: \r\n"
-                        + NetcoreHelper.GetInstalledNetcoreRuntimes());
+                        + string.Join("\r\n", NetcoreHelper.GetInstalledNetcoreRuntimes().Select(r => "- " + r)));
             }
 
             if (!requestedRuntime.IsSupportedByCurrentProcess(cluster.Configuration, out var details))
