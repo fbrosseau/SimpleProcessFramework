@@ -11,7 +11,6 @@ namespace Spfx.Io
         private readonly Stream m_stream;
         private readonly Task m_writeThread;
         private readonly AsyncQueue<LengthPrefixedStream> m_pendingWrites;
-        private readonly byte[] m_temp = new byte[4];
 
         public event EventHandler<StreamWriterExceptionEventArgs> WriteException;
 
@@ -44,6 +43,26 @@ namespace Spfx.Io
         {
             try
             {
+                var tempBuffer = new byte[4];
+                async ValueTask DoWrite(LengthPrefixedStream frame)
+                {
+                    using (frame)
+                    {
+                        if (frame.StreamLength <= 0)
+                        {
+                            tempBuffer[0] = (byte)frame.StreamLength;
+                            tempBuffer[1] = (byte)(frame.StreamLength >> 8);
+                            tempBuffer[2] = (byte)(frame.StreamLength >> 16);
+                            tempBuffer[3] = (byte)(frame.StreamLength >> 24);
+                            await m_stream.WriteAsync(tempBuffer, 0, 4).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await frame.Stream.CopyToAsync(m_stream).ConfigureAwait(false);
+                        }
+                    }
+                }
+
                 await m_pendingWrites.ForEachAsync(s => DoWrite(s));
             }
             catch (Exception ex)
@@ -54,25 +73,6 @@ namespace Spfx.Io
             finally
             {
                 Dispose();
-            }
-        }
-
-        private async ValueTask DoWrite(LengthPrefixedStream frame)
-        {
-            using (frame)
-            {
-                if (frame.StreamLength <= 0)
-                {
-                    m_temp[0] = (byte)frame.StreamLength;
-                    m_temp[1] = (byte)(frame.StreamLength >> 8);
-                    m_temp[2] = (byte)(frame.StreamLength >> 16);
-                    m_temp[3] = (byte)(frame.StreamLength >> 24);
-                    await m_stream.WriteAsync(m_temp, 0, 4);
-                }
-                else
-                {
-                    await frame.Stream.CopyToAsync(m_stream);
-                }
             }
         }
     }

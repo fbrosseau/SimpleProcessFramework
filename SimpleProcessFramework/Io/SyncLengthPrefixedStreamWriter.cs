@@ -32,16 +32,18 @@ namespace Spfx.Io
         {
             try
             {
+                var tempBuffer = new byte[4];
                 foreach (var frame in m_pendingWrites.GetConsumingEnumerable())
                 {
                     using (frame)
                     {
                         if (frame.StreamLength <= 0)
                         {
-                            m_stream.WriteByte((byte)frame.StreamLength);
-                            m_stream.WriteByte((byte)(frame.StreamLength >> 8));
-                            m_stream.WriteByte((byte)(frame.StreamLength >> 16));
-                            m_stream.WriteByte((byte)(frame.StreamLength >> 24));
+                            tempBuffer[0] = (byte)frame.StreamLength;
+                            tempBuffer[1] = (byte)(frame.StreamLength >> 8);
+                            tempBuffer[2] = (byte)(frame.StreamLength >> 16);
+                            tempBuffer[3] = (byte)(frame.StreamLength >> 24);
+                            m_stream.Write(tempBuffer, 0, 4);
                         }
                         else
                         {

@@ -1,6 +1,7 @@
 ﻿using Spfx.Utilities;
 using System;
 using System.IO;
+using System.IO.Pipes;
 using System.Threading.Tasks;
 
 namespace Spfx.Io
@@ -41,7 +42,7 @@ namespace Spfx.Io
         internal static ILengthPrefixedStreamWriter CreateWriter(Stream stream, string name, bool? sync = null)
         {
             if (sync == null)
-                sync = !HostFeaturesHelper.IsWindows;
+                sync = UseStreamSynchronously(stream);
 
             if (sync == true)
                 return new SyncLengthPrefixedStreamWriter(stream, name);
@@ -52,12 +53,26 @@ namespace Spfx.Io
         internal static ILengthPrefixedStreamReader CreateReader(Stream stream, string name, bool? sync = null)
         {
             if (sync == null)
-                sync = !HostFeaturesHelper.IsWindows;
+                sync = UseStreamSynchronously(stream);
 
             if (sync == true)
                 return new SyncLengthPrefixedStreamReader(stream, name);
 
             return new AsyncLengthPrefixedStreamReader(stream);
+        }
+
+        private static bool UseStreamSynchronously(Stream stream)
+        {
+            if (!HostFeaturesHelper.IsWindows)
+                return true;
+
+            if (stream is PipeStream)
+            {
+                if (stream is AnonymousPipeServerStream || stream is AnonymousPipeClientStream)
+                    return true;
+            }
+
+            return false;
         }
     }
 
