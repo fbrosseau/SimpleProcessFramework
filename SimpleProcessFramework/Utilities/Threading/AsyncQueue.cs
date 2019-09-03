@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable;
 
 namespace Spfx.Utilities.Threading
 {
@@ -34,7 +36,7 @@ namespace Spfx.Utilities.Threading
         private Action<T> m_iteratorActionCallback;
         private Func<T, Task> m_iteratorTaskCallback;
         private Func<T, ValueTask> m_iteratorValueTaskCallback;
-        private ValueTask m_currentIteratorCallbackCompletion;
+        private ConfiguredValueTaskAwaiter m_currentIteratorCallbackCompletion;
 
         public bool IsAddingCompleted { get; private set; }
         public bool IsDisposed { get; private set; }
@@ -131,8 +133,9 @@ namespace Spfx.Utilities.Threading
 
                     if (!completion.IsCompleted)
                     {
-                        m_currentIteratorCallbackCompletion = completion;
-                        completion.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(m_iteratorExecutionCompletedHandler);
+                        var awaiter = completion.ConfigureAwait(false).GetAwaiter();
+                        m_currentIteratorCallbackCompletion = awaiter;
+                        awaiter.UnsafeOnCompleted(m_iteratorExecutionCompletedHandler);
                         return;
                     }
 
@@ -162,9 +165,14 @@ namespace Spfx.Utilities.Threading
         {
             var compl = m_currentIteratorCallbackCompletion;
             m_currentIteratorCallbackCompletion = default;
-            if (!compl.IsCompletedSuccessfully)
+
+            try
             {
-                OnIteratorFaulted(compl.ExtractException());
+                compl.GetResult();
+            }
+            catch (Exception ex)
+            {
+                OnIteratorFaulted(ex);
                 return;
             }
 
