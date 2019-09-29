@@ -73,6 +73,8 @@ steps:
   inputs:
     nuGetServiceConnections: 'Github-Packages'
 
+- script: echo $(Build.Repository.LocalPath)/nuspec/*.nupkg
+
 - task: NuGetCommand@2
   displayName: 'Nuget Push'
   inputs:
