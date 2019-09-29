@@ -1,5 +1,6 @@
 ﻿using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Serialization.DataContracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Spfx.Serialization
     internal class SerializerReferencesCache
     {
         private Dictionary<object, int> m_referencesByObject;
-
+        private KeyValuePair<object, int>[] m_orderedReferences;
         private readonly SerializerReferencesCache m_parent;
 
         public static SerializerReferencesCache HardcodedReferences { get; }
@@ -144,6 +145,7 @@ namespace Spfx.Serialization
 
             int idx = m_referencesByObject.Count;
             m_referencesByObject.Add(obj, idx);
+            m_orderedReferences = null;
             return idx;
         }
 
@@ -152,8 +154,16 @@ namespace Spfx.Serialization
             if (m_referencesByObject is null)
                 return;
 
-            serializerSession.Writer.WriteEncodedUInt32(checked((uint)m_referencesByObject.Count));
-            foreach (var reference in m_referencesByObject.OrderBy(kvp => kvp.Value))
+            if (m_orderedReferences is null)
+            {
+                var refs = new KeyValuePair<object, int>[m_referencesByObject.Count];
+                ((ICollection<KeyValuePair<object, int>>)m_referencesByObject).CopyTo(refs, 0);
+                Array.Sort(refs, (kvp1, kvp2) => kvp1.Value.CompareTo(kvp2.Value));
+                m_orderedReferences = refs;
+            }
+
+            serializerSession.Writer.WriteEncodedUInt32(checked((uint)m_orderedReferences.Length));
+            foreach (var reference in m_orderedReferences)
             {
                 serializerSession.Writer.WriteEncodedInt32(reference.Value);
                 DefaultBinarySerializer.Serialize(serializerSession, reference.Key, typeof(object));
