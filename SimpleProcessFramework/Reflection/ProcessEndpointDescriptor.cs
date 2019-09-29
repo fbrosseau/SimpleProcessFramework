@@ -33,10 +33,17 @@ namespace Spfx.Reflection
                 });
             }
 
+            var uniqueEventNames = new HashSet<string>();
+            foreach (var e in allInterfaces.SelectMany(i => i.GetEvents()))
+            {
+                uniqueEventNames.Add(e.Name);
+                ReflectedTypeInfo.AddWellKnownType(e.EventHandlerType.GetMethod("Invoke").GetParameters()[1].ParameterType);
+            }
+
             return new ProcessEndpointDescriptor
             {
                 Methods = methodDescriptors.ToArray(),
-                Events = allInterfaces.SelectMany(i => i.GetEvents()).Select(e => e.Name).Distinct().ToArray()
+                Events = uniqueEventNames.ToArray()
             };
         }
 

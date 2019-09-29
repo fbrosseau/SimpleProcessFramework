@@ -100,7 +100,7 @@ namespace Spfx.Serialization
             {
                 AddHardcodedTypeReference(t);
 
-                var serializer = (ReflectedDataContractSerializer)DefaultBinarySerializer.GetSerializer(t);
+                var serializer = (BaseReflectedDataContractSerializer)DefaultBinarySerializer.GetSerializer(t);
                 foreach (var member in serializer.Members)
                 {
                     memberNames.Add(member.Name);

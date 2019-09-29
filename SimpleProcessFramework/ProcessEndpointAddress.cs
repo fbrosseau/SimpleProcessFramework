@@ -1,5 +1,6 @@
 ﻿using Spfx.Utilities;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.Serialization;
 
@@ -78,6 +79,15 @@ namespace Spfx
 
         private ProcessEndpointAddress()
         {
+        }
+
+        [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "Serialization")]
+        private static ProcessEndpointAddress CreateFromSerialization(string originalString)
+        {
+            return new ProcessEndpointAddress
+            {
+                m_originalString = originalString
+            };
         }
 
         public ProcessEndpointAddress(string hostAuthority)

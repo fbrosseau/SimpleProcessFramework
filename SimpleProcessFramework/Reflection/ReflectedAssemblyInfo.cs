@@ -1,6 +1,6 @@
 ﻿using Spfx.Utilities;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -10,33 +10,53 @@ namespace Spfx.Reflection
     [DataContract(IsReference = true)]
     public class ReflectedAssemblyInfo : IEquatable<ReflectedAssemblyInfo>
     {
-        private static readonly Dictionary<Assembly, ReflectedAssemblyInfo> s_knownAssemblies;
+        private static readonly ThreadSafeAppendOnlyDictionary<Assembly, ReflectedAssemblyInfo> s_knownAssemblies = new ThreadSafeAppendOnlyDictionary<Assembly, ReflectedAssemblyInfo>();
+        private static readonly ThreadSafeAppendOnlyDictionary<string, ReflectedAssemblyInfo> s_knownAssembliesByName = new ThreadSafeAppendOnlyDictionary<string, ReflectedAssemblyInfo>();
 
         private Assembly m_resolvedAssembly;
 
         static ReflectedAssemblyInfo()
         {
-            var thisAsm = typeof(ReflectedAssemblyInfo).Assembly;
+            AddWellKnownAssembly(typeof(ReflectedAssemblyInfo).Assembly);
+        }
 
-            s_knownAssemblies = new Dictionary<Assembly, ReflectedAssemblyInfo>
-            {
-                { thisAsm, new ReflectedAssemblyInfo(thisAsm) }
-            };
+        internal static void AddWellKnownAssembly(Assembly assembly)
+        {
+            if (s_knownAssemblies.ContainsKey(assembly))
+                return;
+
+            var asmInfo = new ReflectedAssemblyInfo(assembly); 
+            s_knownAssemblies[assembly] = asmInfo;
+            s_knownAssembliesByName[assembly.FullName] = asmInfo;
         }
 
         private ReflectedAssemblyInfo(Assembly assembly)
+            : this(assembly.FullName)
         {
-            Guard.ArgumentNotNull(assembly, nameof(assembly));
-
-            Name = assembly.FullName;
             m_resolvedAssembly = assembly;
+        }
+
+        private ReflectedAssemblyInfo(string assemblyName)
+        {
+            Name = assemblyName;
         }
 
         public static ReflectedAssemblyInfo Create(Assembly assembly)
         {
+            Guard.ArgumentNotNull(assembly, nameof(assembly));
+
             if (s_knownAssemblies.TryGetValue(assembly, out var a))
                 return a;
             return new ReflectedAssemblyInfo(assembly);
+        }
+
+        [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "Serialization")]
+        private static ReflectedAssemblyInfo CreateFromSerialization(string assemblyName)
+        {
+            if (s_knownAssembliesByName.TryGetValue(assemblyName, out var a))
+                return a;
+
+            return new ReflectedAssemblyInfo(assemblyName);
         }
 
         [DataMember]

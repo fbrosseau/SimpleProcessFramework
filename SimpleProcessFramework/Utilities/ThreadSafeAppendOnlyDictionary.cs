@@ -17,14 +17,7 @@ namespace Spfx.Utilities
 
         public void Add(TKey key, TValue value)
         {
-            lock (m_syncRoot)
-            {
-                var clone = new Dictionary<TKey, TValue>(m_dict, m_comparer)
-                {
-                    { key, value }
-                };
-                m_dict = clone;
-            }
+            this[key] = value;
         }
 
         public bool ContainsKey(TKey key)

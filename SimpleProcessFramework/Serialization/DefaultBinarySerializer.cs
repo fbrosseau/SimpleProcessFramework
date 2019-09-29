@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Serialization.DataContracts;
 using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
@@ -295,7 +296,7 @@ namespace Spfx.Serialization
         {
             if (actualType.GetCustomAttribute<DataContractAttribute>() != null)
             {
-                return new ReflectedDataContractSerializer(actualType);
+                return BaseReflectedDataContractSerializer.Create(actualType);
             }
 
             if (actualType.IsArray)

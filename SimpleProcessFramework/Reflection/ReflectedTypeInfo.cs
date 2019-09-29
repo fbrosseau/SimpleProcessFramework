@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Spfx.Utilities;
+using System;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -8,7 +8,7 @@ namespace Spfx.Reflection
     [DataContract(IsReference = true)]
     public class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>
     {
-        private static readonly Dictionary<Type, ReflectedTypeInfo> s_knownTypes;
+        private static readonly ThreadSafeAppendOnlyDictionary<Type, ReflectedTypeInfo> s_knownTypes = new ThreadSafeAppendOnlyDictionary<Type, ReflectedTypeInfo>();
 
         private Type m_resolvedType;
 
@@ -55,18 +55,20 @@ namespace Spfx.Reflection
         {
             if (s_knownTypes.TryGetValue(t, out var reflectedInfo))
                 return reflectedInfo;
-            return new ReflectedTypeInfo(t);
-        }
 
-        static ReflectedTypeInfo()
-        {
-            s_knownTypes = new Dictionary<Type, ReflectedTypeInfo>();
+            return new ReflectedTypeInfo(t);
         }
 
         internal static ReflectedTypeInfo AddWellKnownType(Type t)
         {
-            var ti = new ReflectedTypeInfo(t);
+            if (s_knownTypes.TryGetValue(t, out var ti))
+                return ti;
+
+            ti = new ReflectedTypeInfo(t);
             s_knownTypes.Add(t, ti);
+
+            ReflectedAssemblyInfo.AddWellKnownAssembly(t.Assembly);
+
             return ti;
         }
 

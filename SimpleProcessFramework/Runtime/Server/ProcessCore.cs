@@ -237,6 +237,7 @@ namespace Spfx.Runtime.Server
         public Task<ProcessCreationOutcome> InitializeEndpointAsync(string uniqueId, Type endpointType, Type implementationType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
             var instance = DefaultTypeResolver.CreateInstance(endpointType, implementationType);
+
             try
             {
                 return InitializeEndpointAsync(uniqueId, endpointType, instance, options);
@@ -250,6 +251,11 @@ namespace Spfx.Runtime.Server
 
         public async Task<ProcessCreationOutcome> InitializeEndpointAsync(string address, Type interfaceType, object handler, ProcessCreationOptions options)
         {
+            Guard.ArgumentNotNull(handler, nameof(handler));
+
+            ReflectedAssemblyInfo.AddWellKnownAssembly(interfaceType.Assembly);
+            ReflectedAssemblyInfo.AddWellKnownAssembly(handler.GetType().Assembly);
+
             var wrapper = ProcessEndpointHandlerFactory.Create(handler, interfaceType);
             bool removeFromEndpoints = false;
             try
