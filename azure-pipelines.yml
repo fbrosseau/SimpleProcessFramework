@@ -41,41 +41,42 @@ steps:
     projects: 'SimpleProcessFramework.sln'
     arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Full Build'
-  inputs:
-    command: build
-    projects: 'SimpleProcessFramework.sln'
-    arguments: '-c $(buildConfiguration) -v $(verbosity)'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Run tests (netcore)'
-  continueOnError: true
-  inputs:
-    command: test
-    projects: 'Spfx.Tests'
-    buildConfiguration: '$(buildConfiguration)'
-    testRunTitle: '$(buildConfiguration) $(netcoreName)'
-    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Run tests (netfx)'
-  continueOnError: true
-  condition: eq(variables['imageName'], variables['windowsImage'])
-  inputs:
-    command: test
-    projects: 'SimpleProcessFramework.sln'
-    buildConfiguration: '$(buildConfiguration)'
-    testRunTitle: '$(buildConfiguration) $(netfxName)'
-    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
+#- task: DotNetCoreCLI@2
+#  displayName: 'Full Build'
+#  inputs:
+#    command: build
+#    projects: 'SimpleProcessFramework.sln'
+#    arguments: '-c $(buildConfiguration) -v $(verbosity)'
+#
+#- task: DotNetCoreCLI@2
+#  displayName: 'Run tests (netcore)'
+#  continueOnError: true
+#  inputs:
+#    command: test
+#    projects: 'Spfx.Tests'
+#    buildConfiguration: '$(buildConfiguration)'
+#    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+#    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
+#
+#- task: DotNetCoreCLI@2
+#  displayName: 'Run tests (netfx)'
+#  continueOnError: true
+#  condition: eq(variables['imageName'], variables['windowsImage'])
+#  inputs:
+#    command: test
+#    projects: 'SimpleProcessFramework.sln'
+#    buildConfiguration: '$(buildConfiguration)'
+#    testRunTitle: '$(buildConfiguration) $(netfxName)'
+#    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
 
 - task: NuGetAuthenticate@0
   inputs:
     nuGetServiceConnections: 'Github-Packages'
 
 - task: NuGetCommand@2
+  displayName: 'Nuget Push'
   inputs:
     command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    packagesToPush: '$(Build.Repository.LocalPath)/nuspec/*.nupkg;!$(Build.Repository.LocalPath)/nuspec/*.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'Github-Packages'
