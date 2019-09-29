@@ -32,7 +32,7 @@ steps:
 - task: DotNetCoreInstaller@0
   displayName: 'Install .net core 3.0.x'
   inputs:
-    version: '3.0.100-preview8-013656'
+    version: '3.0.100'
 
 - task: DotNetCoreCLI@2
   displayName: 'Main Build without tests'
