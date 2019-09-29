@@ -43,12 +43,12 @@ namespace Spfx.Runtime.Client
 
         protected Task WrapTaskReturn(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
-            return WrapTaskOfTReturn<VoidType>(args, method, ct);
+            return WrapTaskOfTReturn<object>(args, method, ct);
         }
 
         protected ValueTask WrapValueTaskReturn(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
-            return new ValueTask(WrapTaskOfTReturn<VoidType>(args, method, ct));
+            return new ValueTask(WrapTaskOfTReturn<object>(args, method, ct));
         }
 
         protected Task<T> WrapTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
@@ -64,7 +64,7 @@ namespace Spfx.Runtime.Client
             return new ValueTask<T>(WrapTaskOfTReturn<T>(args, method, ct));
         }
 
-        private async Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteInvocationRequest remoteCallRequest, CancellationToken ct)
+        private Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteInvocationRequest remoteCallRequest, CancellationToken ct)
         {
             remoteCallRequest.Destination = RemoteAddress;
             remoteCallRequest.AbsoluteTimeout = CallTimeout;
@@ -75,17 +75,9 @@ namespace Spfx.Runtime.Client
                 callReq.MethodName = calledMethod.GetUniqueName();
                 //callReq.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
             }
-
-            var res = await m_connection.SerializeAndSendMessage(remoteCallRequest, ct).ConfigureAwait(false);
-
-            if (typeof(T) == typeof(VoidType))
-            {
-                return default;
-            }
-            else
-            {
-                return (T)res;
-            }
+            
+            var compl = m_connection.SerializeAndSendMessage(remoteCallRequest, ct);
+            return TaskEx.ContinueWithCast<object, T>(compl);
         }
 
         internal void RaiseEvent(EventRaisedMessage msg)

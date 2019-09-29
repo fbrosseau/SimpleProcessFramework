@@ -99,6 +99,22 @@ namespace Spfx.Utilities.Threading
             }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
+        internal static Task<TOut> ContinueWithCast<TIn, TOut>(Task<TIn> t)
+        {
+            if (t is Task<TOut> taskOfT)
+                return taskOfT;
+
+            if (t.IsCompleted)
+            {
+                return Task.FromResult((TOut)(object)t.Result);
+            }
+
+            return t.ContinueWith(innerT =>
+            {
+                return (TOut)(object)innerT.Result;
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
         internal static async ValueTask ExpectFirstTask(Task taskExpectedToComplete, Task taskNotExpectedToWin)
         {
             var winner = await Task.WhenAny(taskExpectedToComplete, taskNotExpectedToWin).ConfigureAwait(false);
