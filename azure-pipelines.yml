@@ -73,13 +73,11 @@ steps:
   inputs:
     nuGetServiceConnections: 'Github-Packages'
 
-- script: echo $(Build.Repository.LocalPath)/nuspec/*.nupkg
-
 - task: NuGetCommand@2
   displayName: 'Nuget Push'
   inputs:
     command: 'push'
-    packagesToPush: '$(Build.Repository.LocalPath)/nuspec/*.nupkg;!$(Build.Repository.LocalPath)/nuspec/*.nupkg'
+    packagesToPush: '$(Build.Repository.LocalPath)\nuspec\*.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'Github-Packages'
     verbosityPush: 'Detailed'
