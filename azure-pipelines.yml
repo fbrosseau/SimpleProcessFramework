@@ -68,3 +68,14 @@ steps:
     buildConfiguration: '$(buildConfiguration)'
     testRunTitle: '$(buildConfiguration) $(netfxName)'
     arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
+
+- task: NuGetAuthenticate@0
+  inputs:
+    nuGetServiceConnections: 'Github-Packages'
+
+- task: NuGetCommand@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'Github-Packages'
