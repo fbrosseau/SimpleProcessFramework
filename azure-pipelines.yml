@@ -80,3 +80,4 @@ steps:
     packagesToPush: '$(Build.Repository.LocalPath)/nuspec/*.nupkg;!$(Build.Repository.LocalPath)/nuspec/*.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'Github-Packages'
+    verbosityPush: 'Detailed'
