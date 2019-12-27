@@ -74,6 +74,8 @@ namespace Spfx.Utilities.Threading
 
         public static void CompleteWithResultAsObject<T>(this TaskCompletionSource<object> tcs, Task task)
         {
+            Guard.ArgumentNotNull(task, nameof(task));
+
             task.ContinueWith((innerTask, s) =>
             {
                 var innerTcs = (TaskCompletionSource<object>)s;
