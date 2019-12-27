@@ -6,7 +6,7 @@ namespace Spfx.Utilities.Threading
 {
     public interface IAsyncDestroyable : IDisposable
     {
-        Task TeardownAsync(CancellationToken ct = default);
+        ValueTask TeardownAsync(CancellationToken ct = default);
     }
 
     public static class AsyncDestroyableExtensions
@@ -21,41 +21,27 @@ namespace Spfx.Utilities.Threading
     }
 
     public class AsyncDestroyable : Disposable, IAsyncDestroyable
+#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+        , IAsyncDisposable
+#endif
     {
         public bool HasAsyncTeardownStarted { get; private set; }
 
-        public Task TeardownAsync(CancellationToken ct = default)
+        public async ValueTask TeardownAsync(CancellationToken ct = default)
         {
-            if (HasDisposeStarted)
+            using (this)
             {
-                return Task.CompletedTask;
-            }
+                if (HasDisposeStarted || ct.IsCancellationRequested)
+                    return;
 
-            if (ct.IsCancellationRequested)
-            {
-                Dispose();
-                return Task.CompletedTask;
-            }
-
-            lock (m_disposeLock)
-            {
-                if (HasDisposeStarted || HasAsyncTeardownStarted)
-                    return Task.CompletedTask;
-                HasAsyncTeardownStarted = true;
-            }
-
-            try
-            {
-                var t = OnTeardownAsync(ct);
-                return t.ContinueWith((innerT, innerThis) =>
+                lock (m_disposeLock)
                 {
-                    ((IDisposable)innerThis).Dispose();
-                }, this, ct);
-            }
-            catch
-            {
-                Dispose();
-                return Task.CompletedTask;
+                    if (HasDisposeStarted || HasAsyncTeardownStarted)
+                        return;
+                    HasAsyncTeardownStarted = true;
+                }
+
+                await OnTeardownAsync(ct).ConfigureAwait(false);
             }
         }
 
@@ -66,9 +52,14 @@ namespace Spfx.Utilities.Threading
                 throw new ObjectDisposedException(GetType().FullName);
         }
 
-        protected virtual Task OnTeardownAsync(CancellationToken ct)
+        protected virtual ValueTask OnTeardownAsync(CancellationToken ct)
         {
-            return Task.CompletedTask;
+            return default;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return TeardownAsync();
         }
     }
 }

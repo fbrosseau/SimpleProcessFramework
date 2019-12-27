@@ -152,7 +152,7 @@ namespace Spfx.Runtime.Server
             m_logger.Dispose();
         }
 
-        protected override async Task OnTeardownAsync(CancellationToken ct)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct)
         {
             List<IProcessEndpointHandler> endpoints;
             lock (m_endpointHandlers)
@@ -166,7 +166,7 @@ namespace Spfx.Runtime.Server
             var disposeTasks = new List<Task>();
             foreach (var ep in endpoints)
             {
-                disposeTasks.Add(ep.TeardownAsync(ct));
+                disposeTasks.Add(ep.TeardownAsync(ct).AsTask());
             }
 
             await Task.WhenAll(disposeTasks);
@@ -324,7 +324,7 @@ namespace Spfx.Runtime.Server
         public Task AutoDestroyAsync()
         {
             m_logger.Info?.Trace("AutoDestroyAsync");
-            return TeardownAsync();
+            return TeardownAsync().AsTask();
         }
 
         private T GetLazyEndpoint<T>(string addr, ref T cacheField)

@@ -40,7 +40,7 @@ namespace Spfx.Runtime.Server
             base.OnDispose();
         }
 
-        protected override async Task OnTeardownAsync(CancellationToken ct)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct)
         {
             if (m_realTarget is IAsyncDestroyable d)
                 await d.TeardownAsync(ct).ConfigureAwait(false);

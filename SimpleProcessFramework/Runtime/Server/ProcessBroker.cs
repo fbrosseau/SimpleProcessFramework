@@ -70,7 +70,7 @@ namespace Spfx.Runtime.Server
             base.OnDispose();
         }
 
-        protected override async Task OnTeardownAsync(CancellationToken ct)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct)
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
 
@@ -86,7 +86,7 @@ namespace Spfx.Runtime.Server
 
             foreach (var p in processes)
             {
-                teardownTasks.Add(p.TeardownAsync(ct));
+                teardownTasks.Add(p.TeardownAsync(ct).AsTask());
             }
 
             await Task.WhenAll(teardownTasks);

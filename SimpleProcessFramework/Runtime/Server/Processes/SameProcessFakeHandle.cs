@@ -42,7 +42,7 @@ namespace Spfx.Runtime.Server.Processes
             m_processContainer.Dispose();
         }
 
-        protected override Task OnTeardownAsync(CancellationToken ct)
+        protected override ValueTask OnTeardownAsync(CancellationToken ct)
         {
             return m_processContainer.TeardownAsync(ct);
         }
@@ -108,8 +108,8 @@ namespace Spfx.Runtime.Server.Processes
 
             public Task InitializeAsync(CancellationToken ct)
                 => Task.CompletedTask;
-            public Task TeardownAsync(CancellationToken ct = default)
-                => Task.CompletedTask;
+            public ValueTask TeardownAsync(CancellationToken ct = default)
+                => default;
         }
     }
 }

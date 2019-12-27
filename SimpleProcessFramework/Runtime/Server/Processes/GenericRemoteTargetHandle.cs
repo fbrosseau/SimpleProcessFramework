@@ -107,7 +107,7 @@ namespace Spfx.Runtime.Server.Processes
             m_processExitEvent.TrySetResult(reason);
         }
 
-        protected override async Task OnTeardownAsync(CancellationToken ct)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct)
         {
             if (m_ipcConnector != null)
                 await m_ipcConnector.TeardownAsync(ct).ConfigureAwait(false);

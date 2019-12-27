@@ -64,7 +64,7 @@ namespace Spfx
             return m_connectionsManager.GetListenEndpoints();
         }
 
-        protected override async Task OnTeardownAsync(CancellationToken ct = default)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
             await m_processBroker.TeardownAsync(ct).ConfigureAwait(false);
