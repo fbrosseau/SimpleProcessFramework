@@ -6,7 +6,7 @@ using Spfx.Utilities;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class WslProcessStartupParameters : NetcoreProcessStartupParameters
+    internal class WslProcessStartupParameters : WindowsNetcoreProcessStartupParameters
     {
         private static readonly string s_windowsVersionOfWslRoot = ProcessSpawnHelper.GetDefaultRuntimeCodeBase(ProcessKind.Wsl);
 

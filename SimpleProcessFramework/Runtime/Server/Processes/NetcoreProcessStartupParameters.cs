@@ -16,7 +16,7 @@ namespace Spfx.Runtime.Server.Processes
         }
     }
 
-    internal class NetcoreProcessStartupParameters : WindowsProcessStartupParameters
+    internal class WindowsNetcoreProcessStartupParameters : WindowsProcessStartupParameters
     {
         protected override void CreateFinalArguments(List<string> processArguments)
         {

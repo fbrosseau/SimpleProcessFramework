@@ -32,7 +32,7 @@ namespace Spfx.Runtime.Server.Processes
                     return new WslProcessStartupParameters();
                 case ProcessKind.Netcore:
                 case ProcessKind.Netcore32:
-                    return new NetcoreProcessStartupParameters();
+                    return new WindowsNetcoreProcessStartupParameters();
                 case ProcessKind.Netfx:
                 case ProcessKind.Netfx32:
                     return new NetfxProcessStartupParameters();
@@ -128,10 +128,10 @@ namespace Spfx.Runtime.Server.Processes
 
         protected void CreateNetcoreArguments(List<string> processArguments)
         {
-            processArguments.Insert(0, DotNetPath);
-
             if (!ProcessCreationInfo.TargetFramework.IsSupportedByCurrentProcess(Config, out var reason))
                 throw new PlatformNotSupportedException(reason);
+
+            processArguments.Insert(0, DotNetPath);
 
             if (ProcessCreationInfo.TargetFramework is NetcoreTargetFramework netcore
                 && !string.IsNullOrWhiteSpace(netcore.TargetRuntime))
@@ -147,8 +147,7 @@ namespace Spfx.Runtime.Server.Processes
         }
 
         protected virtual string DotNetPath => NetcoreHelper.GetNetCoreHostPath(ProcessKind != ProcessKind.Netcore32);
-
-
+        
         internal static string GetDefaultExecutableFileName(ProcessKind processKind, ProcessClusterConfiguration config)
         {
             switch (processKind)
