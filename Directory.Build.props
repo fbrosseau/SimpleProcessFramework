@@ -2,13 +2,14 @@
   <PropertyGroup>
     <LangVersion>7.2</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.265</Version>
+    <Version>0.0.272</Version>
+    <SpfxNugetVersion>$(Version)</SpfxNugetVersion>
     <ProductName>The SimpleProcessFramework</ProductName>
-    <ProductVersion>$(Version)</ProductVersion>
-    <PackageVersion>$(Version)</PackageVersion>
+    <ProductVersion>$(SpfxNugetVersion)</ProductVersion>
+    <PackageVersion>$(SpfxNugetVersion)</PackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Netcore_Debug' OR '$(Configuration)'=='Netcore_Release'">
+  <PropertyGroup Condition="$(Configuration.StartsWith('Netcore_'))">
     <DefineConstants>$(DefineConstants);UNIX_TESTS_BUILD_ONLY</DefineConstants>
     <SpfxBuildNet48>false</SpfxBuildNet48>
   </PropertyGroup>
@@ -22,15 +23,19 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AllNetCoreVersions)'==''">
-    <AllNetCoreVersions>netcoreapp2.1;netcoreapp2.2;netcoreapp3.0</AllNetCoreVersions>
+    <AllNetCoreVersions>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1</AllNetCoreVersions>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
     <DefineConstants>$(DefineConstants);NETCOREAPP2_1_PLUS</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.0'">
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netcoreapp3'))">
     <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_1_PLUS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">

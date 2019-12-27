@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <SpfxExtraOutputs Include="$(MSBuildThisFileDirectory)../tools/netcoreapp2.1/*.*" />
+    <SpfxExtraOutputs Include="$(MSBuildThisFileDirectory)../tools/$(TargetFramework)/*.*" />
   </ItemGroup>
 
   <ItemGroup>    
