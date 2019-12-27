@@ -17,7 +17,7 @@ namespace Spfx.Utilities
                 throw new SerializationException("Received a message larger than the maximum allowed size");
 
             if (size == 0)
-                return new MemoryStream(Array.Empty<byte>(), false);
+                return Stream.Null;
 
             Array.Resize(ref buf, size);
 
