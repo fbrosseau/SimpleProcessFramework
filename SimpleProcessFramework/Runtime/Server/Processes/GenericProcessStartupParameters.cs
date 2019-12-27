@@ -58,7 +58,7 @@ namespace Spfx.Runtime.Server.Processes
             if (!File.Exists(name))
             {
                 if (!Config.CreateExecutablesIfMissing)
-                    throw new InvalidProcessParametersException("The target executable does not exist");
+                    throw new MissingSubprocessExecutableException(processCreationInfo.ProcessName);
 
                 CreateMissingExecutable(name);
             }
