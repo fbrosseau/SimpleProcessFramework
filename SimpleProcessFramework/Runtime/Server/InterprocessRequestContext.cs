@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Serialization;
 using Spfx.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Spfx.Runtime.Server
 {
@@ -109,7 +110,14 @@ namespace Spfx.Runtime.Server
         public void CompleteWithValueTask(ValueTask t) => CompleteWithTask<VoidType>(t.AsTask());
         public void CompleteWithTaskOfT<T>(Task<T> t) => CompleteWithTask<T>(t);
         public void CompleteWithValueTaskOfT<T>(ValueTask<T> t) => CompleteWithTask<T>(t.AsTask());
-        private void CompleteWithTask<T>(Task t) => m_tcs.CompleteWithResultAsObject<T>(t);
+
+        private void CompleteWithTask<T>(Task t)
+        {
+            if (t is null)
+                throw new InvalidOperationException("Methods cannot return null Tasks");
+
+            m_tcs.CompleteWithResultAsObject<T>(t);
+        }
 
         internal static class Reflection
         {
