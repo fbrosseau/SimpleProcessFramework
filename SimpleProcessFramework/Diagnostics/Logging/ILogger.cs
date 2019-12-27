@@ -20,9 +20,9 @@ namespace Spfx.Diagnostics.Logging
 
     public static class LoggerExtensions
     {
-        public static ILogger GetLogger(this ITypeResolver typeResolver, Type loggedType, bool uniqueInstance = false)
+        public static ILogger GetLogger(this ITypeResolver typeResolver, Type loggedType, bool uniqueInstance = false, string friendlyName = null)
         {
-            return typeResolver.CreateSingleton<ILoggerFactory>().GetLogger(loggedType, uniqueInstance);
+            return typeResolver.CreateSingleton<ILoggerFactory>().GetLogger(loggedType, uniqueInstance, friendlyName);
         }
     }
 }

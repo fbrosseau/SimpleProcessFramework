@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.272</Version>
+    <Version>0.0.282</Version>
     <SpfxNugetVersion>$(Version)</SpfxNugetVersion>
     <ProductName>The SimpleProcessFramework</ProductName>
     <ProductVersion>$(SpfxNugetVersion)</ProductVersion>

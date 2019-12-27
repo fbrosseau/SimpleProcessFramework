@@ -30,7 +30,13 @@ namespace Spfx.Reflection
             DefaultTypeResolver = resolver;
         }
 
-        internal static ITypeResolver CreateRootTypeResolver(Type typeResolverFactoryType)
+        public static ITypeResolver CreateRootTypeResolver<TFactory>()
+            where TFactory : ITypeResolverFactory
+        {
+            return CreateRootTypeResolver(typeof(TFactory));
+        }
+
+        public static ITypeResolver CreateRootTypeResolver(Type typeResolverFactoryType)
         {
             ITypeResolverFactory factory;
             if (typeResolverFactoryType is null || typeResolverFactoryType == typeof(DefaultTypeResolverFactory))

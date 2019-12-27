@@ -64,27 +64,26 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             if (timeout == TimeSpan.Zero)
                 timeout = m_config.DefaultProcessInitTimeout;
 
-            using (var cts = new CancellationTokenSource(timeout))
-            using (var initializer = CreateInitializer())
-            {
-                var ct = cts.Token;
+            using var cts = new CancellationTokenSource(timeout);
+            using var initializer = CreateInitializer();
 
-                TypeResolver.RegisterSingleton<IIpcConnectorListener>(this);
-                TypeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
-                m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true);
-                m_logger.Info?.Trace("Initialize");
+            var ct = cts.Token;
 
-                m_processCore = new ProcessCore(InputPayload.HostAuthority, InputPayload.ProcessUniqueId, TypeResolver);
+            TypeResolver.RegisterSingleton<IIpcConnectorListener>(this);
+            TypeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
+            m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: LocalProcessUniqueId);
+            m_logger.Info?.Trace("Initialize");
 
-                m_shutdownEvents.AddRange(initializer.GetShutdownEvents());
-                m_shutdownEvents.Add(m_processCore.TerminateEvent);
+            m_processCore = new ProcessCore(InputPayload.HostAuthority, InputPayload.ProcessUniqueId, TypeResolver);
 
-                m_logger.Info?.Trace("InitializeConnector");
-                m_connector = initializer.CreateConnector(this);
-                m_connector.InitializeAsync(ct).WithCancellation(ct).Wait();
+            m_shutdownEvents.AddRange(initializer.GetShutdownEvents());
+            m_shutdownEvents.Add(m_processCore.TerminateEvent);
 
-                initializer.OnInitSucceeded();
-            }
+            m_logger.Info?.Trace("InitializeConnector");
+            m_connector = initializer.CreateConnector(this);
+            m_connector.InitializeAsync(ct).WithCancellation(ct).Wait();
+
+            initializer.OnInitSucceeded();
 
             m_logger.Info?.Trace("InitializeConnector completed");
         }

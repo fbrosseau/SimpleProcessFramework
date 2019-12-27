@@ -13,10 +13,8 @@ namespace Spfx.Utilities.Threading
     {
         public static async Task TeardownAsync(this IAsyncDestroyable d, TimeSpan timeout)
         {
-            using (var cts = new CancellationTokenSource(timeout))
-            {
-                await d.TeardownAsync(cts.Token);
-            }
+            using var cts = new CancellationTokenSource(timeout);
+            await d.TeardownAsync(cts.Token);
         }
     }
 

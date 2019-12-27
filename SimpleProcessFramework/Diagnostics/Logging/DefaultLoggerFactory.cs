@@ -19,9 +19,13 @@ namespace Spfx.Diagnostics.Logging
         {
         }
 
-        public ILogger GetLogger(Type loggedType, bool uniqueInstance = false)
+        public ILogger GetLogger(Type loggedType, bool uniqueInstance = false, string friendlyName = null)
         {
-            var l = new DefaultLogger(m_listener, loggedType.FullName);
+            var name = loggedType.FullName;
+            if (!string.IsNullOrWhiteSpace(friendlyName))
+                name += "#" + friendlyName;
+
+            var l = new DefaultLogger(m_listener, name);
             l.EnabledLevels = m_listener.GetEnabledLevels(l);
             return l;
         }

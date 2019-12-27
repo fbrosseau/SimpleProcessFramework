@@ -6,7 +6,7 @@ namespace Spfx.Diagnostics.Logging
     {
         public static NullLoggerFactory Instance { get; } = new NullLoggerFactory();
 
-        public ILogger GetLogger(Type loggedType, bool uniqueInstance = false) 
+        public ILogger GetLogger(Type loggedType, bool uniqueInstance = false, string friendlyName = null) 
             => NullLogger.Logger;
     }
 }
