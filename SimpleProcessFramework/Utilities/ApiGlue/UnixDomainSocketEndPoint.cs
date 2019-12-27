@@ -1,4 +1,11 @@
-﻿#if !NETCOREAPP2_1_PLUS && !NETSTANDARD2_1_PLUS
+﻿#if NETCOREAPP2_1_PLUS || NETSTANDARD2_1_PLUS
+
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+
+[assembly: TypeForwardedTo(typeof(UnixDomainSocketEndPoint))]
+
+#else
 
 using System.Text;
 
