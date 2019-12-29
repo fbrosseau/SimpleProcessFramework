@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ namespace Spfx.Utilities.Threading
     {
         private readonly FreeLockSession m_freeLockSession;
         private readonly Queue<LockSession> m_waiters;
+
+        [SuppressMessage("Code Quality", "IDE0052:Remove unread private members", Justification = "for debugging")]
         private object m_activeLockSession;
 
         public bool IsLockTaken { get; private set; }
@@ -154,7 +157,7 @@ namespace Spfx.Utilities.Threading
             }
         }
 
-        private class FreeLockSession : IValueTaskSource<IDisposable>, IDisposable, IThreadPoolWorkItem
+        private sealed class FreeLockSession : IValueTaskSource<IDisposable>, IDisposable, IThreadPoolWorkItem
         {
             private AsyncLock m_asyncLock;
             private short m_token;
