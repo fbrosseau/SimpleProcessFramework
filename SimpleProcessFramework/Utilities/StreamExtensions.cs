@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.Serialization;
@@ -11,20 +12,35 @@ namespace Spfx.Utilities
     {
         public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream, int maximumSize = int.MaxValue, CancellationToken ct = default)
         {
-            var buf = new byte[4];
-            await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct);
+            var buf = ArrayPool<byte>.Shared.Rent(2048);
+            bool freeBuffer = true;
+            try
+            {
+                await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf, 0, 4), ct).ConfigureAwait(false);
 
-            int size = BinaryPrimitives.ReadInt32LittleEndian(buf);
-            if (size > maximumSize || size < 0)
-                throw new SerializationException("Received a message larger than the maximum allowed size");
+                int size = BinaryPrimitives.ReadInt32LittleEndian(new Span<byte>(buf, 0, 4));
+                if (size > maximumSize || size < 0)
+                    throw new SerializationException("Received a message larger than the maximum allowed size");
 
-            if (size == 0)
-                return Stream.Null;
+                if (size == 0)
+                    return Stream.Null;
 
-            Array.Resize(ref buf, size);
+                if (buf.Length < size)
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                    buf = ArrayPool<byte>.Shared.Rent(size);
+                }
 
-            await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct);
-            return new MemoryStream(buf);
+                await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct).ConfigureAwait(false);
+                var outputStream = RentedMemoryStream.CreateFromRentedArray(buf, size, false);
+                freeBuffer = false;
+                return outputStream;
+            }
+            finally
+            {
+                if (freeBuffer)
+                    ArrayPool<byte>.Shared.Return(buf);
+            }
         }
 
         public static void ReadAllBytes(this Stream stream, ArraySegment<byte> buf)

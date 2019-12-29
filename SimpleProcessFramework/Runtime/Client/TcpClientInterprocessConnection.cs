@@ -64,7 +64,7 @@ namespace Spfx.Runtime.Client
             var hello = BinarySerializer.Serialize<object>(new RemoteClientConnectionRequest(), lengthPrefix: true);
             await hello.CopyToAsync(tlsStream);
 
-            var responseStream = await tlsStream.ReadLengthPrefixedBlock();
+            using var responseStream = await tlsStream.ReadLengthPrefixedBlock();
             var response = (RemoteClientConnectionResponse)BinarySerializer.Deserialize<object>(responseStream);
 
             if (response.Success)

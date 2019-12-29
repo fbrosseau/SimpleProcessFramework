@@ -151,7 +151,7 @@ namespace Spfx.Runtime.Common
             {
                 while (true)
                 {
-                    var stream = await ReadStream.ReadLengthPrefixedBlock();
+                    using var stream = await ReadStream.ReadLengthPrefixedBlock();
                     var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
                     HandleExternalMessage(msg);
                 }

@@ -80,8 +80,8 @@ namespace Spfx.Runtime.Server.Listeners
         {
             var clientStream = await CreateFinalStream(rawStream);
 
-            var msg = await clientStream.ReadLengthPrefixedBlock(RemoteClientConnectionRequest.MaximumMessageSize);
-            var clientMessage = m_serializer.Deserialize<object>(msg);
+            using var msg = await clientStream.ReadLengthPrefixedBlock(RemoteClientConnectionRequest.MaximumMessageSize);
+            /*var clientMessage = */m_serializer.Deserialize<object>(msg);
 
             var serializedResponse = m_serializer.Serialize<object>(new RemoteClientConnectionResponse
             {
