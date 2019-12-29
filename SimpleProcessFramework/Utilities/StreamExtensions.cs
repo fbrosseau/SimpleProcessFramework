@@ -1,16 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {
     internal static class StreamExtensions
     {
-        public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream, int maximumSize = int.MaxValue)
+        public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream, int maximumSize = int.MaxValue, CancellationToken ct = default)
         {
             var buf = new byte[4];
-            await ReadBytesAsync(stream, new ArraySegment<byte>(buf));
+            await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct);
 
             int size = BitConverter.ToInt32(buf, 0);
             if (size > maximumSize || size < 0)
@@ -21,11 +22,11 @@ namespace Spfx.Utilities
 
             Array.Resize(ref buf, size);
 
-            await ReadBytesAsync(stream, new ArraySegment<byte>(buf));
+            await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct);
             return new MemoryStream(buf);
         }
 
-        public static void ReadBytes(this Stream stream, ArraySegment<byte> buf)
+        public static void ReadAllBytes(this Stream stream, ArraySegment<byte> buf)
         {
             int count = buf.Count;
             int ofs = 0;
@@ -41,14 +42,14 @@ namespace Spfx.Utilities
             }
         }
 
-        public static async ValueTask ReadBytesAsync(this Stream stream, ArraySegment<byte> buf)
+        public static async ValueTask ReadAllBytesAsync(this Stream stream, ArraySegment<byte> buf, CancellationToken ct = default)
         {
             int count = buf.Count;
             int ofs = 0;
 
             while (count > 0)
             {
-                int read = await stream.ReadAsync(buf.Array, buf.Offset + ofs, count);
+                int read = await stream.ReadAsync(buf.Array, buf.Offset + ofs, count, ct).ConfigureAwait(false);
                 if (read < 1)
                     throw new EndOfStreamException();
 

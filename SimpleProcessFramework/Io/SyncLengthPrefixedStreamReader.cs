@@ -48,7 +48,7 @@ namespace Spfx.Io
                     if (sizeBuffer is null)
                         sizeBuffer = new byte[4];
 
-                    m_stream.ReadBytes(new ArraySegment<byte>(sizeBuffer, 0, 4));
+                    m_stream.ReadAllBytes(new ArraySegment<byte>(sizeBuffer, 0, 4));
                     int count = BitConverter.ToInt32(sizeBuffer, 0);
                     if (count <= 0)
                     {
@@ -67,7 +67,7 @@ namespace Spfx.Io
                         buf = new byte[count];
                     }
 
-                    m_stream.ReadBytes(new ArraySegment<byte>(buf, 0, count));
+                    m_stream.ReadAllBytes(new ArraySegment<byte>(buf, 0, count));
                     m_readQueue.Enqueue(new LengthPrefixedStream(count, new MemoryStream(buf, 0, count)));
                 }
             }
