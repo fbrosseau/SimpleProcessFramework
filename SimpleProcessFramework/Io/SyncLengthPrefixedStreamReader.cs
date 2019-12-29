@@ -1,6 +1,7 @@
 ﻿using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,7 +50,7 @@ namespace Spfx.Io
                         sizeBuffer = new byte[4];
 
                     m_stream.ReadAllBytes(new ArraySegment<byte>(sizeBuffer, 0, 4));
-                    int count = BitConverter.ToInt32(sizeBuffer, 0);
+                    int count = BinaryPrimitives.ReadInt32LittleEndian(sizeBuffer);
                     if (count <= 0)
                     {
                         m_readQueue.Enqueue(new LengthPrefixedStream(count));
