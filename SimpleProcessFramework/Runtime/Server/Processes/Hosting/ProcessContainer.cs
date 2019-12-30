@@ -60,6 +60,9 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
             m_config = TypeResolver.CreateSingleton<SubProcessConfiguration>();
 
+            m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: InputPayload.ProcessUniqueId);
+            m_logger.Info?.Trace("Initialize");
+
             var timeout = TimeSpan.FromMilliseconds(InputPayload.HandshakeTimeout);
             if (timeout == TimeSpan.Zero)
                 timeout = m_config.DefaultProcessInitTimeout;
@@ -71,8 +74,6 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
             TypeResolver.RegisterSingleton<IIpcConnectorListener>(this);
             TypeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
-            m_logger = TypeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: LocalProcessUniqueId);
-            m_logger.Info?.Trace("Initialize");
 
             m_processCore = new ProcessCore(InputPayload.HostAuthority, InputPayload.ProcessUniqueId, TypeResolver);
 

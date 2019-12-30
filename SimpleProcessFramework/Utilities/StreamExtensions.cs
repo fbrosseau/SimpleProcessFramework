@@ -10,7 +10,7 @@ namespace Spfx.Utilities
 {
     internal static class StreamExtensions
     {
-        public static async ValueTask<Stream> ReadLengthPrefixedBlock(this Stream stream, int maximumSize = int.MaxValue, CancellationToken ct = default)
+        public static async ValueTask<Stream> ReadLengthPrefixedBlockAsync(this Stream stream, int maximumSize = int.MaxValue, CancellationToken ct = default)
         {
             var buf = ArrayPool<byte>.Shared.Rent(2048);
             bool freeBuffer = true;
@@ -31,7 +31,7 @@ namespace Spfx.Utilities
                     buf = ArrayPool<byte>.Shared.Rent(size);
                 }
 
-                await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf), ct).ConfigureAwait(false);
+                await ReadAllBytesAsync(stream, new ArraySegment<byte>(buf, 0, size), ct).ConfigureAwait(false);
                 var outputStream = RentedMemoryStream.CreateFromRentedArray(buf, size, false);
                 freeBuffer = false;
                 return outputStream;

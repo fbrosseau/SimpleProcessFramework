@@ -13,7 +13,7 @@ namespace Spfx.Tests
     internal static class TestUtilities
     {
 #if DEBUG
-        public const int DefaultTestTimeout = 30000;
+        public const int DefaultTestTimeout = 3000000;
 #else
         public const int DefaultTestTimeout = 30000;
 #endif
@@ -47,7 +47,7 @@ namespace Spfx.Tests
         {
             var wrapped = WrapWithUnhandledExceptions(task);
 
-            if (!wrapped.Wrap().Wait(TimeSpan.FromSeconds(DefaultTestTimeout)))
+            if (!wrapped.Wrap().Wait(TimeSpan.FromMilliseconds(DefaultTestTimeout)))
                 throw new TimeoutException();
 
             // to rethrow the original clean exception
