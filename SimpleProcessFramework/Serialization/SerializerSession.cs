@@ -15,7 +15,7 @@ namespace Spfx.Serialization
         public SerializerSession(Stream ms)
         {
             Stream = ms;
-            Writer = new SerializerBinaryWriter(ms);
+            Writer = SerializerBinaryWriter.Create(ms);
         }
 
         internal void WriteType(Type actualType)

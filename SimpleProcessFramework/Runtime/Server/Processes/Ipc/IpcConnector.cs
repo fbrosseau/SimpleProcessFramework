@@ -31,8 +31,6 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             Teardown2,
         }
 
-        protected static readonly IBinarySerializer s_binarySerializer = new DefaultBinarySerializer();
-
         protected ILogger Logger { get; }
         protected IIpcConnectorListener Owner { get; }
         protected ILengthPrefixedStreamReader ReadPipe { get; }

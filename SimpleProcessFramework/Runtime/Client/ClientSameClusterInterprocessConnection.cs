@@ -43,7 +43,7 @@ namespace Spfx.Runtime.Client
             UniqueId = m_localProcess.LocalProcessUniqueId + "/0";
 
             m_proxyToThis = new ConcreteClientProxy(this);
-            m_binarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            m_binarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 
             m_connectionManager = typeResolver.GetSingleton<IClientConnectionManager>();
         }

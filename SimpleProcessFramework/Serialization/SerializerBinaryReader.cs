@@ -1,12 +1,46 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
+using System.Buffers;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Spfx.Serialization
 {
+    internal sealed class RentedStreamSerializerBinaryReader : SerializerBinaryReader
+    {
+        private readonly RentedMemoryStream m_stream;
+
+        public RentedStreamSerializerBinaryReader(RentedMemoryStream input)
+            : base(input)
+        {
+            m_stream = input;
+        }
+
+        public sealed override int Read(Span<byte> bytes)
+        {
+            return m_stream.Read(bytes);
+        }
+
+        protected sealed override unsafe T ReadBlittable<T>()
+        {
+            T val = default;
+            byte* bytes = (byte*)&val;
+            ReadAll(new Span<byte>(bytes, sizeof(T)));
+            return val;
+        }
+
+        public sealed override byte ReadByte() => m_stream.ReadByteOrThrow();
+        public sealed override short ReadInt16() => ReadBlittable<short>();
+        public sealed override ushort ReadUInt16() => ReadBlittable<ushort>();
+        public sealed override uint ReadUInt32() => ReadBlittable<uint>();
+        public sealed override int ReadInt32() => ReadBlittable<int>();
+        public sealed override unsafe long ReadInt64() => ReadBlittable<long>();
+        public sealed override unsafe ulong ReadUInt64() => ReadBlittable<ulong>();
+        public sealed override unsafe Guid ReadGuid() => ReadBlittable<Guid>();
+    }
+
     internal class SerializerBinaryReader : BinaryReader
     {
-        public SerializerBinaryReader(Stream input) 
+        protected SerializerBinaryReader(Stream input)
             : base(input)
         {
         }
@@ -29,6 +63,13 @@ namespace Spfx.Serialization
             return val;
         }
 
+        internal static SerializerBinaryReader Create(Stream s)
+        {
+            if (s is RentedMemoryStream rms)
+                return new RentedStreamSerializerBinaryReader(rms);
+            return new SerializerBinaryReader(s);
+        }
+
         public int ReadEncodedInt32()
         {
             return Zag(ReadEncodedUInt32());
@@ -39,8 +80,40 @@ namespace Spfx.Serialization
             return unchecked((int)((v >> 1) ^ (-(v & 1))));
         }
 
-        #if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
-        public void ReadAll(Span<byte> bytes)
+#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+        public override int Read(Span<byte> buffer)
+#else
+        public virtual int Read(Span<byte> buffer)
+#endif
+        {
+#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+            return BaseStream.Read(buffer);
+#else
+            var buf = ArrayPool<byte>.Shared.Rent(buffer.Length);
+            try
+            {
+                var count = Read(buf, 0, buffer.Length);
+                if (count > 0)
+                    new Span<byte>(buf, 0, count).CopyTo(buffer);
+                return count;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buf);
+            }
+#endif
+        }
+
+        protected virtual unsafe T ReadBlittable<T>()
+            where T : unmanaged
+        {
+            T val = default;
+            byte* bytes = (byte*)&val;
+            Read(new Span<byte>(bytes, sizeof(T)));
+            return val;
+        }
+
+        public virtual void ReadAll(Span<byte> bytes)
         {
             var remainingSpan = bytes;
             while (remainingSpan.Length > 0)
@@ -52,7 +125,6 @@ namespace Spfx.Serialization
                 remainingSpan = remainingSpan.Slice(len);
             }
         }
-        #endif
 
         public void ReadAll(byte[] bytes, int offset, int count)
         {
@@ -67,13 +139,12 @@ namespace Spfx.Serialization
             }
         }
 
-        public unsafe Guid ReadGuid()
-        {
-            Guid g = default;
-            long* int64 = (long*)&g;
-            int64[0] = ReadInt64();
-            int64[1] = ReadInt64();
-            return g;
-        }
+        public override short ReadInt16() => ReadBlittable<short>();
+        public override ushort ReadUInt16() => ReadBlittable<ushort>();
+        public override uint ReadUInt32() => ReadBlittable<uint>();
+        public override int ReadInt32() => ReadBlittable<int>();
+        public override unsafe long ReadInt64() => ReadBlittable<long>();
+        public override unsafe ulong ReadUInt64() => ReadBlittable<ulong>();
+        public virtual unsafe Guid ReadGuid() => ReadBlittable<Guid>();
     }
 }

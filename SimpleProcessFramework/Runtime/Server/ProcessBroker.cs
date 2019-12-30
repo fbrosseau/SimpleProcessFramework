@@ -34,8 +34,8 @@ namespace Spfx.Runtime.Server
 
         private readonly IProcessInternal m_masterProcess;
 
-        public event EventHandler<ProcessEventArgs> ProcessCreated;
-        public event EventHandler<ProcessEventArgs> ProcessLost;
+        public event EventHandler<ProcessEventArgs> ProcessCreated { add { } remove { } }
+        public event EventHandler<ProcessEventArgs> ProcessLost { add { } remove { } }
 
         public ProcessBroker(ProcessCluster owner)
         {

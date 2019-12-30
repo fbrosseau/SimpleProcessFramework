@@ -13,7 +13,7 @@ namespace Spfx.Tests.Integration
 {
     public interface ITestInterface
     {
-        Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default, string exceptionText = null);
+        Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default, string exceptionText = null);
         Task<string> GetActualProcessName();
         Task<int> GetPointerSize();
         Task<string> GetEnvironmentVariable(string key);
@@ -79,7 +79,7 @@ namespace Spfx.Tests.Integration
             return Task.FromResult(NetcoreHelper.NetcoreVersion);
         }
 
-        public async Task<DummyReturn> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
+        public async Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
         {
             if (delay > TimeSpan.Zero)
             {
@@ -91,9 +91,9 @@ namespace Spfx.Tests.Integration
                 ThrowException_ThisMethodNameShouldBeInExceptionCallstack(exceptionToThrow, exceptionText);
             }
 
-            return new DummyReturn
+            return new TestReturnValue
             {
-                DummyValue = DummyReturn.ExpectedDummyValue
+                DummyValue = TestReturnValue.ExpectedDummyValue
             };
         }
 

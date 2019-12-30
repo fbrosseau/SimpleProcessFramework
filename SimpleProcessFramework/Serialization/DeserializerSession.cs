@@ -14,7 +14,7 @@ namespace Spfx.Serialization
         public DeserializerSession(Stream s)
         {
             Stream = s;
-            Reader = new SerializerBinaryReader(s);
+            Reader = SerializerBinaryReader.Create(s);
         }
         
         internal object ReadReference(bool readHeader)

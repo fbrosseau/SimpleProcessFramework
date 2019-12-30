@@ -6,8 +6,8 @@ namespace Spfx.Runtime.Server
 {
     internal class EndpointBroker : AbstractProcessEndpoint, IEndpointBroker
     {
-        public event EventHandler<EndpointEventArgs> EndpointOpened;
-        public event EventHandler<EndpointEventArgs> EndpointClosed;
+        public event EventHandler<EndpointEventArgs> EndpointOpened { add { } remove { } }
+        public event EventHandler<EndpointEventArgs> EndpointClosed { add { } remove { } }
 
         public Task<ProcessCreationOutcome> CreateEndpoint(EndpointCreationRequest req)
         {

@@ -44,7 +44,7 @@ namespace Spfx.Runtime.Server.Listeners
         public override void Start(ITypeResolver typeResolver)
         {
             base.Start(typeResolver);
-            m_serializer = typeResolver.GetSingleton<IBinarySerializer>();
+            m_serializer = typeResolver.CreateSingleton<IBinarySerializer>();
             m_listener.Start();
             m_listenLoop = ListenLoop();
         }
@@ -81,18 +81,15 @@ namespace Spfx.Runtime.Server.Listeners
             var clientStream = await CreateFinalStream(rawStream);
 
             using var msg = await clientStream.ReadLengthPrefixedBlockAsync(RemoteClientConnectionRequest.MaximumMessageSize);
-            /*var clientMessage = */m_serializer.Deserialize<object>(msg);
+            /*var clientMessage = */
+            m_serializer.Deserialize<object>(msg);
 
-            var serializedResponse = m_serializer.Serialize<object>(new RemoteClientConnectionResponse
+            using var serializedResponse = m_serializer.Serialize<object>(new RemoteClientConnectionResponse
             {
                 Success = true
             }, lengthPrefix: true);
 
-            using (serializedResponse)
-            {
-                serializedResponse.CopyTo(clientStream);
-            }
-
+            await serializedResponse.CopyToAsync(clientStream).ConfigureAwait(false);
             await clientStream.FlushAsync();
             return clientStream;
         }

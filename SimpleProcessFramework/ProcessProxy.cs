@@ -80,7 +80,7 @@ namespace Spfx
             m_address = new ProcessEndpointAddress(hostAuthority);
         }
 
-        public event EventHandler ConnectionLost;
+        public event EventHandler ConnectionLost { add { } remove { } }
 
         public Task<bool> IsAlive()
         {

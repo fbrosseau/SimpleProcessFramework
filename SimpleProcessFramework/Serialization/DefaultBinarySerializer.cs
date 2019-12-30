@@ -1,5 +1,7 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Reflection;
 using Spfx.Serialization.DataContracts;
+using Spfx.Serialization.Serializers;
 using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
@@ -18,6 +20,12 @@ namespace Spfx.Serialization
         internal const int MagicHeader = unchecked((int)0xBEEF1234);
 
         private static Dictionary<Type, Type> s_typeSubstitutions;
+        private ILogger m_logger;
+
+        public DefaultBinarySerializer(ITypeResolver resolver)
+        {
+            m_logger = resolver.GetLogger(GetType());
+        }
 
         public T Deserialize<T>(Stream s)
         {
@@ -52,7 +60,7 @@ namespace Spfx.Serialization
                     case DataKind.Ref:
                         return reader.ReadReference(readHeader: false);
                     default:
-                        throw new SerializationException("Data is invalid");
+                        throw ThrowBadSerializationException("Data is invalid");
                 }
             }
         }
@@ -65,27 +73,38 @@ namespace Spfx.Serialization
 
         public byte[] SerializeToBytes<T>(T graph, bool lengthPrefix)
         {
-            var ms = (MemoryStream)Serialize(graph, lengthPrefix);
-            return ms.ToArray();
+            using var ms = Serialize(graph, lengthPrefix);
+            return StreamExtensions.CopyToByteArray(ms);
         }
 
         public Stream Serialize<T>(T graph, bool lengthPrefix, int startOffset = 0)
         {
-            MemoryStream ms = new MemoryStream();
+            // 512 was guesstimated to be the average message size in use by spfx
+            // when running all unit tests and looking at avg/median.
+            var ms = new RentedMemoryStream(512);
 
-            ms.Position = startOffset + (lengthPrefix ? 4 : 0);
+            try
+            {
+                ms.Position = startOffset + (lengthPrefix ? 4 : 0);
 
-            var writer = new SerializerSession(ms);
-            writer.BeginSerialization();
-            Serialize(writer, graph, ReflectionUtilities.GetType<T>());
-            writer.FinishSerialization();
+                var writer = new SerializerSession(ms);
+                writer.BeginSerialization();
+                Serialize(writer, graph, ReflectionUtilities.GetType<T>());
+                writer.FinishSerialization();
 
-            if (lengthPrefix)
-                writer.WritePositionDelta(startOffset);
+                if (lengthPrefix)
+                    writer.WritePositionDelta(startOffset);
 
-            ms.Position = startOffset;
+                ms.Position = startOffset;
 
-            return ms;
+                return ms;
+            }
+            catch (Exception ex)
+            {
+                ms.Dispose();
+                m_logger.Error?.Trace(ex, "Serialization failed: " + ex.Message);
+                throw;
+            }
         }
 
         internal static void Serialize(SerializerSession bw, object graph, Type expectedType)
@@ -188,13 +207,15 @@ namespace Spfx.Serialization
             AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadChar());
             AddGeneric((bw, o) => bw.Writer.Write(o.ToUniversalTime().Ticks), br => new DateTime(br.Reader.ReadInt64(), DateTimeKind.Utc));
             AddGeneric((bw, o) => bw.Writer.Write(o.Ticks), br => new TimeSpan(br.Reader.ReadInt64()));
+            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadGuid());
             AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadString());
-            AddGeneric((bw, o) => bw.Writer.Write(o ? (byte)1 : (byte)0), br => br.Reader.ReadByte() != 0);
             AddGeneric((bw, o) => { }, br => CancellationToken.None);
             AddGeneric((bw, o) => { }, br => EventArgs.Empty);
-            AddGeneric((bw, o) => bw.Writer.Write(o), br => br.Reader.ReadGuid());
             AddGeneric(WriteIPAddress, ReadIPAddress, discoverAllImplementations: true);
             AddGeneric(WriteVersion, ReadVersion);
+
+            AddSerializer(typeof(bool), BoolSerializer.Serializer);
+            AddSerializer(typeof(bool?), BoolSerializer.NullableSerializer);
         }
 
         private static void WriteVersion(SerializerSession session, Version val)
@@ -245,7 +266,7 @@ namespace Spfx.Serialization
             }
 
             if (af != AddressFamily.InterNetworkV6)
-                throw new InvalidOperationException("The endpoint must be IPv4 or IPv6");
+                ThrowBadSerializationException("The endpoint must be IPv4 or IPv6");
 
 #if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
             Span<byte> span = stackalloc byte[16];
@@ -254,7 +275,7 @@ namespace Spfx.Serialization
             var bytes = session.Reader.ReadBytes(16);
             var span = new ReadOnlySpan<byte>(bytes);
 #endif
-            switch(span[15])
+            switch (span[15])
             {
                 case 1:
                     if (span.SequenceEqual(s_ipv6LoopbackBytes))
@@ -273,6 +294,14 @@ namespace Spfx.Serialization
 #else
             return new IPAddress(bytes);
 #endif
+        }
+
+        internal static ITypeSerializer<T> GetSerializer<T>()
+        {
+            var serializer = GetSerializer(ReflectionUtilities.GetType<T>());
+            if (serializer is ITypeSerializer<T> typed)
+                return typed;
+            return new TypedSerializerWrapper<T>(serializer);
         }
 
         internal static ITypeSerializer GetSerializer(Type actualType)
@@ -304,7 +333,7 @@ namespace Spfx.Serialization
                 return ArraySerializer.Create(actualType.GetElementType());
             }
 
-            if(actualType.IsEnum)
+            if (actualType.IsEnum)
             {
                 return EnumSerializer.Create(actualType);
             }
@@ -317,9 +346,18 @@ namespace Spfx.Serialization
                 {
                     return ListSerializer.Create(genericArgs.Single());
                 }
+                if (baseType == typeof(Nullable<>))
+                {
+                    return NullableSerializer.Create(genericArgs.Single());
+                }
             }
 
-            throw new InvalidOperationException("Unable to serialize type " + actualType);
+            throw ThrowBadSerializationException("Unable to serialize type " + actualType);
+        }
+
+        internal static Exception ThrowBadSerializationException(string msg = null)
+        {
+            throw new SerializationException(msg ?? "Serialization failed!");
         }
     }
 }

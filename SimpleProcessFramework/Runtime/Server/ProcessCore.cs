@@ -99,7 +99,7 @@ namespace Spfx.Runtime.Server
             UniqueId = uniqueId;
             HostAuthority = hostAuthority;
             UniqueAddress = CreateRelativeAddressInternal();
-            m_binarySerializer = DefaultTypeResolver.GetSingleton<IBinarySerializer>();
+            m_binarySerializer = DefaultTypeResolver.CreateSingleton<IBinarySerializer>();
 
             DefaultTypeResolver.RegisterSingleton<IInternalRequestsHandler>(new InternalRequestsHandler(hostAuthority));
             DefaultTypeResolver.RegisterSingleton<IProcess>(this);

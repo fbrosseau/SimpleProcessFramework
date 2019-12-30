@@ -23,6 +23,8 @@ namespace Spfx.Tests
 
         public const int DefaultTestTimeout = TestUtilities.DefaultTestTimeout;
 
+        public static ITypeResolver DefaultTestResolver { get; } = DefaultTypeResolverFactory.CreateRootTypeResolver<TestTypeResolverFactory>();
+
         private static readonly ILogger s_logger = DefaultTypeResolverFactory.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass));
         private readonly SanityTestOptions m_options;
 

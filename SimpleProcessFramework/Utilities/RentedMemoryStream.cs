@@ -1,4 +1,4 @@
-﻿using Spfx.Utilities.Threading;
+﻿#define DEBUG_DISPOSE_LEAK
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -8,13 +8,17 @@ using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {
-    internal class RentedMemoryStream : AbstractSyncStream
+    internal sealed class RentedMemoryStream : AbstractSyncStream
     {
         private static readonly byte[] s_fallbackBuffer = Array.Empty<byte>();
         private byte[] m_buffer = s_fallbackBuffer;
         private int m_count;
         private int m_position;
         private bool m_disposed;
+
+#if DEBUG_DISPOSE_LEAK
+        private StackTrace m_allocationStack = new StackTrace();
+#endif
 
         public override bool CanRead => true;
         public override bool CanSeek => true;
@@ -62,7 +66,11 @@ namespace Spfx.Utilities
             if (AppDomain.CurrentDomain.IsFinalizingForUnload() || Environment.HasShutdownStarted)
                 return;
 
+#if DEBUG_DISPOSE_LEAK
+            Debug.Fail("Stream was not disposed: " + m_allocationStack);
+#else
             Debug.Fail("Stream was not disposed");
+#endif
         }
 #endif
 

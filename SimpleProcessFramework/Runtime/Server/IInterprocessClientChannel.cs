@@ -9,7 +9,6 @@ namespace Spfx.Runtime.Server
         public const string ExternalConnectionIdPrefix = "<out>/";
 
         public string UniqueId { get; }
-        private IInterprocessClientChannel m_realChannel;
 
         void SendMessage(IInterprocessMessage message)
         {

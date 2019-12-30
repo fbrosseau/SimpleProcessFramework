@@ -74,5 +74,17 @@ namespace Spfx.Utilities
                 count -= read;
             }
         }
+
+        internal static byte[] CopyToByteArray(Stream s)
+        {
+            if (s is MemoryStream ms)
+                return ms.ToArray();
+            if (s is RentedMemoryStream rms)
+                return rms.ToArray();
+
+            var buf = new byte[s.Length];
+            ReadAllBytes(s, new ArraySegment<byte>(buf));
+            return buf;
+        }
     }
 }

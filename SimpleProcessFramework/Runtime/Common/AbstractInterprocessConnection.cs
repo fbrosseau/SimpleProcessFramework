@@ -63,7 +63,7 @@ namespace Spfx.Runtime.Common
 
         public AbstractInterprocessConection(ITypeResolver typeResolver)
         {
-            BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 
             m_pendingWrites = new AsyncQueue<PendingOperation>
             {

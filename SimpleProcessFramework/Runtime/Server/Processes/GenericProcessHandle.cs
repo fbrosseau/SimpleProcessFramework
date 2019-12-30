@@ -31,7 +31,7 @@ namespace Spfx.Runtime.Server.Processes
             ProcessCreationInfo = info;
             TypeResolver = typeResolver;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
-            BinarySerializer = typeResolver.GetSingleton<IBinarySerializer>();
+            BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
             m_processBroker = typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: info.ProcessUniqueId);
         }

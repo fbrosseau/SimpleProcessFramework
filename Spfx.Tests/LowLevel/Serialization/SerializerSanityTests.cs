@@ -13,11 +13,11 @@ namespace Spfx.Tests.LowLevel.Serialization
     [TestFixture, Parallelizable]
     public class BasicSerializerSanityTests : CommonTestClass
     {
-        [Test, TestCaseSource(nameof(GenerateSampleObjects))]
+        [Test, TestCaseSource(nameof(GenerateSampleObjects)), Timeout(DefaultTestTimeout)]
         public void BasicSerializerSanityTests_Simple(Type t, object value)
         {
-            var serializer = new DefaultBinarySerializer();
-            var bytes = serializer.Serialize(value, false);
+            var serializer = new DefaultBinarySerializer(DefaultTestResolver);
+            using var bytes = serializer.Serialize(value, false);
             bytes.Position = 0;
             long len = bytes.Length;
             var deserialized = serializer.Deserialize<object>(bytes);
@@ -46,29 +46,17 @@ namespace Spfx.Tests.LowLevel.Serialization
             }
         }
 
-        [DataContract]
-        public class TestContract : IEquatable<TestContract>
-        {
-            [DataMember]
-            public object Value { get; set; }
-
-            public override int GetHashCode() => Value?.GetHashCode() ?? 0;
-            public override bool Equals(object obj) => Equals(obj as TestContract);
-            public bool Equals(TestContract other)
-            {
-                return other != null && Equals(Value, other.Value);
-            }
-
-            public override string ToString()
-            {
-                return Value?.ToString() ?? "<null>";
-            }
-        }
-
         private static object[][] GenerateSampleObjects()
         {
+            (object Value, Type Type) CreateTypedObject(object o, Type t = null)
+            {
+                return (o, t ?? o?.GetType());
+            }
+
             var values = new object[]
             {
+                true,
+                false,
                 (sbyte)5,
                 (short)1234,
                 449292924,
@@ -88,17 +76,29 @@ namespace Spfx.Tests.LowLevel.Serialization
                 new IPAddress(new byte[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}),
                 IPAddress.Loopback,
                 IPAddress.IPv6Loopback,
-                Array.Empty<string>()
-            };
+                Array.Empty<string>(),
+                ByteEnum.B,
+                IntEnum.B,
+                LongEnum.B,
+                ULongEnum.B,
+                FlagsEnum.A | FlagsEnum.C,
+                BigFlagsEnum.A | BigFlagsEnum.AF,
+            }.Select(o => CreateTypedObject(o)).ToArray();
+
+            var valuetypes = values.Where(o => o.Type.IsValueType).ToArray();
+            var nullables = valuetypes
+                .Select(v => MakeNullable(v.Value, v.Type))
+                .Concat(valuetypes.Select(v => MakeNullable(null, v.Type)));
+
+            values = values.Concat(nullables).ToArray();
 
             var arrays = values.Select(o =>
             {
-                var t = o.GetType();
-                var arr = Array.CreateInstance(t, 3);
-                arr.SetValue(o, 0);
-                arr.SetValue(o, 1);
+                var arr = Array.CreateInstance(o.Type, 3);
+                arr.SetValue(o.Value, 0);
+                arr.SetValue(o.Value, 1);
                 // leave index 2
-                return arr;
+                return CreateTypedObject(arr);
             });
 
             IList MakeList(Type t)
@@ -108,18 +108,23 @@ namespace Spfx.Tests.LowLevel.Serialization
 
             var lists = values.Select(o =>
             {
-                var t = o.GetType();
-                var list = MakeList(o.GetType());
-                list.Add(o);
-                return list;
+                var list = MakeList(o.Type);
+                list.Add(o.Value);
+                return CreateTypedObject(list);
             });
 
             var emptyLists = values.Select(o =>
             {
-                return MakeList(o.GetType());
+                return CreateTypedObject(MakeList(o.Type));
             });
 
-            return values.Concat(arrays).Concat(lists).Concat(emptyLists).Select(o => new[] { o.GetType(), o }).ToArray();
+            return values.Concat(arrays).Concat(lists).Concat(emptyLists).Select(o => new[] { o.Type, o.Value }).ToArray();
+        }
+
+        private static (object Value, Type Type) MakeNullable(object value, Type type)
+        {
+            var nullableT = typeof(Nullable<>).MakeGenericType(type);
+            return (value, nullableT);
         }
     }
 }

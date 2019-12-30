@@ -19,7 +19,7 @@ namespace Spfx.Reflection
             resolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new DefaultUnhandledExceptionHandler(r));
             resolver.RegisterFactory<ILogListener>(r => new DefaultConsoleLogListener());
             resolver.RegisterFactory<ILoggerFactory>(r => NullLoggerFactory.Instance);
-            resolver.RegisterSingleton<IBinarySerializer, DefaultBinarySerializer>();
+            resolver.RegisterFactory<IBinarySerializer>(r => new DefaultBinarySerializer(r));
             resolver.RegisterFactory<IInternalProcessBroker>(r => new ProcessBroker(r.GetSingleton<ProcessCluster>()));
             resolver.RegisterFactory<IClientConnectionFactory>(r => new TcpTlsClientConnectionFactory(r));
             resolver.RegisterFactory<IClientConnectionManager>(r => new ClientConnectionManager(r));

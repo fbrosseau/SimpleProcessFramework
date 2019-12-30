@@ -312,7 +312,7 @@ namespace Spfx.Tests.Integration
 
             var testInterface = CreateProxyInterface<ITestInterface>(proxy, cluster, processEndpointAddress.TargetProcess, testEndpoint);
             var res = Unwrap(testInterface.GetDummyValue());
-            DummyReturn.Verify(res);
+            TestReturnValue.Verify(res);
             Log("Validated Endpoint " + testEndpoint);
 
             return testInterface;
