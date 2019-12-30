@@ -35,7 +35,7 @@ namespace Spfx.Runtime.Client
             {
                 case RemoteInvocationResponse callResponse:
                     PendingOperation op = m_pendingRequests.RemoveById(callResponse.CallId);
-                    callResponse.ForwardResult(op.Completion);
+                    callResponse.ForwardResult(op);
                     break;
                 case EventRaisedMessage eventMsg:
                     var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
@@ -55,7 +55,7 @@ namespace Spfx.Runtime.Client
             {
                 expectResponse = true;
 
-                op.Completion.Task.ContinueWith(t =>
+                op.Task.ContinueWith(t =>
                 {
                     m_pendingRequests.RemoveById(req.CallId);
                 }).FireAndForget();
@@ -65,7 +65,7 @@ namespace Spfx.Runtime.Client
 
             if (!expectResponse)
             {
-                op.Completion.TrySetResult(BoxHelper.BoxedInvalidType);
+                op.TrySetResult(BoxHelper.BoxedInvalidType);
                 op.Dispose();
             }
         }

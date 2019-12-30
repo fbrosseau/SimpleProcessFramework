@@ -2,6 +2,7 @@
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -84,7 +85,7 @@ namespace Spfx
 
         public Task<bool> IsAlive()
         {
-            return Task.FromResult(true);
+            return TaskCache.TrueTask;
         }
     }
 

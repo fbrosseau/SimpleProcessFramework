@@ -108,7 +108,7 @@ namespace Spfx.Utilities.Threading
 
             if (t.IsCompleted)
             {
-                return Task.FromResult((TOut)(object)t.Result);
+                return TaskCache.FromResult((TOut)(object)t.Result);
             }
 
             return t.ContinueWith(innerT =>
@@ -199,10 +199,10 @@ namespace Spfx.Utilities.Threading
         public static Task<bool> WaitAsync(this Task t, TimeSpan timeout)
         {
             if (t.IsCompleted)
-                return Task.FromResult(true);
+                return TaskCache.TrueTask;
 
             if (timeout == TimeSpan.Zero)
-                return Task.FromResult(false);
+                return TaskCache.FalseTask;
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 

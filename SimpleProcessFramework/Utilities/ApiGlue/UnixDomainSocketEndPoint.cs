@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 
 #else
 
+using System.Buffers;
 using System.Text;
 
 namespace System.Net.Sockets
@@ -27,13 +28,22 @@ namespace System.Net.Sockets
         {
             var addr = new SocketAddress(AddressFamily.Unix, 300);
 
-            var bytes = s_rawUtf8.GetBytes(Address);
-            for (int i = 0; i < bytes.Length; ++i)
+            var buf = ArrayPool<byte>.Shared.Rent(s_rawUtf8.GetMaxByteCount(Address.Length));
+            try
             {
-                addr[2 + i] = bytes[i];
-            }
 
-            return addr;
+                int bytecount = s_rawUtf8.GetBytes(Address, 0, Address.Length, buf, 0);
+                for (int i = 0; i < bytecount; ++i)
+                {
+                    addr[2 + i] = buf[i];
+                }
+
+                return addr;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buf);
+            }
         }
 
         public override EndPoint Create(SocketAddress socketAddress)
@@ -45,11 +55,18 @@ namespace System.Net.Sockets
             if (firstNull == 2)
                 return Empty;
 
-            byte[] buf = new byte[firstNull - 2];
-            for (int i = 2; i < firstNull; ++i)
-                buf[i - 2] = socketAddress[i];
+            byte[] buf = ArrayPool<byte>.Shared.Rent(firstNull - 2);
+            try
+            {
+                for (int i = 2; i < firstNull; ++i)
+                    buf[i - 2] = socketAddress[i];
 
-            return new UnixDomainSocketEndPoint(Encoding.UTF8.GetString(buf));
+                return new UnixDomainSocketEndPoint(Encoding.UTF8.GetString(buf, 0, firstNull - 2));
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buf);
+            }
         }
 
         public override string ToString()

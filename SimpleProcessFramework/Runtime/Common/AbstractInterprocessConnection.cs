@@ -25,18 +25,17 @@ namespace Spfx.Runtime.Common
         protected IBinarySerializer BinarySerializer { get; }
         protected virtual TimeSpan KeepAliveInterval { get; } = TimeSpan.FromSeconds(30);
 
-        protected class PendingOperation : IAbortableItem
+        protected class PendingOperation : TaskCompletionSource<object>, IAbortableItem
         {
             public Stream Data { get; private set; }
-            public TaskCompletionSource<object> Completion { get; }
             public IInterprocessMessage Request { get; }
             public CancellationToken CancellationToken { get; }
 
             public PendingOperation(IInterprocessMessage req, CancellationToken ct = default)
+                : base(TaskCreationOptions.RunContinuationsAsynchronously)
             {
                 CancellationToken = ct;
                 Request = req;
-                Completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
             public void SerializeRequest(IBinarySerializer serializer)
@@ -51,13 +50,13 @@ namespace Spfx.Runtime.Common
 
             public void Abort(Exception ex)
             {
-                Completion.TrySetException(ex);
+                TrySetException(ex);
             }
 
             public void Dispose()
             {
                 Data.Dispose();
-                Completion.TrySetCanceled();
+                TrySetCanceled();
             }
         }
 
@@ -218,7 +217,7 @@ namespace Spfx.Runtime.Common
 
             using (ctRegistration)
             {
-                return await op.Completion.Task.ConfigureAwait(false);
+                return await op.Task.ConfigureAwait(false);
             }
         }
     }

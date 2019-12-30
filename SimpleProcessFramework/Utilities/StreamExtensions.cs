@@ -66,7 +66,11 @@ namespace Spfx.Utilities
 
             while (count > 0)
             {
+#if NETCOREAPP2_1_PLUS || NETSTANDARD2_1_PLUS
+                int read = await stream.ReadAsync(new Memory<byte>(buf.Array, buf.Offset + ofs, count), ct).ConfigureAwait(false);
+#else
                 int read = await stream.ReadAsync(buf.Array, buf.Offset + ofs, count, ct).ConfigureAwait(false);
+#endif
                 if (read < 1)
                     throw new EndOfStreamException();
 
