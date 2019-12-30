@@ -47,7 +47,7 @@ namespace Spfx.Tests.Integration
             base.OnDispose();
         }
 
-        protected override Task OnTeardownAsync(CancellationToken ct)
+        protected override ValueTask OnTeardownAsync(CancellationToken ct)
         {
             Logger.Info?.Trace("OnTeardownAsync");
             return base.OnTeardownAsync(ct);

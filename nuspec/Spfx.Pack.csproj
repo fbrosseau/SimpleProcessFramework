@@ -5,7 +5,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NuspecFile Condition="'$(SpfxBuildNet48)'=='true'">SimpleProcessFramework.nuspec</NuspecFile>
     <NuspecFile Condition="'$(SpfxBuildNet48)'=='false'">SimpleProcessFramework.Core.nuspec</NuspecFile>
-    <NuspecProperties>configuration=$(Configuration);ver=$(ProductVersion)</NuspecProperties>
+    <NuspecProperties>configuration=$(Configuration);verString=$(SpfxNugetVersion)</NuspecProperties>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>.</OutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>

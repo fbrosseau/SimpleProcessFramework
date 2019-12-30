@@ -2,11 +2,19 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.282</Version>
-    <SpfxNugetVersion>$(Version)</SpfxNugetVersion>
+    <Version>0.0.337</Version>
+    <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
+    <ProductVersion>$(Version)</ProductVersion>
+    <PackageVersion>$(Version)</PackageVersion>
     <ProductName>The SimpleProcessFramework</ProductName>
-    <ProductVersion>$(SpfxNugetVersion)</ProductVersion>
-    <PackageVersion>$(SpfxNugetVersion)</PackageVersion>
+    <Description>Spfx ($(TargetFramework))</Description>
+    <Title>Spfx ($(TargetFramework))</Title>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <InformationalVersion>$(SpfxNugetVersion)</InformationalVersion>
+    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release;Debug_NoTests;Release_NoTests</Configurations>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.StartsWith('Netcore_'))">
@@ -18,19 +26,35 @@
     <SpfxBuildNet48>true</SpfxBuildNet48>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)'=='Windows_NT'">
+    <DefineConstants>$(DefineConstants);WINDOWS_BUILD</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(SpfxBuildNet48)'==''">
     <SpfxBuildNet48>false</SpfxBuildNet48>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(NetCore3Versions)'==''">
+    <NetCore3Versions>netcoreapp3.1;netcoreapp3.0</NetCore3Versions>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NetCore2Versions)'==''">
+    <NetCore2Versions>netcoreapp2.2;netcoreapp2.1</NetCore2Versions>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NetCore3PlusVersions)'==''">
+    <NetCore3PlusVersions>$(NetCore3Versions)</NetCore3PlusVersions>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(AllNetCoreVersions)'==''">
-    <AllNetCoreVersions>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1</AllNetCoreVersions>
+    <AllNetCoreVersions>$(NetCore3PlusVersions);$(NetCore2Versions)</AllNetCoreVersions>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
     <DefineConstants>$(DefineConstants);NETCOREAPP2_1_PLUS</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('netcoreapp3'))">
+  <PropertyGroup Condition="$(NetCore3PlusVersions.Contains($(TargetFramework)))">
     <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS</DefineConstants>
   </PropertyGroup>
 
@@ -47,5 +71,5 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(SpfxBuildNet48)'=='false'">
     <SfpxAllTargetPlatforms>$(AllNetCoreVersions)</SfpxAllTargetPlatforms>
-  </PropertyGroup>  
+  </PropertyGroup>
 </Project>
