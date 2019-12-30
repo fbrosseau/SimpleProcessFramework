@@ -1,6 +1,7 @@
 ﻿using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,7 +11,7 @@ namespace Spfx.Io
     {
         private readonly Stream m_stream;
         private readonly Task m_writeThread;
-        private readonly AsyncQueue<LengthPrefixedStream> m_pendingWrites;
+        private readonly AsyncQueue<PendingWriteFrame> m_pendingWrites;
 
         public event EventHandler<StreamWriterExceptionEventArgs> WriteException;
 
@@ -19,7 +20,7 @@ namespace Spfx.Io
             Guard.ArgumentNotNull(stream, nameof(stream));
             m_stream = stream;
 
-            m_pendingWrites = new AsyncQueue<LengthPrefixedStream>
+            m_pendingWrites = new AsyncQueue<PendingWriteFrame>
             {
                 DisposeIgnoredItems = true
             };
@@ -34,7 +35,7 @@ namespace Spfx.Io
             m_stream.Dispose();
         }
 
-        public void WriteFrame(LengthPrefixedStream frame)
+        public void WriteFrame(PendingWriteFrame frame)
         {
             m_pendingWrites.Enqueue(frame);
         }
@@ -44,21 +45,19 @@ namespace Spfx.Io
             try
             {
                 var tempBuffer = new byte[4];
-                async ValueTask DoWrite(LengthPrefixedStream frame)
+                async ValueTask DoWrite(PendingWriteFrame frame)
                 {
                     using (frame)
                     {
-                        if (frame.StreamLength <= 0)
+                        if (frame.IsCodeFrame)
                         {
-                            tempBuffer[0] = (byte)frame.StreamLength;
-                            tempBuffer[1] = (byte)(frame.StreamLength >> 8);
-                            tempBuffer[2] = (byte)(frame.StreamLength >> 16);
-                            tempBuffer[3] = (byte)(frame.StreamLength >> 24);
+                            int code = frame.Code;
+                            BinaryPrimitives.WriteInt32LittleEndian(new Span<byte>(tempBuffer), code);
                             await m_stream.WriteAsync(tempBuffer, 0, 4).ConfigureAwait(false);
                         }
                         else
                         {
-                            await frame.Stream.CopyToAsync(m_stream).ConfigureAwait(false);
+                            await frame.DataStream.CopyToAsync(m_stream).ConfigureAwait(false);
                         }
                     }
                 }

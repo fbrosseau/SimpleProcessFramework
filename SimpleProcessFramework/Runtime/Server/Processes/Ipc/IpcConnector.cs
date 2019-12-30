@@ -17,7 +17,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
     {
         protected enum InterprocessFrameType
         {
-            Handshake1 = 0xAA,
+            Handshake1 = -10000,
             Handshake2,
             Handshake3,
 
@@ -105,15 +105,12 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             {
                 while (true)
                 {
-                    using (var frame = await ReadPipe.GetNextFrame())
+                    using var frame = await ReadPipe.GetNextFrame().ConfigureAwait(false);
+
+                    if (frame.IsCodeFrame)
                     {
-                        var code = (InterprocessFrameType)frame.Stream.ReadByte();
-                        switch (code)
+                        switch ((InterprocessFrameType)frame.Code)
                         {
-                            case InterprocessFrameType.IpcMessage:
-                                var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(frame.Stream);
-                                Owner.OnMessageReceived(msg);
-                                break;
                             case InterprocessFrameType.Teardown1:
                                 Shutdown1ReceivedEvent.Set();
                                 Owner.OnTeardownRequestReceived();
@@ -123,13 +120,19 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                                 return;
                         }
                     }
+                    else
+                    {
+                        using var stream = frame.AcquireDataStream();
+                        var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(stream);
+                        Owner.OnMessageReceived(msg);
+                    }
                 }
             }
-            catch(EndOfStreamException ex)
+            catch (EndOfStreamException ex)
             {
                 RaiseFinalDisconnect("The IPC stream was closed", ex);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 RaiseFinalDisconnect("Exception in IpcConnector::ReadLoop", ex);
             }
@@ -149,43 +152,33 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             Logger.Debug?.Trace(caughtException, "RaiseFinalDisconnect: " + description);
             Owner.OnRemoteEndLost(description, caughtException);
         }
-        
+
         public void ForwardMessage(IInterprocessMessage msg)
         {
-            if(!(msg is WrappedInterprocessMessage wrapped))
+            if (!(msg is WrappedInterprocessMessage wrapped))
             {
                 wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
             }
 
-            var stream = BinarySerializer.Serialize(wrapped, lengthPrefix: false, startOffset: 5);
-            stream.Position = 0;
-            int streamLen = checked((int)(stream.Length - 4));
-            stream.WriteByte((byte)streamLen);
-            stream.WriteByte((byte)(streamLen >> 8));
-            stream.WriteByte((byte)(streamLen >> 16));
-            stream.WriteByte((byte)(streamLen >> 24));
-            stream.WriteByte((byte)InterprocessFrameType.IpcMessage);
-            stream.Position = 0;
-            WritePipe.WriteFrame(new LengthPrefixedStream(stream));
+            var stream = BinarySerializer.Serialize(wrapped, lengthPrefix: true);
+            WritePipe.WriteFrame(PendingWriteFrame.CreateFromFramedData(stream));
         }
 
         protected void SendCode(InterprocessFrameType code)
         {
-            var ms = new MemoryStream(new byte[] { 1, 0, 0, 0, (byte)code });
-            WritePipe.WriteFrame(new LengthPrefixedStream(ms));
+            WritePipe.WriteFrame(PendingWriteFrame.CreateCodeFrame((int)code));
         }
 
         protected async ValueTask ReceiveCode(InterprocessFrameType expectedCode)
         {
-            using (var frame = await ReadPipe.GetNextFrame())
-            {
-                if (frame.StreamLength != 1)
-                    throw new SerializationException($"Expected a single frame code, received {frame.StreamLength} bytes");
+            using var frame = await ReadPipe.GetNextFrame();
 
-                var actualCode = (InterprocessFrameType)frame.Stream.ReadByte();
-                if (actualCode != expectedCode)
-                    throw new SerializationException($"Expected a {expectedCode} frame, received {actualCode}");
-            }
+            if (!frame.IsCodeFrame)
+                throw new SerializationException($"Expected a single frame code");
+
+            var actualCode = (InterprocessFrameType)frame.Code;
+            if (actualCode != expectedCode)
+                throw new SerializationException($"Expected a {expectedCode} frame, received {actualCode}");
         }
     }
 }

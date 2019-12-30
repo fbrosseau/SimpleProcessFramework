@@ -9,8 +9,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         public MasterProcessIpcConnector(GenericRemoteTargetHandle owner, IRemoteProcessInitializer remoteProcessHandles, ITypeResolver typeResolver)
             : base(
                   owner,
-                  LengthPrefixedStream.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
-                  LengthPrefixedStream.CreateWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
+                  PipeWriterFactory.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
+                  PipeWriterFactory.CreateWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
                   typeResolver)
         {
         }

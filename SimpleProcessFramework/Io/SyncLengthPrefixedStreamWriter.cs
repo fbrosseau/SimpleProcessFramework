@@ -1,5 +1,6 @@
 ﻿using Spfx.Utilities;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
@@ -10,7 +11,7 @@ namespace Spfx.Io
     {
         private readonly Stream m_stream;
         private readonly Thread m_writeThread;
-        private readonly BlockingCollection<LengthPrefixedStream> m_pendingWrites = new BlockingCollection<LengthPrefixedStream>();
+        private readonly BlockingCollection<PendingWriteFrame> m_pendingWrites = new BlockingCollection<PendingWriteFrame>();
 
         public event EventHandler<StreamWriterExceptionEventArgs> WriteException;
 
@@ -37,17 +38,15 @@ namespace Spfx.Io
                 {
                     using (frame)
                     {
-                        if (frame.StreamLength <= 0)
+                        if (frame.IsCodeFrame)
                         {
-                            tempBuffer[0] = (byte)frame.StreamLength;
-                            tempBuffer[1] = (byte)(frame.StreamLength >> 8);
-                            tempBuffer[2] = (byte)(frame.StreamLength >> 16);
-                            tempBuffer[3] = (byte)(frame.StreamLength >> 24);
+                            int code = frame.Code;
+                            BinaryPrimitives.WriteInt32LittleEndian(new Span<byte>(tempBuffer), code);
                             m_stream.Write(tempBuffer, 0, 4);
                         }
                         else
                         {
-                            frame.Stream.CopyTo(m_stream);
+                            frame.DataStream.CopyTo(m_stream);
                         }
                     }
                 }
@@ -68,7 +67,7 @@ namespace Spfx.Io
             m_stream.Dispose();
         }
 
-        public void WriteFrame(LengthPrefixedStream frame)
+        public void WriteFrame(PendingWriteFrame frame)
         {
             m_pendingWrites.TryAdd(frame);
         }
