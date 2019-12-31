@@ -57,6 +57,8 @@ namespace Spfx
         public string DefaultNetcoreRuntime { get; set; } = "2";
         public bool PrintErrorInRegularOutput { get; set; }
 
+        public TimeSpan IpcConnectionKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(30);
+
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {
             if (makeReadonly && IsReadOnly)

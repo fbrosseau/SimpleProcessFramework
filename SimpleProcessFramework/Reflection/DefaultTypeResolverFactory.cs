@@ -26,6 +26,7 @@ namespace Spfx.Reflection
             resolver.RegisterFactory<IEndpointBroker>(r => new EndpointBroker());
             resolver.RegisterFactory<IInternalRequestsHandler>(r => new NullInternalRequestsHandler());
             resolver.RegisterFactory<ILocalConnectionFactory>(r => new NullLocalConnectionFactory());
+            resolver.RegisterFactory(r => ProcessClusterConfiguration.Default);
             resolver.RegisterFactory(r => new SubProcessConfiguration());
             DefaultTypeResolver = resolver;
         }

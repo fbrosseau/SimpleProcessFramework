@@ -23,7 +23,7 @@ namespace Spfx.Runtime.Common
         protected Stream ReadStream { get; private set; }
         protected Stream WriteStream { get; private set; }
         protected IBinarySerializer BinarySerializer { get; }
-        protected virtual TimeSpan KeepAliveInterval { get; } = TimeSpan.FromSeconds(30);
+        protected virtual TimeSpan KeepAliveInterval { get; }
 
         protected class PendingOperation : TaskCompletionSource<object>, IAbortableItem
         {
@@ -64,6 +64,9 @@ namespace Spfx.Runtime.Common
         {
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 
+            var config = typeResolver.CreateSingleton<ProcessClusterConfiguration>();
+            KeepAliveInterval = config.IpcConnectionKeepAliveInterval;
+
             m_pendingWrites = new AsyncQueue<PendingOperation>
             {
                 DisposeIgnoredItems = true
@@ -76,7 +79,7 @@ namespace Spfx.Runtime.Common
             {
                 try
                 {
-                    await DoWrite(op);                    
+                    await DoWrite(op);
                 }
                 catch (Exception ex)
                 {
@@ -183,7 +186,7 @@ namespace Spfx.Runtime.Common
         private async Task DoKeepAlive(TimeSpan delay)
         {
             await Task.Delay(delay);
-         //   await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
+            //   await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
             RescheduleKeepAlive();
         }
 
