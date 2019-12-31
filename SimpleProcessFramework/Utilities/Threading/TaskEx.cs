@@ -346,9 +346,7 @@ namespace Spfx.Utilities.Threading
                 if (task.IsFaulted) tcs.TrySetException(task.Exception.InnerExceptions);
                 else if (task.IsCanceled) tcs.TrySetCanceled();
                 else tcs.TrySetResult(task.Result);
-
-                if (callback != null) callback(tcs.Task);
-
+                callback?.Invoke(tcs.Task);
             }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
             return tcs.Task;
         }

@@ -1,39 +1,42 @@
-﻿using Spfx.Utilities;
-using Spfx.Utilities.Threading;
+﻿using Spfx.Utilities.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Io;
 using System.IO.Pipes;
+using Spfx.Utilities.Interop;
+using Microsoft.Win32.SafeHandles;
+using System;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
     internal class WindowsProcessContainerInitializer : RemoteProcessContainerInitializer
     {
+        private readonly NamedPipeClientStream m_pipe;
+
         public WindowsProcessContainerInitializer(ProcessSpawnPunchPayload payload, ITypeResolver typeResolver)
             : base(payload, typeResolver)
         {
+            m_pipe = new NamedPipeClientStream(PipeDirection.InOut, true, true, new SafePipeHandle(SafeHandleUtilities.DeserializeRawHandleFromString(payload.WritePipe), true));
         }
 
         internal override ILengthPrefixedStreamReader CreateReader()
         {
-            var readStream = new AnonymousPipeClientStream(PipeDirection.In, Payload.ReadPipe);
-            return new SyncLengthPrefixedStreamReader(readStream, Payload.ProcessUniqueId + " - SubprocessRead");
+            return new AsyncLengthPrefixedStreamReader(m_pipe);
         }
 
         internal override ILengthPrefixedStreamWriter CreateWriter()
         {
-            var writeStream = new AnonymousPipeClientStream(PipeDirection.Out, Payload.WritePipe);
-            return new SyncLengthPrefixedStreamWriter(writeStream, Payload.ProcessUniqueId + " - SubprocessWrite");
+            return new AsyncLengthPrefixedStreamWriter(m_pipe);
         }
 
         internal override IEnumerable<Task> GetShutdownEvents()
         {
             if (string.IsNullOrWhiteSpace(Payload.ShutdownEvent))
-                yield break;
+                return Array.Empty<Task>();
 
             var h = SafeHandleUtilities.CreateWaitHandleFromString(Payload.ShutdownEvent);
-            yield return h.WaitAsync();
+            return new[] { h.WaitAsync() };
         }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using Spfx.Reflection;
 using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
+using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,12 +36,16 @@ namespace Spfx.Runtime.Client
             switch (msg)
             {
                 case RemoteInvocationResponse callResponse:
-                    PendingOperation op = m_pendingRequests.RemoveById(callResponse.CallId);
-                    callResponse.ForwardResult(op);
+                    {
+                        using var op = m_pendingRequests.RemoveById(callResponse.GetValidCallId());
+                        callResponse.ForwardResult(op);
+                    }
                     break;
                 case EventRaisedMessage eventMsg:
-                    var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
-                    handler?.Invoke(eventMsg);
+                    {
+                        var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
+                        handler?.Invoke(eventMsg);
+                    }
                     break;
                 default:
                     base.HandleExternalMessage(msg);
@@ -47,40 +53,52 @@ namespace Spfx.Runtime.Client
             }
         }
 
-        protected override async ValueTask DoWrite(PendingOperation op)
+        protected override async ValueTask DoWrite(PendingOperation op, Stream dataStream)
         {
             bool expectResponse = false;
 
-            if (op.Request is IInterprocessRequest req && req.ExpectResponse)
+            try
             {
-                expectResponse = true;
-
-                op.Task.ContinueWith(t =>
+                if (op.Request is IInterprocessRequest req && req.ExpectResponse)
                 {
-                    m_pendingRequests.RemoveById(req.CallId);
-                }).FireAndForget();
+                    expectResponse = true;
+
+                    op.Task.ContinueWith(t =>
+                    {
+                        m_pendingRequests.RemoveById(req.CallId);
+                    }).FireAndForget();
+                }
+
+                await base.DoWrite(op, dataStream).ConfigureAwait(false);
+
+                if (!expectResponse)
+                {
+                    op.TrySetResult(BoxHelper.BoxedInvalidType);
+                    op.Dispose();
+                }
             }
-
-            await base.DoWrite(op).ConfigureAwait(false);
-
-            if (!expectResponse)
+            catch
             {
-                op.TrySetResult(BoxHelper.BoxedInvalidType);
                 op.Dispose();
+                throw;
             }
         }
 
-        public override Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
+        private class ClientPendingOperation : PendingOperation
         {
-            ct.ThrowIfCancellationRequested();
-
-            var op = new PendingOperation(msg, ct);
-            if (msg is IInterprocessRequest req)
+            public ClientPendingOperation(AbstractClientInterprocessConnection owner, SimpleUniqueIdFactory<PendingOperation> pendingCalls, IInterprocessMessage msg, CancellationToken ct)
+                : base(owner, msg, ct)
             {
-                req.CallId = m_pendingRequests.GetNextId(op);
+                if (msg is IInterprocessRequest req)
+                {
+                    req.CallId = pendingCalls.GetNextId(this);
+                }
             }
+        }
 
-            return EnqueueOperation(op);
+        protected override PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
+        {
+            return new ClientPendingOperation(this, m_pendingRequests, msg, ct);
         }
 
         private class DescribedRemoteEndpoint

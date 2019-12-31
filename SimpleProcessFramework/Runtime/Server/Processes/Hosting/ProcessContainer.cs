@@ -20,7 +20,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         private ISubprocessConnector m_connector;
         private List<Task> m_shutdownEvents = new List<Task>();
         protected ProcessSpawnPunchPayload InputPayload { get; private set; }
-        private GCHandle m_gcHandleToThis;
+        private IDisposable m_gcHandleToThis;
         private ILogger m_logger = NullLogger.Logger;
 
         public string LocalProcessUniqueId => m_processCore.UniqueId;
@@ -31,25 +31,20 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
         protected override void OnDispose()
         {
-            try
-            {
-                m_logger.Info?.Trace("OnDispose");
-                m_processCore?.Dispose();
-                m_connector?.Dispose();
-                base.OnDispose();
-                m_logger.Dispose();
-            }
-            finally
-            {
-                if (m_gcHandleToThis.IsAllocated)
-                    m_gcHandleToThis.Free();
-            }
+            m_logger.Info?.Trace("OnDispose");
+            m_processCore?.Dispose();
+            m_connector?.Dispose();
+            base.OnDispose();
+            m_logger.Dispose();
+            m_gcHandleToThis?.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void Initialize(TextReader input)
         {
-            m_gcHandleToThis = GCHandle.Alloc(this);
+            var gcHandleToThis = GCHandle.Alloc(this);
+            m_gcHandleToThis = new DisposableAction(() => gcHandleToThis.Free());
+
             InputPayload = ProcessSpawnPunchPayload.Deserialize(input);
 
             var typeResolverFactoryType = string.IsNullOrWhiteSpace(InputPayload.TypeResolverFactory)

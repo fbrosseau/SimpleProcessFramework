@@ -1,16 +1,20 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Common
 {
-    internal abstract class AbstractInterprocessConnection : IInterprocessConnection
+    internal abstract class AbstractInterprocessConnection : Disposable, IInterprocessConnection
     {
         public event EventHandler ConnectionLost;
 
@@ -23,29 +27,30 @@ namespace Spfx.Runtime.Common
         protected Stream ReadStream { get; private set; }
         protected Stream WriteStream { get; private set; }
         protected IBinarySerializer BinarySerializer { get; }
+
+        private readonly ILogger m_logger;
+
         protected virtual TimeSpan KeepAliveInterval { get; }
 
         protected class PendingOperation : TaskCompletionSource<object>, IAbortableItem
         {
-            public Stream Data { get; private set; }
+            private readonly ConnectionCodes? m_code;
+
             public IInterprocessMessage Request { get; }
+            public AbstractInterprocessConnection Owner { get; }
             public CancellationToken CancellationToken { get; }
 
-            public PendingOperation(IInterprocessMessage req, CancellationToken ct = default)
+            public PendingOperation(AbstractInterprocessConnection owner, IInterprocessMessage req, CancellationToken ct)
                 : base(TaskCreationOptions.RunContinuationsAsynchronously)
             {
                 CancellationToken = ct;
                 Request = req;
-            }
-
-            public void SerializeRequest(IBinarySerializer serializer)
-            {
-                Data = serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Request, serializer), lengthPrefix: true);
+                Owner = owner;
             }
 
             public PendingOperation(ConnectionCodes code)
             {
-                Data = new MemoryStream(BitConverter.GetBytes((int)code));
+                m_code = code;
             }
 
             public void Abort(Exception ex)
@@ -55,14 +60,55 @@ namespace Spfx.Runtime.Common
 
             public void Dispose()
             {
-                Data.Dispose();
                 TrySetCanceled();
+            }
+
+            internal Stream CreateMessageStream(IBinarySerializer serializer)
+            {
+                if (Request != null)
+                    return serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Request, serializer), lengthPrefix: true);
+                return new MemoryStream(m_serializedCodes[m_code.Value], false);
+            }
+
+            private readonly Dictionary<ConnectionCodes, byte[]> m_serializedCodes =
+                Enum.GetValues(typeof(ConnectionCodes))
+                .Cast<ConnectionCodes>()
+                .ToDictionary(c => c, c =>
+                {
+                    var arr = new byte[4];
+                    BinaryPrimitives.WriteInt32LittleEndian(arr, (int)c);
+                    return arr;
+                });
+
+            internal Task<object> ExecuteToCompletion()
+            {
+                if (!CancellationToken.CanBeCanceled || !(Request is IInterprocessRequest req))
+                    return Task;
+
+                return AwaitOperationWithCancellation(req);
+            }
+
+            private async Task<object> AwaitOperationWithCancellation(IInterprocessRequest req)
+            {
+                using var ctRegistration = CancellationToken.Register(() =>
+                {
+                    Owner.m_logger.Debug?.Trace("Call cancelled by source: " + req.GetTinySummaryString());
+                    Owner.SerializeAndSendMessage(new RemoteCallCancellationRequest
+                    {
+                        CallId = req.CallId,
+                        Destination = req.Destination
+                    }).FireAndForget();
+                }, false);
+
+                return await Task.ConfigureAwait(false);
             }
         }
 
         public AbstractInterprocessConnection(ITypeResolver typeResolver)
         {
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
+
+            m_logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
 
             var config = typeResolver.CreateSingleton<ProcessClusterConfiguration>();
             KeepAliveInterval = config.IpcConnectionKeepAliveInterval;
@@ -79,28 +125,34 @@ namespace Spfx.Runtime.Common
             {
                 try
                 {
-                    await DoWrite(op);
+                    using var serializedData = op.CreateMessageStream(BinarySerializer);
+                    m_logger.Debug?.Trace($"ExecuteWrite: {op.Request.GetTinySummaryString()} ({serializedData.Length} bytes)");
+                    await DoWrite(op, serializedData).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
+                    m_logger.Debug?.Trace(ex, "ExecuteWrite failed");
                     op.Abort(ex);
                     HandleFailure(ex);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                m_logger.Debug?.Trace(ex, "ExecuteWrite->HandleFailure failed");
                 op.Dispose();
                 throw;
             }
         }
 
-        protected virtual ValueTask DoWrite(PendingOperation op)
+        protected virtual ValueTask DoWrite(PendingOperation op, Stream dataStream)
         {
-            return new ValueTask(op.Data.CopyToAsync(WriteStream));
+            return new ValueTask(dataStream.CopyToAsync(WriteStream));
         }
 
         protected void HandleFailure(Exception ex)
         {
+            m_logger.Debug?.Trace(ex, "HandleFailure");
+
             m_pendingWrites.Dispose(ex);
 
             lock (this)
@@ -113,15 +165,18 @@ namespace Spfx.Runtime.Common
             ConnectionLost?.Invoke(this, EventArgs.Empty);
         }
 
-        public virtual void Dispose()
+        protected override void OnDispose()
         {
+            m_logger.Info?.Trace("OnDispose");
+
             ReadStream?.Dispose();
             WriteStream?.Dispose();
             m_pendingWrites.Dispose();
-
             m_writeFlow?.FireAndForget();
             m_readFlow?.FireAndForget();
             m_keepAliveTask?.FireAndForget();
+            base.OnDispose();
+            m_logger.Dispose();
         }
 
         public void Initialize()
@@ -133,12 +188,13 @@ namespace Spfx.Runtime.Common
         {
             try
             {
+                m_logger.Info?.Trace("Begin ConnectStreams");
                 (ReadStream, WriteStream) = await ConnectStreamsAsync();
 
                 RescheduleKeepAlive();
 
-                m_writeFlow = m_pendingWrites.ForEachAsync(i => ExecuteWrite(i));
-
+                m_logger.Info?.Trace("ConnectStreams succeeded, starting Recv&Write loops");
+                m_writeFlow = m_pendingWrites.ForEachAsync(ExecuteWrite);
                 await ReceiveLoop();
             }
             catch (Exception ex)
@@ -153,12 +209,14 @@ namespace Spfx.Runtime.Common
             {
                 while (true)
                 {
-                    using var stream = await ReadStream.ReadLengthPrefixedBlockAsync();
+                    using var stream = await ReadStream.ReadLengthPrefixedBlockAsync().ConfigureAwait(false);
+                    var len = stream.Length;
                     var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
+                    m_logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({len} bytes)");
                     HandleExternalMessage(msg);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 HandleFailure(ex);
             }
@@ -171,6 +229,7 @@ namespace Spfx.Runtime.Common
 
         private void RescheduleKeepAlive()
         {
+            m_logger.Debug?.Trace("RescheduleKeepAlive");
             m_keepAliveTask = CreateKeepAliveTask();
         }
 
@@ -185,7 +244,8 @@ namespace Spfx.Runtime.Common
 
         private async Task DoKeepAlive(TimeSpan delay)
         {
-            await Task.Delay(delay);
+            await Task.Delay(delay).ConfigureAwait(false);
+            m_logger.Debug?.Trace("DoKeepAlive");
             //   await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
             RescheduleKeepAlive();
         }
@@ -197,31 +257,21 @@ namespace Spfx.Runtime.Common
 
         internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
 
-        public virtual Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
+        public Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
-            return EnqueueOperation(new PendingOperation(msg, ct));
+            return EnqueueOperation(CreatePendingOperation(msg, ct));
         }
 
-        protected async Task<object> EnqueueOperation(PendingOperation op)
+        protected virtual PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
         {
-            op.SerializeRequest(BinarySerializer);
+            return new PendingOperation(this, msg, ct);
+        }
+
+        protected Task<object> EnqueueOperation(PendingOperation op)
+        {
+            m_logger.Debug?.Trace("EnqueueOperation " + op.Request.GetTinySummaryString());
             m_pendingWrites.Enqueue(op);
-
-            var ctRegistration = new CancellationTokenRegistration();
-
-            if (op.CancellationToken.CanBeCanceled && op.Request is RemoteInvocationRequest req)
-            {
-                op.CancellationToken.Register(() => SerializeAndSendMessage(new RemoteCallCancellationRequest
-                {
-                    CallId = req.CallId,
-                    Destination = req.Destination
-                }).FireAndForget(), false);
-            }
-
-            using (ctRegistration)
-            {
-                return await op.Task.ConfigureAwait(false);
-            }
+            return op.ExecuteToCompletion();
         }
     }
 }

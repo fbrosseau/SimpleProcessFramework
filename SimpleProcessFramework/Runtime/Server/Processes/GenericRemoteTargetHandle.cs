@@ -32,8 +32,8 @@ namespace Spfx.Runtime.Server.Processes
         internal static GenericRemoteTargetHandle Create(ProcessClusterConfiguration config, ProcessCreationInfo info, ITypeResolver typeResolver)
         {
             if (HostFeaturesHelper.IsWindows && !config.UseGenericProcessSpawnOnWindows)
-                return new DotNetProcessTargetHandle(info, typeResolver);
-            return new DotNetProcessTargetHandle(info, typeResolver);
+                return new GenericManagedProcessTargetHandle(info, typeResolver);
+            return new GenericManagedProcessTargetHandle(info, typeResolver);
         }
 
         protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
@@ -46,6 +46,8 @@ namespace Spfx.Runtime.Server.Processes
                 var ct = cts.Token;
                 var remoteProcessHandles = CreatePunchHandles();
                 disposeBag.Add(remoteProcessHandles);
+
+                await remoteProcessHandles.InitializeAsync(ct).ConfigureAwait(false);
 
                 try
                 {

@@ -22,18 +22,23 @@ namespace Spfx.Runtime.Server.Processes
             m_linuxAddressName = s_tempFolderWslPath.Value + filename;
             var tempAddress = Path.Combine(Path.GetTempPath(), filename);
             m_listenSocket.Bind(new UnixDomainSocketEndPoint(tempAddress));
-            m_listenSocket.Listen(5);
+            m_listenSocket.Listen(1);
         }
 
         public Stream ReadStream { get; private set; }
         public Stream WriteStream { get; private set; }
 
-        public async Task CompleteHandshakeAsync(CancellationToken ct)
+        ValueTask IRemoteProcessInitializer.InitializeAsync(CancellationToken ct)
+        {
+            return default;
+        }
+
+        public async ValueTask CompleteHandshakeAsync(CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
             using (ct.Register(s => ((WslProcessSpawnPunchHandles)s).Dispose(), this, false))
             {
-                m_acceptedSocket = await Task.Factory.FromAsync((cb, s) => m_listenSocket.BeginAccept(cb, s), m_listenSocket.EndAccept, null);
+                m_acceptedSocket = await m_listenSocket.AcceptAsync();
                 WriteStream = ReadStream = new NetworkStream(m_acceptedSocket);
             }
         }

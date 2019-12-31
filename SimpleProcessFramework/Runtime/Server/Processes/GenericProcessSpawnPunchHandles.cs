@@ -4,7 +4,7 @@ using System;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal sealed class GenericProcessSpawnPunchHandles : PipeBasedProcessSpawnPunchHandles
+    internal sealed class GenericProcessSpawnPunchHandles : AnonymousPipeProcessSpawnPunchHandles
     {
         public GenericProcessSpawnPunchHandles()
         {

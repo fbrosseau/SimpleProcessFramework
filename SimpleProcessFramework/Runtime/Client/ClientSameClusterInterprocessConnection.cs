@@ -101,7 +101,7 @@ namespace Spfx.Runtime.Client
             switch (msg)
             {
                 case RemoteInvocationResponse callResponse:
-                    var completion = m_pendingRequests.RemoveById(callResponse.CallId);
+                    var completion = m_pendingRequests.RemoveById(callResponse.GetValidCallId());
                     callResponse.ForwardResult(completion);
                     break;
                 case EventRaisedMessage eventMsg:

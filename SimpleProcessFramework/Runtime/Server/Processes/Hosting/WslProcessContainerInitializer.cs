@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Io;
 using System.Net.Sockets;
+using System;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
@@ -16,7 +17,9 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         {
             Logger.Info?.Trace("Creating Unix socket to " + payload.ReadPipe);
             var sock = SocketUtilities.CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            sock.Connect(new UnixDomainSocketEndPoint(payload.ReadPipe));
+            var connectTask = sock.ConnectAsync(new UnixDomainSocketEndPoint(payload.ReadPipe));
+            if (!connectTask.Wait(TimeSpan.FromSeconds(30)))
+                throw new TimeoutException("Connect timed out on the Unix socket. This operation should be instantaneous.");
             m_stream = new NetworkStream(sock);
         }
 

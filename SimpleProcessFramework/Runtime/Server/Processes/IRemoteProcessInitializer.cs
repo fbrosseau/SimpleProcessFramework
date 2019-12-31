@@ -15,10 +15,11 @@ namespace Spfx.Runtime.Server.Processes
         Stream ReadStream { get; }
         Stream WriteStream { get; }
 
+        ValueTask InitializeAsync(CancellationToken ct);
         string FinalizeInitDataAndSerialize(Process targetProcess, ProcessSpawnPunchPayload remotePunchPayload);
         void DisposeAllHandles();
         void InitializeInLock();
         void HandleProcessCreatedInLock(Process targetProcess, ProcessSpawnPunchPayload initData);
-        Task CompleteHandshakeAsync(CancellationToken ct);
+        ValueTask CompleteHandshakeAsync(CancellationToken ct);
     }
 }

@@ -1,4 +1,6 @@
-﻿#define DEBUG_DISPOSE_LEAK
+﻿#if DEBUG
+//#define DEBUG_DISPOSE_LEAK
+#endif
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -11,6 +13,10 @@ namespace Spfx.Utilities
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal sealed class RentedMemoryStream : AbstractSyncStream
     {
+#if DEBUG
+        public static Action LeakCallback;
+#endif
+
         private static readonly byte[] s_fallbackBuffer = Array.Empty<byte>();
         private byte[] m_buffer = s_fallbackBuffer;
         private int m_count;
@@ -66,6 +72,8 @@ namespace Spfx.Utilities
         {
             if (AppDomain.CurrentDomain.IsFinalizingForUnload() || Environment.HasShutdownStarted)
                 return;
+
+            LeakCallback?.Invoke();
 
 #if DEBUG_DISPOSE_LEAK
             Debug.Fail("Stream was not disposed: " + m_allocationStack);
