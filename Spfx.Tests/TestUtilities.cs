@@ -4,6 +4,7 @@ using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,17 +44,19 @@ namespace Spfx.Tests
             }).Unwrap();
         }
 
+        [DebuggerStepThrough, DebuggerHidden]
         public static void Unwrap(Task task)
         {
             var wrapped = WrapWithUnhandledExceptions(task);
 
-            if (!wrapped.Wrap().Wait(TimeSpan.FromMilliseconds(DefaultTestTimeout)))
+            if (!wrapped.WaitSilent(DefaultTestTimeout))
                 throw new TimeoutException();
 
             // to rethrow the original clean exception
-            wrapped.GetAwaiter().GetResult();
+            wrapped.WaitOrRethrow();
         }
 
+        [DebuggerStepThrough, DebuggerHidden]
         public static T Unwrap<T>(Task<T> task)
         {
             Unwrap((Task)task);
@@ -75,7 +78,7 @@ namespace Spfx.Tests
         {
             task = WrapWithUnhandledExceptions(task);
 
-            if (!task.Wrap().Wait(TimeSpan.FromSeconds(30)))
+            if (!task.WaitSilent(TimeSpan.FromSeconds(30)))
                 throw new TimeoutException();
 
             Assert.AreEqual(TaskStatus.Faulted, task.Status);

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,8 +9,6 @@ namespace Spfx.Utilities.Threading
 {
     internal static partial class TaskEx
     {
-        public static Task NeverCompletingTask { get; } = new TaskCompletionSource<VoidType>().Task;
-
         public static Task<Task> Wrap(this Task t)
         {
             return t.ContinueWith(innerT => innerT, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
@@ -221,21 +221,39 @@ namespace Spfx.Utilities.Threading
             return tcs.Task;
         }
 
+        [DebuggerStepThrough, DebuggerHidden]
         public static T WaitOrTimeout<T>(this Task<T> t, TimeSpan timeout)
         {
             ((Task)t).WaitOrTimeout(timeout);
             return t.Result;
         }
 
+        [DebuggerStepThrough, DebuggerHidden]
         public static void WaitOrTimeout(this Task t, TimeSpan timeout)
         {
             if (!t.Wait(timeout))
                 throw new TimeoutException();
         }
 
+        [DebuggerStepThrough, DebuggerHidden]
         public static void WaitOrRethrow(this Task t)
         {
             t.GetAwaiter().GetResult();
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static bool WaitSilent(this Task t, int timeoutMilliseconds)
+        {
+            if (t.IsCompleted)
+                return true;
+
+            return t.Wrap().Wait(timeoutMilliseconds);
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static bool WaitSilent(this Task t, TimeSpan timeout)
+        {
+            return WaitSilent(t, (int)timeout.TotalMilliseconds);
         }
 
         public static void ExpectAlreadyCompleted(this Task t)
@@ -260,6 +278,42 @@ namespace Spfx.Utilities.Threading
         public static Exception ExtractException<T>(this ValueTask<T> t)
         {
             return t.AsTask().ExtractException();
+        }
+
+        public static Task WhenAllOrRethrow(Task t1) => t1;
+        public static Task WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrowInternal(new List<Task> { t1, t2 });
+        public static Task WhenAllOrRethrow(Task t1, Task t2, Task t3) => WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
+        public static Task WhenAllOrRethrow(IEnumerable<Task> tasks) => WhenAllOrRethrowInternal(tasks.ToList());
+
+        private static async Task WhenAllOrRethrowInternal(List<Task> remaining)
+        {
+            while (remaining.Count > 0)
+            {
+                if (remaining.Count == 1)
+                {
+                    await remaining[0];
+                    return;
+                }
+
+                for (int i = remaining.Count - 1; i >= 0; --i)
+                {
+                    if (!remaining[i].IsCompleted)
+                        continue;
+
+                    remaining[i].Wait();
+                    if (remaining.Count == 1)
+                        return;
+                    remaining.RemoveAt(i);
+                }
+
+                if (remaining.Count == 1)
+                {
+                    await remaining[0];
+                    return;
+                }
+
+                await Task.WhenAny(remaining).ConfigureAwait(false);
+            }
         }
 
         public static Task<VoidType> ToVoidTypeTask(Task t)
