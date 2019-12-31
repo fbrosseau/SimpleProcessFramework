@@ -27,6 +27,16 @@ namespace Spfx.Runtime.Messages
         [DataMember]
         public bool IsRequest { get; set; }
 
+        /// <summary>
+        /// Provides no functional value, it is there to track messages across IPC hops
+        /// </summary>
+        [DataMember]
+        public string TracingId { get; set; }
+
+        public WrappedInterprocessMessage()
+        {
+        }
+
         public static WrappedInterprocessMessage Wrap(IInterprocessMessage msg, IBinarySerializer serializer)
         {
             if (msg is WrappedInterprocessMessage alreadyWrapped)
@@ -37,10 +47,15 @@ namespace Spfx.Runtime.Messages
 
             long callId = 0;
 
-            if (msg is IInterprocessRequest request)
+            if (msg is IStatefulInterprocessMessage request)
             {
                 callId = request.CallId;
             }
+
+            string tracingId = null;
+#if DEBUG
+            tracingId = msg.GetTinySummaryString();
+#endif
 
             var payload = serializer.SerializeToBytes(msg, lengthPrefix: false);
             return new WrappedInterprocessMessage
@@ -49,7 +64,8 @@ namespace Spfx.Runtime.Messages
                 PayloadType = msg.GetType(),
                 Payload = payload,
                 CallId = callId,
-                IsRequest = msg is IInterprocessRequest
+                IsRequest = msg is IInterprocessRequest,
+                TracingId = tracingId
             };
         }
 
@@ -65,5 +81,14 @@ namespace Spfx.Runtime.Messages
 
             return msg;
         }
+
+        public string GetTinySummaryString()
+        {
+            if (!string.IsNullOrWhiteSpace(TracingId))
+                return "Wrapped " + TracingId;
+            return $"Wrapped {PayloadType.GetShortName()}#{CallId} ({Payload.Length} bytes)";
+        }
+
+        public override string ToString() => GetTinySummaryString();
     }
 }

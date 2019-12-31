@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using Spfx.Utilities;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Messages
@@ -8,6 +9,9 @@ namespace Spfx.Runtime.Messages
     {
         [DataMember]
         public object Result { get; set; }
+        
+        public override string GetTinySummaryString()
+                 => nameof(RemoteCallSuccessResponse) + ":" + MostRandomUtilities.FormatObjectToTinyString(Result) + "(#" + CallId + ")";
 
         internal override void ForwardResult(TaskCompletionSource<object> completion)
         {

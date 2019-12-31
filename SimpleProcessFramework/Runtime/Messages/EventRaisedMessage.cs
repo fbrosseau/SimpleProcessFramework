@@ -13,5 +13,8 @@ namespace Spfx.Runtime.Messages
         public string EventName { get; set; }
         [DataMember]
         public object EventArgs { get; set; }
+
+        public override string ToString() => GetTinySummaryString();
+        public string GetTinySummaryString() => $"{GetType().Name} {EventName} (Sub {SubscriptionId})";
     }
 }

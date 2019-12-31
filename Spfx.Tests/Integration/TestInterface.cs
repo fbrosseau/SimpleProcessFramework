@@ -55,7 +55,7 @@ namespace Spfx.Tests.Integration
 
         protected override bool FilterMessage(IInterprocessRequestContext request)
         {
-            Logger.Debug?.Trace(request.Request.ToString());
+            Logger.Debug?.Trace(request.Request.GetTinySummaryString());
             return base.FilterMessage(request);
         }
 

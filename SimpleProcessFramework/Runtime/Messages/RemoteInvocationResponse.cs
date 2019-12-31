@@ -12,5 +12,8 @@ namespace Spfx.Runtime.Messages
         public ProcessEndpointAddress Destination { get; set; }
 
         internal abstract void ForwardResult(TaskCompletionSource<object> completion);
+
+        public override string ToString() => GetTinySummaryString();
+        public virtual string GetTinySummaryString() => $"{GetType().Name}(#{CallId})";
     }
 }

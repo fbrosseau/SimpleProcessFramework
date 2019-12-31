@@ -20,10 +20,8 @@ namespace Spfx.Runtime.Messages
         public object[] GetArgsOrEmpty() => Arguments ?? Array.Empty<object>();
         public override bool ExpectResponse => true;
 
-        public override string ToString()
-        {
-            return nameof(RemoteCallRequest) + ": " + MethodName + " (#" + CallId + ")";
-        }
+        public override string GetTinySummaryString() 
+            => nameof(RemoteCallRequest) + ":" + MethodName + "(#" + CallId + ")";
 
         internal static class Reflection
         {
