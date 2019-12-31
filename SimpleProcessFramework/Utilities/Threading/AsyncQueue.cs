@@ -286,8 +286,8 @@ namespace Spfx.Utilities.Threading
             {
                 if (ex != null && item is IAbortableItem abort)
                     abort.Abort(ex);
-                else
-                    disposable.Dispose();
+
+                disposable.Dispose();
             }
             catch
             {
