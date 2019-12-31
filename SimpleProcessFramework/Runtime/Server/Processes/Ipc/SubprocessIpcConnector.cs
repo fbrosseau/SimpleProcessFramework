@@ -10,7 +10,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
     internal class SubprocessIpcConnector : IpcConnector, ISubprocessConnector
     {
         public SubprocessIpcConnector(ProcessContainer owner, ILengthPrefixedStreamReader readStream, ILengthPrefixedStreamWriter writeStream, ITypeResolver typeResolver)
-            : base(owner, readStream, writeStream, typeResolver)
+            : base(owner, readStream, writeStream, typeResolver, owner.LocalProcessUniqueId)
         {
         }
 

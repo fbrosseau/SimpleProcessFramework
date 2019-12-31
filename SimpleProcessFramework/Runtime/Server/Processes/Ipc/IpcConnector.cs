@@ -40,13 +40,13 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         protected AsyncManualResetEvent Shutdown1ReceivedEvent { get; } = new AsyncManualResetEvent();
         protected AsyncManualResetEvent Shutdown2ReceivedEvent { get; } = new AsyncManualResetEvent();
 
-        protected IpcConnector(IIpcConnectorListener owner, ILengthPrefixedStreamReader readPipe, ILengthPrefixedStreamWriter writePipe, ITypeResolver typeResolver)
+        protected IpcConnector(IIpcConnectorListener owner, ILengthPrefixedStreamReader readPipe, ILengthPrefixedStreamWriter writePipe, ITypeResolver typeResolver, string remoteProcessId)
         {
             Guard.ArgumentNotNull(owner, nameof(owner));
             Guard.ArgumentNotNull(readPipe, nameof(readPipe));
             Guard.ArgumentNotNull(writePipe, nameof(writePipe));
 
-            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
+            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, remoteProcessId);
             Owner = owner;
             ReadPipe = readPipe;
             WritePipe = writePipe;
@@ -107,7 +107,10 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
                     if (frame.IsCodeFrame)
                     {
-                        switch ((InterprocessFrameType)frame.Code)
+                        var code = (InterprocessFrameType)frame.Code;
+                        Logger.Debug?.Trace("Received code " + code);
+
+                        switch (code)
                         {
                             case InterprocessFrameType.Teardown1:
                                 Shutdown1ReceivedEvent.Set();
@@ -121,7 +124,9 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                     else
                     {
                         using var stream = frame.AcquireDataStream();
+                        var len = stream.Length;
                         var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(stream);
+                        Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({stream.Length} bytes)");
                         Owner.OnMessageReceived(msg);
                     }
                 }
@@ -159,16 +164,20 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             }
 
             var stream = BinarySerializer.Serialize(wrapped, lengthPrefix: true);
+            Logger.Debug?.Trace($"Sending out {msg.GetTinySummaryString()} ({stream.Length} bytes)");
             WritePipe.WriteFrame(PendingWriteFrame.CreateFromFramedData(stream));
         }
 
         protected void SendCode(InterprocessFrameType code)
         {
+            Logger.Debug?.Trace("Sending code " + code);
             WritePipe.WriteFrame(PendingWriteFrame.CreateCodeFrame((int)code));
         }
 
         protected async ValueTask ReceiveCode(InterprocessFrameType expectedCode)
         {
+            Logger.Debug?.Trace("Expecting code " + expectedCode);
+
             using var frame = await ReadPipe.GetNextFrame();
 
             if (!frame.IsCodeFrame)

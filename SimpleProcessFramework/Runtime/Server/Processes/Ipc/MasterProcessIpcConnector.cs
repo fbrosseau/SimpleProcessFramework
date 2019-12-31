@@ -11,7 +11,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                   owner,
                   PipeWriterFactory.CreateReader(remoteProcessHandles.ReadStream, owner.ProcessUniqueId + " - MasterRead"),
                   PipeWriterFactory.CreateWriter(remoteProcessHandles.WriteStream, owner.ProcessUniqueId + " - MasterWrite"),
-                  typeResolver)
+                  typeResolver,
+                  owner.ProcessUniqueId)
         {
         }
 
