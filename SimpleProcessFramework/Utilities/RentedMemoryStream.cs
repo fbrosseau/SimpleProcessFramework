@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal sealed class RentedMemoryStream : AbstractSyncStream
     {
         private static readonly byte[] s_fallbackBuffer = Array.Empty<byte>();
@@ -85,6 +86,8 @@ namespace Spfx.Utilities
                 m_disposed = true;
             }
 
+            GC.SuppressFinalize(this);
+
             base.Dispose(disposing);
         }
 
@@ -137,6 +140,8 @@ namespace Spfx.Utilities
 
         public override long Seek(long offset, SeekOrigin origin)
         {
+            EnsureNotDisposed();
+
             var int32Ofs = checked((int)offset);
 
             void SetFinalPosition(int val)
@@ -197,6 +202,8 @@ namespace Spfx.Utilities
 
         public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken ct)
         {
+            EnsureNotDisposed();
+
             await destination.WriteAsync(m_buffer, m_position, m_count, ct).ConfigureAwait(false);
             m_position += m_count;
         }
@@ -228,6 +235,7 @@ namespace Spfx.Utilities
 
         public override void CopyTo(Stream destination, int bufferSize)
         {
+            EnsureNotDisposed();
             destination.Write(m_buffer, m_position, m_count);
             m_position += m_count;
         }
@@ -244,5 +252,7 @@ namespace Spfx.Utilities
             if (m_disposed)
                 throw new ObjectDisposedException(nameof(RentedMemoryStream));
         }
+
+        private string DebuggerDisplay => $"{Position}/{Length} (Cap. {Capacity})";
     }
 }

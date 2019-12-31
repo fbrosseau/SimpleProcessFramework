@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
@@ -15,6 +16,8 @@ namespace Spfx.Tests.Integration
     [TestFixture(SanityTestOptions.UseIpcProxy)]
     public partial class GeneralEndToEndSanity : CommonTestClass
     {
+        private long s_nextUniqueId;
+
         public GeneralEndToEndSanity(SanityTestOptions options)
             : base(options)
         {
@@ -30,10 +33,8 @@ namespace Spfx.Tests.Integration
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicTestInMasterProcess()
         {
-            using (var cluster = CreateTestCluster())
-            {
-                CreateAndValidateTestInterface(cluster, cluster.MasterProcess.UniqueAddress);
-            }
+            using var cluster = CreateTestCluster();
+            CreateAndValidateTestInterface(cluster, cluster.MasterProcess.UniqueAddress);
         }
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
@@ -55,18 +56,13 @@ namespace Spfx.Tests.Integration
             var envVar = "AWGJIEAJWIGJIAWE";
             var envValue = "JIAEWIGJEWIGHJRIEHJI";
 
-            using (var cluster = CreateTestCluster())
+            using var cluster = CreateTestCluster();
+            using var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
             {
-                var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
-                {
-                    procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) };
-                });
+                procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) };
+            });
 
-                using (iface)
-                {
-                    Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
-                }
-            }
+            Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
         }
 
         public class CustomExceptionNotMarshalled : Exception
@@ -80,20 +76,17 @@ namespace Spfx.Tests.Integration
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void ThrowCustomException()
         {
-            using (var cluster = CreateTestCluster())
-            using (var svc = CreateSuccessfulSubprocess(cluster, p => p.TargetFramework = TargetFramework.DirectlyInRootProcess))
-            {
-                var text = Guid.NewGuid().ToString("N");
-                ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
-            }
+            using var cluster = CreateTestCluster();
+            using var svc = CreateSuccessfulSubprocess(cluster, p => p.TargetFramework = TargetFramework.DirectlyInRootProcess);
+
+            var text = Guid.NewGuid().ToString("N");
+            ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
         }
 
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
         {
-            using (var cluster = CreateTestCluster())
-            {
-                TestCallback(cluster, processKind, callbackInMaster);
-            }
+            using var cluster = CreateTestCluster();
+            TestCallback(cluster, processKind, callbackInMaster);
         }
 
         private void TestCallback(ProcessCluster cluster, ProcessKind processKind, bool callbackInMaster = true)
@@ -114,7 +107,7 @@ namespace Spfx.Tests.Integration
             var proxy = CreateProxy(cluster);
             var targetEndpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, targetProcess, WellKnownEndpoints.EndpointBroker);
 
-            var callbackEndpoint = Guid.NewGuid().ToString("N");
+            var callbackEndpoint = "Cb_" + GetNextUniqueId();
 
             Unwrap(targetEndpointBroker.CreateEndpoint(new EndpointCreationRequest
             {
@@ -136,10 +129,8 @@ namespace Spfx.Tests.Integration
 
         private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
         {
-            using (var cluster = CreateTestCluster())
-            {
-                CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
-            }
+            using var cluster = CreateTestCluster();
+            CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
         }
 
         private static void DisposeTestProcess(TestInterfaceWrapper testInterface)
@@ -199,7 +190,7 @@ namespace Spfx.Tests.Integration
 
         private TestInterfaceWrapper CreateSuccessfulSubprocess(ProcessCluster cluster, Action<ProcessCreationInfo> requestCustomization = null)
         {
-            var procId = Guid.NewGuid().ToString("N");
+            var procId = "Proc_" + GetNextUniqueId();
             var req = new ProcessCreationRequest
             {
                 Options = ProcessCreationOptions.ThrowIfExists,
@@ -302,12 +293,12 @@ namespace Spfx.Tests.Integration
 
         private ITestInterface CreateAndValidateTestInterface(ProcessCluster cluster, ProcessEndpointAddress processEndpointAddress)
         {
-            var testEndpoint = Guid.NewGuid().ToString("N");
+            var testEndpoint = "EP_" + GetNextUniqueId();
 
             var proxy = CreateProxy(cluster);
 
             var endpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, processEndpointAddress.TargetProcess, WellKnownEndpoints.EndpointBroker);
-            endpointBroker.CreateEndpoint(testEndpoint, typeof(ITestInterface), typeof(TestInterface));
+            Unwrap(endpointBroker.CreateEndpoint(testEndpoint, typeof(ITestInterface), typeof(TestInterface)));
             Log("Create Endpoint " + testEndpoint);
 
             var testInterface = CreateProxyInterface<ITestInterface>(proxy, cluster, processEndpointAddress.TargetProcess, testEndpoint);
@@ -316,6 +307,11 @@ namespace Spfx.Tests.Integration
             Log("Validated Endpoint " + testEndpoint);
 
             return testInterface;
+        }
+
+        private string GetNextUniqueId()
+        {
+            return Interlocked.Increment(ref s_nextUniqueId).ToString("X4");
         }
     }
 }
