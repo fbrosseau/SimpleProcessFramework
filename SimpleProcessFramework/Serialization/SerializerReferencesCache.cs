@@ -1,11 +1,10 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Interfaces;
+using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization.DataContracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
 namespace Spfx.Serialization
@@ -17,6 +16,7 @@ namespace Spfx.Serialization
         private readonly SerializerReferencesCache m_parent;
 
         public static SerializerReferencesCache HardcodedReferences { get; }
+        public bool IsFrozen { get; private set; }
 
         static SerializerReferencesCache()
         {
@@ -24,7 +24,8 @@ namespace Spfx.Serialization
 
             void AddHardcodedReference(object o)
             {
-                HardcodedReferences.m_referencesByObject[o] = -HardcodedReferences.m_referencesByObject.Count - 1;
+                if (!HardcodedReferences.m_referencesByObject.ContainsKey(o))
+                    HardcodedReferences.m_referencesByObject[o] = -HardcodedReferences.m_referencesByObject.Count - 1;
             }
 
             void AddHardcodedTypeReference(Type t, bool addAllTypeVariations = false)
@@ -43,33 +44,12 @@ namespace Spfx.Serialization
             }
 
             AddHardcodedReference(ReflectedAssemblyInfo.Create(typeof(ReflectedAssemblyInfo).Assembly));
-            
-            var primitiveTypes = new[] 
+
+            var primitiveTypes = ReflectedTypeInfo.PrimitiveWellKnownTypes;
+            foreach (var t in primitiveTypes)
             {
-                typeof(string),
-                typeof(char),
-                typeof(bool),
-                typeof(sbyte),
-                typeof(short),
-                typeof(int),
-                typeof(long),
-                typeof(byte),
-                typeof(ushort),
-                typeof(uint),
-                typeof(ulong),
-                typeof(Guid),
-                typeof(float),
-                typeof(double),
-                typeof(decimal),
-                typeof(object),
-                typeof(IPAddress),
-                typeof(IPEndPoint),
-                typeof(DnsEndPoint),
-                typeof(DateTime),
-                typeof(TimeSpan),
-                typeof(Version),
-                typeof(X509Certificate),
-            };
+                AddHardcodedTypeReference(t, addAllTypeVariations: true);
+            }
 
             var criticalInternalTypes = new[]
             {
@@ -84,15 +64,11 @@ namespace Spfx.Serialization
                 typeof(RemoteClientConnectionResponse),
                 typeof(WrappedInterprocessMessage),
                 typeof(RemoteExceptionInfo),
-                typeof(MarshalledRemoteExceptionInfo)
+                typeof(MarshalledRemoteExceptionInfo),
+                typeof(EndpointCreationRequest),
+                typeof(ProcessAndEndpointCreationOutcome),
+                typeof(ProcessEndpointAddress)
             };
-
-            AddHardcodedTypeReference(typeof(CancellationToken));
-
-            foreach (var t in primitiveTypes)
-            {
-                AddHardcodedTypeReference(t, addAllTypeVariations: true);
-            }
 
             var memberNames = new HashSet<string>();
 
@@ -100,10 +76,15 @@ namespace Spfx.Serialization
             {
                 AddHardcodedTypeReference(t);
 
-                var serializer = (BaseReflectedDataContractSerializer)DefaultBinarySerializer.GetSerializer(t);
-                foreach (var member in serializer.Members)
+                if (!(DefaultBinarySerializer.GetSerializer(t) is IComplexObjectSerializer serializer))
+                    return;
+
+                foreach (var member in serializer.GetSerializedMembers())
                 {
                     memberNames.Add(member.Name);
+
+                    if (!member.Type.IsInterface)
+                        AddHardcodedTypeReference(member.Type);
                 }
             }
 
@@ -161,6 +142,8 @@ namespace Spfx.Serialization
                 Array.Sort(refs, (kvp1, kvp2) => kvp1.Value.CompareTo(kvp2.Value));
                 m_orderedReferences = refs;
             }
+
+            IsFrozen = true;
 
             serializerSession.Writer.WriteEncodedUInt32(checked((uint)m_orderedReferences.Length));
             foreach (var reference in m_orderedReferences)

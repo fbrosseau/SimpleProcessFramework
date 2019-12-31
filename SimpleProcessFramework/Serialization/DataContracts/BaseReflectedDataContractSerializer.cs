@@ -1,11 +1,18 @@
-﻿using System;
+﻿using Spfx.Serialization.Serializers;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace Spfx.Serialization.DataContracts
 {
-    internal abstract class BaseReflectedDataContractSerializer : ITypeSerializer
+    internal interface IComplexObjectSerializer : ITypeSerializer
+    {
+        IReadOnlyList<(string Name, Type Type)> GetSerializedMembers();
+    }
+
+    internal abstract class BaseReflectedDataContractSerializer : BaseTypeSerializer, IComplexObjectSerializer
     {
         internal class ReflectedMemberTypeInfo
         {
@@ -22,19 +29,25 @@ namespace Spfx.Serialization.DataContracts
             public Func<object, object> GetAccessor;
             public Action<object, object> SetAccessor;
             public ReflectedMemberTypeInfo TypeInfo;
+
+            public override string ToString()
+            {
+                return $"{Name} -> {TypeInfo.MemberType.Name}";
+            }
         }
 
         internal ReflectedDataMember[] Members { get; }
+        IReadOnlyList<(string Name, Type Type)> IComplexObjectSerializer.GetSerializedMembers() => Members.Select(m => (m.Name, m.TypeInfo.MemberType)).ToArray();
 
         protected readonly Type ReflectedType;
-        protected readonly bool IssSerializedByRef;
+        protected readonly bool IsSerializedByRef;
         private static readonly Dictionary<Type, ReflectedMemberTypeInfo> s_typeInfos = new Dictionary<Type, ReflectedMemberTypeInfo>();
         private static readonly Func<object, bool> s_fallbackIsDefaultValue = o => o is null;
 
         protected BaseReflectedDataContractSerializer(Type actualType, List<ReflectedDataMember> members)
         {
             ReflectedType = actualType;
-            IssSerializedByRef = actualType.GetCustomAttribute<DataContractAttribute>()?.IsReference ?? false;
+            IsSerializedByRef = actualType.GetCustomAttribute<DataContractAttribute>()?.IsReference ?? false;
             Members = members.ToArray();
         }
 
@@ -112,11 +125,14 @@ namespace Spfx.Serialization.DataContracts
             if (actualType is null || actualType == typeof(object))
                 yield break;
 
-            foreach (var m in actualType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-                yield return m;
-
             foreach (var m in EnumerateAllDataMembers(actualType.BaseType))
                 yield return m;
+
+            foreach (var m in actualType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (m.DeclaringType == actualType)
+                    yield return m;
+            }
         }
 
         private static ReflectedMemberTypeInfo GetTypeInfo(Type memberType)
@@ -154,7 +170,19 @@ namespace Spfx.Serialization.DataContracts
             }
         }
 
-        public void WriteObject(SerializerSession bw, object graph)
+        public override void WriteObjectWithHeader(SerializerSession session, object graph)
+        {
+            if (IsSerializedByRef && session.CanAddReferences)
+            {
+                session.WriteReference(graph);
+            }
+            else
+            {
+                base.WriteObjectWithHeader(session, graph);
+            }
+        }
+
+        public override void WriteObject(SerializerSession bw, object graph)
         {
             var baseLocation = bw.Stream.Position;
             bw.Stream.Position += 4;
@@ -180,8 +208,6 @@ namespace Spfx.Serialization.DataContracts
 
             bw.WritePositionDelta(baseLocation);
         }
-
-        public abstract object ReadObject(DeserializerSession reader);
 
         protected interface IDataContractDeserializationHandler
         {

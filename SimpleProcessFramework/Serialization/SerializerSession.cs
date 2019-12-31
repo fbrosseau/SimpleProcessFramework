@@ -8,6 +8,7 @@ namespace Spfx.Serialization
     {
         public Stream Stream { get; }
         public SerializerBinaryWriter Writer { get; }
+        public bool CanAddReferences => !m_localReferences.IsFrozen;
 
         private readonly SerializerReferencesCache m_localReferences = new SerializerReferencesCache(SerializerReferencesCache.HardcodedReferences);
         private long m_originalBaseLocation;

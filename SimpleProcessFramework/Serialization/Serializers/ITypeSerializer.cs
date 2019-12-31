@@ -2,7 +2,9 @@
 {
     internal interface ITypeSerializer
     {
-        void WriteObject(SerializerSession bw, object graph);
+        void WriteObject(SerializerSession session, object graph);
+        void WriteObjectWithHeader(SerializerSession session, object graph);
+
         object ReadObject(DeserializerSession reader);
     }
 

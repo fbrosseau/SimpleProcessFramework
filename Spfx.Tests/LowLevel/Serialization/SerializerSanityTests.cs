@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Spfx.Utilities;
 using System.Net;
+using Spfx.Reflection;
 
 namespace Spfx.Tests.LowLevel.Serialization
 {
@@ -83,6 +84,8 @@ namespace Spfx.Tests.LowLevel.Serialization
                 ULongEnum.B,
                 FlagsEnum.A | FlagsEnum.C,
                 BigFlagsEnum.A | BigFlagsEnum.AF,
+                (ReflectedTypeInfo)typeof(string),
+                (ReflectedTypeInfo)typeof(FlagsEnum),
             }.Select(o => CreateTypedObject(o)).ToArray();
 
             var valuetypes = values.Where(o => o.Type.IsValueType).ToArray();

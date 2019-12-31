@@ -4,11 +4,21 @@ using System;
 
 namespace Spfx.Serialization.Serializers
 {
-    internal abstract class TypedSerializer<T> : ITypeSerializer, ITypeSerializer<T>
+    internal abstract class BaseTypeSerializer : ITypeSerializer
+    {
+        public abstract object ReadObject(DeserializerSession reader);
+        public abstract void WriteObject(SerializerSession session, object graph);
+
+        public virtual void WriteObjectWithHeader(SerializerSession session, object graph)
+        {
+            session.WriteMetadata(DataKind.Graph);
+            WriteObject(session, graph);
+        }
+    }
+
+    internal abstract class TypedSerializer<T> : BaseTypeSerializer, ITypeSerializer<T>
     {
         protected readonly Type TypeofT = ReflectionUtilities.GetType<T>();
-
-        public abstract object ReadObject(DeserializerSession session);
 
         public virtual T ReadTypedObject(DeserializerSession session)
         {
@@ -19,7 +29,5 @@ namespace Spfx.Serialization.Serializers
         {
             WriteObject(session, BoxHelper.Box(graph));
         }
-
-        public abstract void WriteObject(SerializerSession bw, object graph);
     }
 }

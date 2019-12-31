@@ -125,9 +125,7 @@ namespace Spfx.Serialization
                 bw.WriteType(actualType);
             }
 
-            bw.WriteMetadata(DataKind.Graph);
-
-            SerializeExactType(bw, graph, actualType);
+            GetSerializer(actualType).WriteObjectWithHeader(bw, graph);
         }
 
         internal static void SerializeExactType(SerializerSession bw, object graph, Type actualType)
@@ -137,28 +135,6 @@ namespace Spfx.Serialization
         }
 
         private static readonly Dictionary<Type, ITypeSerializer> s_knownSerializers;
-
-        internal class SimpleTypeSerializer : ITypeSerializer
-        {
-            private readonly Action<SerializerSession, object> m_write;
-            private readonly Func<DeserializerSession, object> m_read;
-
-            public SimpleTypeSerializer(Action<SerializerSession, object> write, Func<DeserializerSession, object> read)
-            {
-                m_write = write;
-                m_read = read;
-            }
-
-            public object ReadObject(DeserializerSession reader)
-            {
-                return m_read(reader);
-            }
-
-            public void WriteObject(SerializerSession bw, object graph)
-            {
-                m_write(bw, graph);
-            }
-        }
 
         static DefaultBinarySerializer()
         {
@@ -172,9 +148,9 @@ namespace Spfx.Serialization
             void AddGeneric<T>(Action<SerializerSession, T> serializer, Func<DeserializerSession, T> deserializer, bool discoverAllImplementations = false)
             {
                 var thisT = typeof(T);
-                var serializerInstance = new SimpleTypeSerializer(
+                var serializerInstance = new SimpleTypeSerializer<T>(
                     (bw, o) => serializer(bw, (T)o),
-                    br => BoxHelper.Box(deserializer(br)));
+                    br => deserializer(br));
 
                 AddSerializer(thisT, serializerInstance);
 
