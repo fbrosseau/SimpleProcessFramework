@@ -27,9 +27,9 @@ namespace Spfx.Reflection
 
                 methodDescriptors.Add(new ProcessEndpointMethodDescriptor
                 {
-                    Method = new ReflectedMethodInfo(m),
+                    Method = new ReflectedMethodInfo(m, cacheVisitedTypes: true),
                     MethodId = methodDescriptors.Count,
-                    IsCancellable = m.GetParameters().Any(p => p.ParameterType == typeof(CancellationToken))
+                    IsCancellable = m.GetParameters().Select(p => p.ParameterType).Contains(typeof(CancellationToken))
                 });
             }
 
@@ -38,6 +38,7 @@ namespace Spfx.Reflection
             {
                 uniqueEventNames.Add(e.Name);
                 ReflectedTypeInfo.AddWellKnownType(e.EventHandlerType.GetMethod("Invoke").GetParameters()[1].ParameterType);
+                ReflectedTypeInfo.AddWellKnownType(e.DeclaringType);
             }
 
             return new ProcessEndpointDescriptor

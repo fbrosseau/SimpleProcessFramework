@@ -30,10 +30,12 @@ namespace Spfx.Reflection
             }
         }
 
-        public ReflectedEventInfo(EventInfo e)
+        public ReflectedEventInfo(EventInfo e, bool cacheVisitedTypes = false)
         {
+            ReflectedTypeInfo GetType(Type t) => cacheVisitedTypes ? ReflectedTypeInfo.AddWellKnownType(t) : t;
+
             Name = e.Name;
-            Type = e.DeclaringType;
+            Type = GetType(e.DeclaringType);
 
             m_resolvedEvent = e;
         }

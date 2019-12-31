@@ -292,7 +292,7 @@ namespace Spfx.Runtime.Server
             public long CallId { get; }
 
             public PendingCallKey(IInterprocessRequestContext req)
-                : this(req.Client, req.Request.CallId)
+                : this(req.Client, req.Request.GetValidCallId())
             {
             }
 

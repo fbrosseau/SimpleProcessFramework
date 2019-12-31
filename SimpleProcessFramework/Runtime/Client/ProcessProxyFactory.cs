@@ -238,13 +238,13 @@ namespace Spfx.Runtime.Client
             foreach (var m in methods)
             {
                 var methodInfoField = finalType.GetField(methodInfoFieldNames[m], BindingFlags.NonPublic | BindingFlags.Static);
-                methodInfoField.SetValue(null, new ReflectedMethodInfo(m));
+                methodInfoField.SetValue(null, new ReflectedMethodInfo(m, cacheVisitedTypes: true));
             }
 
             foreach(var evt in events)
             {
                 var eventInfoField = finalType.GetField(GetEventInfoField(evt), BindingFlags.NonPublic | BindingFlags.Static);
-                eventInfoField.SetValue(null, new ReflectedEventInfo(evt));
+                eventInfoField.SetValue(null, new ReflectedEventInfo(evt, cacheVisitedTypes: true));
             }
                        
             return (Func<ProcessProxyImplementation>)Delegate.CreateDelegate(typeof(Func<ProcessProxyImplementation>), factoryMethod);

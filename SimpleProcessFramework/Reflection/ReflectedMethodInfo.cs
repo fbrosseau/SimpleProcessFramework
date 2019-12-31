@@ -34,15 +34,18 @@ namespace Spfx.Reflection
             }
         }
 
-        public ReflectedMethodInfo(MethodInfo m)
+        public ReflectedMethodInfo(MethodInfo m, bool cacheVisitedTypes = false)
         {
             Name = m.Name;
-            Type = m.DeclaringType;
+
+            ReflectedTypeInfo GetType(Type t) => cacheVisitedTypes ? ReflectedTypeInfo.AddWellKnownType(t) : t;
+
+            Type = GetType(m.DeclaringType);
 
             var args = m.GetParameters();
-            if(args.Length > 0)
+            if (args.Length > 0)
             {
-                Arguments = args.Select(p => (ReflectedTypeInfo)p.ParameterType).ToArray();
+                Arguments = args.Select(p => GetType(p.ParameterType)).ToArray();
             }
 
             m_resolvedMethod = m;

@@ -1,7 +1,10 @@
 ﻿using Spfx.Utilities;
 using System;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 
 namespace Spfx.Reflection
 {
@@ -20,6 +23,14 @@ namespace Spfx.Reflection
 
         [DataMember]
         public string Name { get; private set; }
+
+        static ReflectedTypeInfo()
+        {
+            foreach (var primitive in PrimitiveWellKnownTypes)
+            {
+                AddWellKnownType(primitive);
+            }
+        }
 
         public Type ResolvedType
         {
@@ -76,6 +87,8 @@ namespace Spfx.Reflection
         public override int GetHashCode() => Assembly.GetHashCode() ^ Name.GetHashCode();
         public override string ToString() => Name;
 
+        public string GetShortName() => m_resolvedType?.Name ?? Name;
+
         public bool Equals(ReflectedTypeInfo other)
         {
             if (ReferenceEquals(this, other))
@@ -84,5 +97,33 @@ namespace Spfx.Reflection
                 return false;
             return other.Name == Name && other.Assembly.Equals(Assembly);
         }
+
+        public static ReadOnlySpan<Type> PrimitiveWellKnownTypes => new[]
+        {
+            typeof(string),
+            typeof(char),
+            typeof(bool),
+            typeof(sbyte),
+            typeof(short),
+            typeof(int),
+            typeof(long),
+            typeof(byte),
+            typeof(ushort),
+            typeof(uint),
+            typeof(ulong),
+            typeof(Guid),
+            typeof(float),
+            typeof(double),
+            typeof(decimal),
+            typeof(object),
+            typeof(IPAddress),
+            typeof(IPEndPoint),
+            typeof(DnsEndPoint),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Version),
+            typeof(X509Certificate),
+            typeof(CancellationToken)
+        };
     }
 }
