@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Common
 {
-    internal abstract class AbstractInterprocessConection : IInterprocessConnection
+    internal abstract class AbstractInterprocessConnection : IInterprocessConnection
     {
         public event EventHandler ConnectionLost;
 
@@ -60,7 +60,7 @@ namespace Spfx.Runtime.Common
             }
         }
 
-        public AbstractInterprocessConection(ITypeResolver typeResolver)
+        public AbstractInterprocessConnection(ITypeResolver typeResolver)
         {
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 

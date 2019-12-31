@@ -17,7 +17,7 @@ namespace Spfx.Runtime.Client
         Task ChangeEventSubscription(EventRegistrationRequestInfo req);
     }
 
-    internal abstract class AbstractClientInterprocessConnection : AbstractInterprocessConection, IClientInterprocessConnection
+    internal abstract class AbstractClientInterprocessConnection : AbstractInterprocessConnection, IClientInterprocessConnection
     {
         private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
         private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server
 {
-    internal class ServerInterprocessChannel : AbstractInterprocessConection, IInterprocessClientChannel
+    internal class ServerInterprocessChannel : AbstractInterprocessConnection, IInterprocessClientChannel
     {
         public string UniqueId { get; }
 
