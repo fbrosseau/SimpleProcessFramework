@@ -44,6 +44,7 @@ namespace Spfx.Tests.Integration
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
 
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         [TestCaseSource(nameof(AllNetcore_AllArchs))]
         public void BasicNetcore_SpecificRuntime(TargetFramework fw) => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = fw; });
 
