@@ -91,17 +91,6 @@ namespace Spfx.Utilities
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Task<T> GetDefaultSuccessTask<T>()
-        {
-            return TaskHelper<T>.DefaultSuccessTask;
-        }
-
-        private static class TaskHelper<T>
-        {
-            public static readonly Task<T> DefaultSuccessTask = Task.FromResult(default(T));
-        }
-
         private sealed class Int16BoxHelper : BoxHelperImpl<short>
         {
             private const short s_min = -10;

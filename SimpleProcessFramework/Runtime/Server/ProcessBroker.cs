@@ -260,7 +260,7 @@ namespace Spfx.Runtime.Server
             return true;
         }
 
-        void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct)
+        void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req)
         {
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));

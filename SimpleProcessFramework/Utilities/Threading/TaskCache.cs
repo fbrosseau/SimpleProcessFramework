@@ -9,6 +9,7 @@ namespace Spfx.Utilities.Threading
         internal static readonly Task<bool> TrueTask = Task.FromResult(true);
         internal static readonly Task<bool> FalseTask = GetDefaultValuedTask<bool>();
         internal static readonly Task<VoidType> VoidTypeTask = GetDefaultValuedTask<VoidType>();
+        internal static readonly Task<object> NullObject = GetDefaultValuedTask<object>();
 
         public static Task<T> FromResult<T>(T val)
         {

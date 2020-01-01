@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server
 {
-    internal class ServerInterprocessChannel : AbstractInterprocessConnection, IInterprocessClientChannel
+    internal class ServerInterprocessChannel : StreamBasedInterprocessConnection, IInterprocessClientChannel
     {
         public string UniqueId { get; }
 
@@ -61,24 +61,6 @@ namespace Spfx.Runtime.Server
                     base.HandleExternalMessage(msg);
                     break;
             }
-        }
-
-        public void SendFailure(long callId, Exception fault)
-        {
-            SendMessage(new RemoteCallFailureResponse
-            {
-                CallId = callId,
-                Error = RemoteExceptionInfo.Create(fault)
-            });
-        }
-
-        public void SendResponse(long callId, object result)
-        {
-            SendMessage(new RemoteCallSuccessResponse
-            {
-                CallId = callId,
-                Result = result
-            });
         }
 
         public void SendMessage(IInterprocessMessage msg)

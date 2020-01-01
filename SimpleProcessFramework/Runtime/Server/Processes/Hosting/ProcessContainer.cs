@@ -125,7 +125,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             Dispose();
         }
 
-        void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct)
+        void IInternalMessageDispatcher.ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req)
         {
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));

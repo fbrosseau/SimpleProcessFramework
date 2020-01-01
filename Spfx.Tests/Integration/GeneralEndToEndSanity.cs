@@ -276,6 +276,14 @@ namespace Spfx.Tests.Integration
             Log("GetPointerSize");
             Assert.AreEqual(expectedPtrSize, Unwrap(iface.GetPointerSize()));
 
+            using (var cts = new CancellationTokenSource())
+            {
+                var cancellableCall = iface.GetDummyValue(delay: Timeout.InfiniteTimeSpan, ct: cts.Token);
+                Assert.IsFalse(cancellableCall.IsCompleted);
+                cts.Cancel();
+                ExpectException(cancellableCall);
+            }
+
             if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
             {
                 var ver = Unwrap(iface.GetNetCoreVersion());

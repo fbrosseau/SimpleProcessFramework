@@ -6,6 +6,6 @@ namespace Spfx.Runtime.Server
     public interface IInternalMessageDispatcher
     {
         string LocalProcessUniqueId { get; }
-        void ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req, CancellationToken ct);
+        void ForwardOutgoingMessage(IInterprocessClientChannel source, IInterprocessMessage req);
     }
 }

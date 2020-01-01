@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Client
 {
-    internal class TcpClientInterprocessConnection : AbstractClientInterprocessConnection
+    internal class TcpClientInterprocessConnection : StreamBasedClientInterprocessConnection
     {
         protected EndPoint Destination { get; }
 

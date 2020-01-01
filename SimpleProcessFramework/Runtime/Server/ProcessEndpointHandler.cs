@@ -1,4 +1,5 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities.Threading;
@@ -23,6 +24,7 @@ namespace Spfx.Runtime.Server
         private readonly ProcessEndpointMethodDescriptor[] m_methods;
         private readonly Dictionary<string, ProcessEndpointMethodDescriptor> m_methodsByName;
         private readonly Dictionary<string, EventSubscriptionInfo> m_eventsByName = new Dictionary<string, EventSubscriptionInfo>();
+        private readonly ILogger m_logger;
 
         protected ProcessEndpointHandler(object realTarget, ProcessEndpointDescriptor descriptor)
         {
@@ -31,25 +33,39 @@ namespace Spfx.Runtime.Server
             m_descriptor = descriptor;
             m_methods = m_descriptor.Methods.ToArray();
             m_methodsByName = m_methods.ToDictionary(m => m.Method.GetUniqueName());
+            m_logger = NullLogger.Logger; // TODO
         }
 
         protected override void OnDispose()
         {
+            m_logger.Info?.Trace("OnDispose");
+
             CancelAllCalls();
             (m_realTarget as IDisposable)?.Dispose();
             base.OnDispose();
+            m_logger.Dispose();
         }
 
         protected override async ValueTask OnTeardownAsync(CancellationToken ct)
         {
+            m_logger.Info?.Trace("OnTeardownAsync");
+
             if (m_realTarget is IAsyncDestroyable d)
                 await d.TeardownAsync(ct).ConfigureAwait(false);
 
             await base.OnTeardownAsync(ct);
         }
 
+        public async Task InitializeAsync(IProcess parentProcess)
+        {
+            m_logger.Info?.Trace("InitializeAsync");
+            if (m_realTargetAsEndpoint != null)
+                await m_realTargetAsEndpoint.InitializeAsync(parentProcess).ConfigureAwait(false);
+        }
+        
         private void CancelAllCalls()
         {
+            m_logger.Info?.Trace("CancelAllCalls");
             List<IInterprocessRequestContext> requests;
             lock (m_pendingCalls)
             {
@@ -73,7 +89,12 @@ namespace Spfx.Runtime.Server
             try
             {
                 if (m_realTargetAsEndpoint?.FilterMessage(req) == false)
+                {
+                    m_logger.Debug?.Trace("Request filtered out: " + req.Request.GetTinySummaryString());
                     return;
+                }
+
+                m_logger.Debug?.Trace("Dispatching request: " + req.Request.GetTinySummaryString());
 
                 switch (req.Request)
                 {
@@ -94,7 +115,7 @@ namespace Spfx.Runtime.Server
                         break;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 req.Fail(ex);
             }
@@ -105,18 +126,26 @@ namespace Spfx.Runtime.Server
             var key = new PendingCallKey(req);
             IInterprocessRequestContext existingCall;
 
-            lock(m_pendingCalls)
+            lock (m_pendingCalls)
             {
                 // we don't actually remove the call here, the only path that removes calls is the actual completion/failure.
                 m_pendingCalls.TryGetValue(key, out existingCall);
             }
 
-            existingCall?.Cancel();
+            if (existingCall != null)
+            {
+                m_logger.Debug?.Trace("Cancelling request: " + existingCall.Request.GetTinySummaryString());
+                existingCall.Cancel();
+            }
+            else
+            {
+                m_logger.Debug?.Trace("Received cancel for unknown request " + key);
+            }
         }
 
         private void DoRemoteCall(IInterprocessRequestContext req, RemoteCallRequest remoteCall)
         {
-            if(remoteCall.MethodName != null)
+            if (remoteCall.MethodName != null)
             {
                 if (!m_methodsByName.TryGetValue(remoteCall.MethodName, out var m))
                     ThrowBadInvocation("Method not found: " + remoteCall.MethodName);
@@ -162,7 +191,7 @@ namespace Spfx.Runtime.Server
 
             private Delegate CreateEventHandler()
             {
-                if(m_eventHandler is null)
+                if (m_eventHandler is null)
                     m_eventHandler = Delegate.CreateDelegate(Event.ResolvedEvent.EventHandlerType, this, s_eventHandlerMethod);
                 return m_eventHandler;
             }
@@ -185,7 +214,7 @@ namespace Spfx.Runtime.Server
                     m_listeners = newList;
                 }
 
-                if(newSub)
+                if (newSub)
                 {
                     Event.ResolvedEvent.AddEventHandler(m_target, CreateEventHandler());
                 }
@@ -211,7 +240,7 @@ namespace Spfx.Runtime.Server
             public void OnEventRaised(object sender, object args)
             {
                 var listeners = m_listeners;
-                foreach(var l in listeners)
+                foreach (var l in listeners)
                 {
                     l.Client.SendMessage(new EventRaisedMessage
                     {
@@ -249,7 +278,7 @@ namespace Spfx.Runtime.Server
 
             req.Respond(null);
         }
-        
+
         protected void ThrowBadInvocation(string reason)
         {
             throw new BadMethodInvocationException(reason);
@@ -270,12 +299,6 @@ namespace Spfx.Runtime.Server
         }
 
         protected abstract void DoRemoteCallImpl(IInterprocessRequestContext callRequest); // codegen
-
-        public async Task InitializeAsync(IProcess parentProcess)
-        {
-            if (m_realTargetAsEndpoint != null)
-                await m_realTargetAsEndpoint.InitializeAsync(parentProcess).ConfigureAwait(false);
-        }
 
         #region Inner classes
         internal static class Reflection
@@ -304,16 +327,22 @@ namespace Spfx.Runtime.Server
 
             public bool Equals(PendingCallKey other)
             {
-                return other.CallId == CallId && ReferenceEquals(Client, other.Client);
+                return other.CallId == CallId && Client.UniqueId == other.Client.UniqueId;
             }
 
             public override int GetHashCode()
             {
-                return RuntimeHelpers.GetHashCode(Client) ^ CallId.GetHashCode();
+                return Client.UniqueId.GetHashCode() ^ CallId.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return $"{CallId}@{Client.UniqueId}";
             }
 
             public override bool Equals(object obj) => (obj as PendingCallKey?)?.Equals(this) ?? false;
         }
+
         #endregion
     }
 }

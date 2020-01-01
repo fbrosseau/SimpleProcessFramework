@@ -85,19 +85,11 @@ namespace Spfx.Runtime.Server
             
             if (Completion.Status == TaskStatus.RanToCompletion)
             {
-                Client.SendMessage(new RemoteCallSuccessResponse
-                {
-                    CallId = Request.CallId,
-                    Result = Completion.Result
-                });
+                Client.SendMessage(new RemoteCallSuccessResponse(Request.CallId, Completion.Result));
             }
             else
             {
-                Client.SendMessage(new RemoteCallFailureResponse
-                {
-                    CallId = Request.CallId,
-                    Error = RemoteExceptionInfo.Create(Completion.ExtractException())
-                });
+                Client.SendMessage(RemoteCallFailureResponse.Create(Request.CallId, Completion));
             }
         }
 
@@ -117,6 +109,11 @@ namespace Spfx.Runtime.Server
                 throw new InvalidOperationException("Methods cannot return null Tasks");
 
             m_tcs.CompleteWithResultAsObject<T>(t);
+        }
+
+        public override string ToString()
+        {
+            return Request.GetTinySummaryString() + " -> " + Client.UniqueId;
         }
 
         internal static class Reflection

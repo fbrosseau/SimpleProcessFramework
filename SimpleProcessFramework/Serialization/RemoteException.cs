@@ -48,6 +48,7 @@ namespace Spfx.Serialization
 
         private RemoteExceptionInfo(Exception ex)
         {
+            Guard.ArgumentNotNull(ex, nameof(ex));
             StackTrace = ex.StackTrace;
             Message = ex.Message;
             ExceptionType = ex.GetType();

@@ -1,4 +1,5 @@
 ﻿using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -36,7 +37,7 @@ namespace Spfx.Runtime.Server.Processes
         public async ValueTask CompleteHandshakeAsync(CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-            using (ct.Register(s => ((WslProcessSpawnPunchHandles)s).Dispose(), this, false))
+            using (ct.RegisterDispose(this))
             {
                 m_acceptedSocket = await m_listenSocket.AcceptAsync();
                 WriteStream = ReadStream = new NetworkStream(m_acceptedSocket);

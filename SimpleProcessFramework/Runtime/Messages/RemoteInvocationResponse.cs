@@ -11,6 +11,11 @@ namespace Spfx.Runtime.Messages
 
         public ProcessEndpointAddress Destination { get; set; }
 
+        protected RemoteInvocationResponse(long callId)
+        {
+            CallId = callId;
+        }
+
         internal abstract void ForwardResult(TaskCompletionSource<object> completion);
 
         public override string ToString() => GetTinySummaryString();

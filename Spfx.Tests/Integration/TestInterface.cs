@@ -81,20 +81,28 @@ namespace Spfx.Tests.Integration
 
         public async Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
         {
-            if (delay > TimeSpan.Zero)
+            try
             {
-                await Task.Delay(delay, ct);
-            }
+                if (delay != TimeSpan.Zero)
+                {
+                    await Task.Delay(delay, ct);
+                }
 
-            if (exceptionToThrow != null)
-            {
-                ThrowException_ThisMethodNameShouldBeInExceptionCallstack(exceptionToThrow, exceptionText);
-            }
+                if (exceptionToThrow != null)
+                {
+                    ThrowException_ThisMethodNameShouldBeInExceptionCallstack(exceptionToThrow, exceptionText);
+                }
 
-            return new TestReturnValue
+                return new TestReturnValue
+                {
+                    DummyValue = TestReturnValue.ExpectedDummyValue
+                };
+            }
+            catch (Exception ex)
             {
-                DummyValue = TestReturnValue.ExpectedDummyValue
-            };
+                Logger.Info?.Trace(ex, $"Throwing {ex.GetType().Name}: {ex.Message}");
+                throw;
+            }
         }
 
         public static readonly string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);

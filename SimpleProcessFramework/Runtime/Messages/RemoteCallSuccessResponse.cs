@@ -9,9 +9,15 @@ namespace Spfx.Runtime.Messages
     {
         [DataMember]
         public object Result { get; set; }
-        
+
         public override string GetTinySummaryString()
                  => nameof(RemoteCallSuccessResponse) + ":" + MostRandomUtilities.FormatObjectToTinyString(Result) + "(#" + CallId + ")";
+
+        public RemoteCallSuccessResponse(long callId, object res)
+            : base(callId)
+        {
+            Result = res;
+        }
 
         internal override void ForwardResult(TaskCompletionSource<object> completion)
         {

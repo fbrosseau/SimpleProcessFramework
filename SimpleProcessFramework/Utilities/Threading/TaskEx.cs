@@ -355,5 +355,10 @@ namespace Spfx.Utilities.Threading
         {
             return ((Task<TResult>)ar).Result;
         }
+
+        public static CancellationTokenRegistration RegisterDispose(this CancellationToken ct, IDisposable disposable, bool useSynchronizationContext = false)
+        {
+            return ct.Register(s => ((IDisposable)s).Dispose(), disposable, useSynchronizationContext);
+        }
     }
 }
