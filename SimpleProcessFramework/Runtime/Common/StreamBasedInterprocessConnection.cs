@@ -1,8 +1,7 @@
-﻿using Spfx.Diagnostics.Logging;
+﻿using Spfx.Io;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
-using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.Buffers.Binary;
@@ -14,61 +13,35 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Common
 {
-    internal abstract class StreamBasedInterprocessConnection : Disposable, IInterprocessConnection
+    internal abstract class StreamBasedInterprocessConnection : AbstractInterprocessConnection
     {
-        public event EventHandler ConnectionLost;
-
-        private readonly AsyncQueue<PendingOperation> m_pendingWrites;
-        private Task m_writeFlow;
-        private Task m_readFlow;
+        private Task m_readTask;
         private Task m_keepAliveTask;
-        private bool m_raisedConnectionLost;
 
         protected Stream ReadStream { get; private set; }
         protected Stream WriteStream { get; private set; }
         protected IBinarySerializer BinarySerializer { get; }
 
-        private readonly ILogger m_logger;
-
         protected virtual TimeSpan KeepAliveInterval { get; }
 
-        protected class PendingOperation : TaskCompletionSource<object>, IAbortableItem
+        protected class PendingStreamOperation : PendingOperation
         {
             private readonly ConnectionCodes? m_code;
 
-            public IInterprocessMessage Request { get; }
-            public StreamBasedInterprocessConnection Owner { get; }
-            public CancellationToken CancellationToken { get; }
-            private readonly ProcessEndpointAddress m_originalAddress;
-
-            public PendingOperation(StreamBasedInterprocessConnection owner, IInterprocessMessage req, CancellationToken ct)
-                : base(TaskCreationOptions.RunContinuationsAsynchronously)
+            public PendingStreamOperation(StreamBasedInterprocessConnection owner, IInterprocessMessage req, CancellationToken ct)
+                : base(owner, req, ct)
             {
-                CancellationToken = ct;
-                Request = req;
-                Owner = owner;
-                m_originalAddress = req.Destination;
             }
 
-            public PendingOperation(ConnectionCodes code)
+            public PendingStreamOperation(ConnectionCodes code)
             {
                 m_code = code;
             }
 
-            public void Abort(Exception ex)
+            internal virtual Stream CreateMessageStream(IBinarySerializer serializer)
             {
-                TrySetException(ex);
-            }
-
-            public void Dispose()
-            {
-                TrySetCanceled();
-            }
-
-            internal Stream CreateMessageStream(IBinarySerializer serializer)
-            {
-                if (Request != null)
-                    return serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Request, serializer), lengthPrefix: true);
+                if (Message != null)
+                    return serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Message, serializer), lengthPrefix: true);
                 return new MemoryStream(m_serializedCodes[m_code.Value], false);
             }
 
@@ -82,66 +55,48 @@ namespace Spfx.Runtime.Common
                     return arr;
                 });
 
-            internal Task<object> ExecuteToCompletion()
+            public override string GetTinySummaryString()
             {
-                if (!CancellationToken.CanBeCanceled || !(Request is IInterprocessRequest))
-                    return Task;
-                return AwaitOperationWithCancellation();
-            }
-
-            private async Task<object> AwaitOperationWithCancellation()
-            {
-                using var ctRegistration = CancellationToken.Register(s => ((PendingOperation)s).OnCancellationRequested(), this, false);
-                return await Task.ConfigureAwait(false);
-            }
-
-            private void OnCancellationRequested()
-            {
-                var req = (IInterprocessRequest)Request;
-                Owner.m_logger.Debug?.Trace("Call cancelled by source: " + req.GetTinySummaryString());
-                Owner.SerializeAndSendMessage(new RemoteCallCancellationRequest
-                {
-                    CallId = req.CallId,
-                    Destination = m_originalAddress
-                }).FireAndForget();
+                if (Message != null)
+                    return base.GetTinySummaryString();
+                return $"<Code: {m_code.Value}>"; 
             }
         }
 
         public StreamBasedInterprocessConnection(ITypeResolver typeResolver)
+            : base(typeResolver)
         {
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 
-            m_logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
-
             var config = typeResolver.CreateSingleton<ProcessClusterConfiguration>();
             KeepAliveInterval = config.IpcConnectionKeepAliveInterval;
-
-            m_pendingWrites = new AsyncQueue<PendingOperation>
-            {
-                DisposeIgnoredItems = true
-            };
         }
 
-        private async ValueTask ExecuteWrite(PendingOperation op)
+        protected override PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
+        {
+            return new PendingStreamOperation(this, msg, ct);
+        }
+
+        protected override async ValueTask ExecuteWrite(PendingOperation op)
         {
             try
             {
                 try
                 {
-                    using var serializedData = op.CreateMessageStream(BinarySerializer);
-                    m_logger.Debug?.Trace($"ExecuteWrite: {op.Request.GetTinySummaryString()} ({serializedData.Length} bytes)");
+                    using var serializedData = ((PendingStreamOperation)op).CreateMessageStream(BinarySerializer);
+                    Logger.Debug?.Trace($"ExecuteWrite: {op.Message.GetTinySummaryString()} ({serializedData.Length} bytes)");
                     await DoWrite(op, serializedData).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    m_logger.Debug?.Trace(ex, "ExecuteWrite failed");
+                    Logger.Debug?.Trace(ex, "ExecuteWrite failed");
                     op.Abort(ex);
                     HandleFailure(ex);
                 }
             }
             catch (Exception ex)
             {
-                m_logger.Debug?.Trace(ex, "ExecuteWrite->HandleFailure failed");
+                Logger.Debug?.Trace(ex, "ExecuteWrite->HandleFailure failed");
                 op.Dispose();
                 throw;
             }
@@ -152,52 +107,33 @@ namespace Spfx.Runtime.Common
             return new ValueTask(dataStream.CopyToAsync(WriteStream));
         }
 
-        protected void HandleFailure(Exception ex)
-        {
-            m_logger.Debug?.Trace(ex, "HandleFailure");
-
-            m_pendingWrites.Dispose(ex);
-
-            lock (this)
-            {
-                if (m_raisedConnectionLost)
-                    return;
-                m_raisedConnectionLost = true;
-            }
-
-            ConnectionLost?.Invoke(this, EventArgs.Empty);
-        }
-
         protected override void OnDispose()
         {
-            m_logger.Info?.Trace("OnDispose");
+            Logger.Info?.Trace($"{nameof(StreamBasedInterprocessConnection)}::OnDispose");
 
             ReadStream?.Dispose();
             WriteStream?.Dispose();
-            m_pendingWrites.Dispose();
-            m_writeFlow?.FireAndForget();
-            m_readFlow?.FireAndForget();
+            m_readTask?.FireAndForget();
             m_keepAliveTask?.FireAndForget();
             base.OnDispose();
-            m_logger.Dispose();
         }
 
-        public void Initialize()
+        public override void Initialize()
         {
-            m_readFlow = Task.Run(ConnectAsync);
+            m_readTask = Task.Run(ConnectAsync);
         }
 
         private async Task ConnectAsync()
         {
             try
             {
-                m_logger.Info?.Trace("Begin ConnectStreams");
+                Logger.Info?.Trace("Begin ConnectStreams");
                 (ReadStream, WriteStream) = await ConnectStreamsAsync();
 
                 RescheduleKeepAlive();
 
-                m_logger.Info?.Trace("ConnectStreams succeeded, starting Recv&Write loops");
-                m_writeFlow = m_pendingWrites.ForEachAsync(ExecuteWrite);
+                Logger.Info?.Trace("ConnectStreams succeeded, starting Recv&Write loops");
+                BeginWrites();
                 await ReceiveLoop();
             }
             catch (Exception ex)
@@ -212,11 +148,17 @@ namespace Spfx.Runtime.Common
             {
                 while (true)
                 {
-                    using var stream = await ReadStream.ReadLengthPrefixedBlockAsync().ConfigureAwait(false);
+                    using var frame = await ReadStream.ReadCodeOrLengthPrefixedBlockAsync().ConfigureAwait(false);
+                    if (frame.Code != null)
+                    {
+                        continue;
+                    }
+
+                    using var stream = frame.AcquireData();
                     var len = stream.Length;
                     var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
-                    m_logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({len} bytes)");
-                    HandleExternalMessage(msg);
+                    Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({len} bytes)");
+                    ProcessReceivedMessage(msg);
                 }
             }
             catch (Exception ex)
@@ -225,14 +167,9 @@ namespace Spfx.Runtime.Common
             }
         }
 
-        protected virtual void HandleExternalMessage(IInterprocessMessage msg)
-        {
-            throw new InvalidOperationException("Message of type " + msg.GetType().FullName + " is not handled");
-        }
-
         private void RescheduleKeepAlive()
         {
-            m_logger.Debug?.Trace("RescheduleKeepAlive");
+            Logger.Debug?.Trace("RescheduleKeepAlive");
             m_keepAliveTask = CreateKeepAliveTask();
         }
 
@@ -248,7 +185,7 @@ namespace Spfx.Runtime.Common
         private async Task DoKeepAlive(TimeSpan delay)
         {
             await Task.Delay(delay).ConfigureAwait(false);
-            m_logger.Debug?.Trace("DoKeepAlive");
+            Logger.Debug?.Trace("DoKeepAlive");
             //   await EnqueueOperation(new PendingOperation(ConnectionCodes.KeepAlive));
             RescheduleKeepAlive();
         }
@@ -258,23 +195,6 @@ namespace Spfx.Runtime.Common
             KeepAlive = -1
         }
 
-        internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
-
-        public Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
-        {
-            return EnqueueOperation(CreatePendingOperation(msg, ct));
-        }
-
-        protected virtual PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
-        {
-            return new PendingOperation(this, msg, ct);
-        }
-
-        protected Task<object> EnqueueOperation(PendingOperation op)
-        {
-            m_logger.Debug?.Trace("EnqueueOperation " + op.Request.GetTinySummaryString());
-            m_pendingWrites.Enqueue(op);
-            return op.ExecuteToCompletion();
-        }
+        internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();       
     }
 }

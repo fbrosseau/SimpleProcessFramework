@@ -50,7 +50,7 @@ namespace Spfx.Runtime.Server
             Initialize();
         }
 
-        protected override void HandleExternalMessage(IInterprocessMessage msg)
+        protected override void ProcessReceivedMessage(IInterprocessMessage msg)
         {
             switch (msg)
             {
@@ -58,12 +58,12 @@ namespace Spfx.Runtime.Server
                     m_messagesHandler.ForwardMessage(GetWrapperProxy(), wrapper);
                     break;
                 default:
-                    base.HandleExternalMessage(msg);
+                    base.ProcessReceivedMessage(msg);
                     break;
             }
         }
 
-        public void SendMessage(IInterprocessMessage msg)
+        public void SendMessageToClient(IInterprocessMessage msg)
         {
             SerializeAndSendMessage(msg);
         }

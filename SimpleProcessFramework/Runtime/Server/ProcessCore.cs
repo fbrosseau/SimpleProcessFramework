@@ -202,7 +202,7 @@ namespace Spfx.Runtime.Server
                 if (!wrappedMessage.IsRequest)
                 {
                     var answerChannel = m_connectionManager.GetClientChannel(wrappedMessage.SourceConnectionId, mustExist: true);
-                    answerChannel.SendMessage(wrappedMessage);
+                    answerChannel.SendMessageToClient(wrappedMessage);
                     return;
                 }
 

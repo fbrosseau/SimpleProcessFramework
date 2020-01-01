@@ -2,12 +2,15 @@
 
 namespace Spfx.Diagnostics.Logging
 {
-    public class DefaultConsoleLogListener : ILogListener
+    public class ConsoleOutputLogListener : ILogListener
     {
         public void Log(string name, LogTraceLevel level, string message, Exception ex = null)
         {
             var now = DateTime.Now;
-            Console.WriteLine($"{now:T}|{name} [{level}]: {message}");
+            if (ex is null)
+                Console.WriteLine($"{now:T}|{name} [{level}]: {message}");
+            else
+                Console.WriteLine($"{now:T}|{name} [{level}]: {message}\r\n{ex}");
         }
 
         public LogTraceLevel GetEnabledLevels(ILogger l) => LogTraceLevel.All;

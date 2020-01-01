@@ -69,6 +69,13 @@ namespace Spfx.Runtime.Messages
             };
         }
 
+        public static IInterprocessMessage Unwrap(IInterprocessMessage msg, IBinarySerializer serializer)
+        {
+            if (msg is WrappedInterprocessMessage wrapped)
+                return wrapped.Unwrap(serializer);
+            return msg;
+        }
+
         public IInterprocessMessage Unwrap(IBinarySerializer serializer)
         {
             var msg = serializer.Deserialize<IInterprocessMessage>(new MemoryStream(Payload));

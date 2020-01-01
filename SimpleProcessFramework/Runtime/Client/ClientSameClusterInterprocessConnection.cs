@@ -14,70 +14,23 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Client
 {
-    internal class ClientSameClusterInterprocessConnection : Disposable, IClientInterprocessConnection, IInterprocessClientChannel
+    internal class ClientSameClusterInterprocessConnection : AbstractInterprocessConnection, IClientInterprocessConnection, IInterprocessClientChannel
     {
-        public event EventHandler ConnectionLost;
-
         private readonly IInternalMessageDispatcher m_localProcess;
         private readonly IInterprocessClientProxy m_proxyToThis;
         private readonly IBinarySerializer m_binarySerializer;
         private readonly IClientConnectionManager m_connectionManager;
-        private readonly SimpleUniqueIdFactory<PendingClientCall> m_pendingRequests = new SimpleUniqueIdFactory<PendingClientCall>();
         private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
 
         public string UniqueId { get; }
 
-        private readonly ILogger m_logger;
-
         public IInterprocessClientProxy GetWrapperProxy() => m_proxyToThis;
-
-        private class PendingClientCall : TaskCompletionSource<object>
-        {
-            public ClientSameClusterInterprocessConnection Owner { get; }
-            public IInterprocessRequest Request { get; }
-            private readonly CancellationToken m_ct;
-            private readonly ProcessEndpointAddress m_originalAddress;
-
-            public PendingClientCall(ClientSameClusterInterprocessConnection owner, IInterprocessRequest req, CancellationToken ct)
-                : base(TaskCreationOptions.RunContinuationsAsynchronously)
-            {
-                Owner = owner;
-                Request = req;
-                m_ct = ct;
-                m_originalAddress = req.Destination;
-            }
-
-            internal Task<object> ExecuteToCompletion()
-            {
-                if (!m_ct.CanBeCanceled)
-                    return Task;
-
-                return ExecuteWithCancellation();
-            }
-
-            private async Task<object> ExecuteWithCancellation()
-            {
-                using var reg = m_ct.Register(s => ((PendingClientCall)s).OnCancellationRequested(), this, false);
-                return await Task;
-            }
-
-            private void OnCancellationRequested()
-            {
-                Owner.m_logger.Debug?.Trace("Call cancelled by source: " + Request.GetTinySummaryString());
-                ((IInterprocessConnection)Owner).SerializeAndSendMessage(new RemoteCallCancellationRequest
-                {
-                    CallId = Request.CallId,
-                    Destination = m_originalAddress
-                }).FireAndForget();
-            }
-        }
-
+        
         public ClientSameClusterInterprocessConnection(ITypeResolver typeResolver)
+            : base(typeResolver)
         {
             m_localProcess = typeResolver.GetSingleton<IInternalMessageDispatcher>();
             UniqueId = m_localProcess.LocalProcessUniqueId + "/0";
-
-            m_logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: UniqueId);
 
             m_proxyToThis = new ConcreteClientProxy(this);
             m_binarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
@@ -87,12 +40,8 @@ namespace Spfx.Runtime.Client
 
         protected override void OnDispose()
         {
-            m_logger.Info?.Trace("OnDispose");
-
-            ConnectionLost?.Invoke(this, EventArgs.Empty);
-
+            Logger.Info?.Trace($"{nameof(ClientSameClusterInterprocessConnection)}::OnDispose");
             base.OnDispose();
-            m_logger.Dispose();
         }
 
         Task IClientInterprocessConnection.ChangeEventSubscription(EventRegistrationRequestInfo req)
@@ -125,10 +74,11 @@ namespace Spfx.Runtime.Client
             throw new NotImplementedException();
         }
 
-        void IInterprocessConnection.Initialize()
+        public override void Initialize()
         {
-            m_logger.Info?.Trace("Initialize");
+            Logger.Info?.Trace("Initialize");
             m_connectionManager.RegisterClientChannel(this);
+            BeginWrites();
         }
 
         void IInterprocessClientChannel.Initialize()
@@ -136,42 +86,36 @@ namespace Spfx.Runtime.Client
             // TODO - Bad code
         }
 
-        void IInterprocessClientChannel.SendMessage(IInterprocessMessage msg)
+        void IInterprocessClientChannel.SendMessageToClient(IInterprocessMessage msg)
         {
-            if (msg is WrappedInterprocessMessage wrapped)
-                msg = wrapped.Unwrap(m_binarySerializer);
+            msg = msg.Unwrap(m_binarySerializer);
+            ProcessReceivedMessage(msg);
+        }
 
-            m_logger.Info?.Trace("SendMessage: " + msg.GetTinySummaryString());
+        protected override void ProcessReceivedMessage(IInterprocessMessage msg)
+        {
+            Logger.Debug?.Trace("ProcessReceivedMessage: " + msg.GetTinySummaryString());
 
             switch (msg)
             {
-                case RemoteInvocationResponse callResponse:
-                    var completion = m_pendingRequests.RemoveById(callResponse.GetValidCallId());
-                    callResponse.ForwardResult(completion);
-                    break;
                 case EventRaisedMessage eventMsg:
                     var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
                     handler?.Invoke(eventMsg);
                     break;
                 default:
-                    throw new InvalidOperationException("Message of type " + msg.GetType().FullName + " is not handled");
+                    base.ProcessReceivedMessage(msg);
+                    break;
             }
         }
 
-        Task<object> IInterprocessConnection.SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct)
+        protected override ValueTask ExecuteWrite(PendingOperation op)
         {
-            PendingClientCall pendingCallState = null;
+            var msg = op.Message;
 
-            m_logger.Info?.Trace("SerializeAndSendMessage: " + msg.GetTinySummaryString());
-
-            if (msg is IInterprocessRequest req && (req.ExpectResponse || ct.CanBeCanceled))
-            {
-                pendingCallState = new PendingClientCall(this, req, ct);
-                req.CallId = m_pendingRequests.GetNextId(pendingCallState);
-            }
+            Logger.Info?.Trace("ExecuteWrite: " + msg.GetTinySummaryString());
 
             m_localProcess.ForwardOutgoingMessage(this, msg);
-            return pendingCallState?.ExecuteToCompletion() ?? TaskCache.NullObject;
+            return default;
         }
     }
 }

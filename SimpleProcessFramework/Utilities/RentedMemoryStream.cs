@@ -261,6 +261,9 @@ namespace Spfx.Utilities
                 throw new ObjectDisposedException(nameof(RentedMemoryStream));
         }
 
-        private string DebuggerDisplay => $"{Position}/{Length} (Cap. {Capacity})";
+        private string DebuggerDisplay =>
+            m_disposed
+            ? "<DISPOSED>"
+            : $"{Position}/{Length} (Cap. {Capacity})";
     }
 }

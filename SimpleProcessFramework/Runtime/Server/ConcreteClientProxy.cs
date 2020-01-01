@@ -22,7 +22,7 @@ namespace Spfx.Runtime.Server
 
         public void SendMessage(IInterprocessMessage msg)
         {
-            m_actualChannel.SendMessage(msg);
+            m_actualChannel.SendMessageToClient(msg);
         }
 
         public override string ToString() => nameof(ConcreteClientProxy) + ": " + UniqueId;

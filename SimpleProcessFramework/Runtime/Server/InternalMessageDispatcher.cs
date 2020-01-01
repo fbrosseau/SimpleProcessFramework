@@ -24,7 +24,7 @@ namespace Spfx.Runtime.Server
             else
             {
                 var channel = m_externalConnectionsManager.GetClientChannel(source.UniqueId, mustExist: true);
-                channel.SendMessage(wrappedMessage);
+                channel.SendMessageToClient(wrappedMessage);
             }
         }
     }

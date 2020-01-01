@@ -105,7 +105,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                 {
                     using var frame = await ReadPipe.GetNextFrame().ConfigureAwait(false);
 
-                    if (frame.IsCodeFrame)
+                    if (frame.Code != null)
                     {
                         var code = (InterprocessFrameType)frame.Code;
                         Logger.Debug?.Trace("Received code " + code);
@@ -123,7 +123,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                     }
                     else
                     {
-                        using var stream = frame.AcquireDataStream();
+                        using var stream = frame.AcquireData();
                         var len = stream.Length;
                         var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(stream);
                         Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({stream.Length} bytes)");
@@ -180,7 +180,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
             using var frame = await ReadPipe.GetNextFrame();
 
-            if (!frame.IsCodeFrame)
+            if (frame.Code is null)
                 throw new SerializationException($"Expected a single frame code");
 
             var actualCode = (InterprocessFrameType)frame.Code;

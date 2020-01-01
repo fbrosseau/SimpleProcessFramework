@@ -34,6 +34,6 @@ namespace Spfx.Runtime.Server
         void Initialize();
         IInterprocessClientProxy GetWrapperProxy();
 
-        void SendMessage(IInterprocessMessage msg);
+        void SendMessageToClient(IInterprocessMessage msg);
     }
 }

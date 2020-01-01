@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Spfx.Diagnostics;
+using Spfx.Reflection;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -359,6 +362,98 @@ namespace Spfx.Utilities.Threading
         public static CancellationTokenRegistration RegisterDispose(this CancellationToken ct, IDisposable disposable, bool useSynchronizationContext = false)
         {
             return ct.Register(s => ((IDisposable)s).Dispose(), disposable, useSynchronizationContext);
+        }
+
+        /// <summary>
+        /// If true, returns 'ExecutionContext.SuppressFlow()', otherwise returns null. Meant to be used in a using.
+        /// </summary>
+        public static AsyncFlowControl? MaybeSuppressExecutionContext(bool suppressFlow)
+        {
+            return suppressFlow ? ExecutionContext.SuppressFlow() : (AsyncFlowControl?)null;
+        }
+
+        public class ThreadSwitchAwaiter : ICriticalNotifyCompletion
+        {
+            private readonly string m_threadName;
+            private readonly ThreadPriority m_priority;
+
+            // awaiter things
+            public bool IsCompleted => false;
+            public void OnCompleted(Action a) => StartThread(a, false);
+            public void UnsafeOnCompleted(Action a) => StartThread(a, true);
+            public void GetResult() { }
+
+            private void StartThread(Action callback, bool suppressFlow)
+            {
+                using (MaybeSuppressExecutionContext(suppressFlow))
+                {
+                    var thread = new Thread(CriticalTryCatch.DefaultRunWithActionAsObject)
+                    {
+                        Name = m_threadName,
+                        IsBackground = true
+                    };
+
+                    if (m_priority != ThreadPriority.Normal)
+                    {
+                        thread.Priority = m_priority;
+                    }
+
+                    thread.Start(callback);
+                }
+            }
+
+            public ThreadSwitchAwaiter(string name, ThreadPriority priority)
+            {
+                m_threadName = name;
+                m_priority = priority;
+            }
+        }
+
+        public readonly struct ThreadSwitchAwaitable
+        {
+            private readonly string m_name;
+            private readonly ThreadPriority m_priority;
+
+            public ThreadSwitchAwaitable(string name, ThreadPriority priority)
+            {
+                m_name = name;
+                m_priority = priority;
+            }
+
+            public ThreadSwitchAwaiter GetAwaiter()
+            {
+                return new ThreadSwitchAwaiter(m_name, m_priority);
+            }
+        }
+
+        internal static ThreadSwitchAwaitable SwitchToNewThread(string threadName, ThreadPriority priority = ThreadPriority.Normal)
+        {
+            return new ThreadSwitchAwaitable(threadName, priority);
+        }
+
+        public class TaskSchedulerSwitchAwaiter : ICriticalNotifyCompletion
+        {
+            private readonly TaskFactory m_factory;
+
+            public static TaskSchedulerSwitchAwaiter Default { get; } = new TaskSchedulerSwitchAwaiter(TaskScheduler.Default);
+
+            public TaskSchedulerSwitchAwaiter(TaskScheduler scheduler)
+            {
+                m_factory = new TaskFactory(scheduler);
+            }
+
+            public bool IsCompleted => false;
+            public void OnCompleted(Action a) => m_factory.StartNew(a);
+            public void UnsafeOnCompleted(Action a) => m_factory.StartNew(a);
+            public void GetResult() { }
+        }
+
+        internal static TaskSchedulerSwitchAwaiter GetAwaiter(this TaskScheduler scheduler)
+        {
+            Guard.ArgumentNotNull(scheduler, nameof(scheduler));
+            if (ReferenceEquals(scheduler, TaskScheduler.Default))
+                return TaskSchedulerSwitchAwaiter.Default;
+            return new TaskSchedulerSwitchAwaiter(scheduler);
         }
     }
 }

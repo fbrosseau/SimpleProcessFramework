@@ -5,6 +5,6 @@ namespace Spfx.Io
 {
     public interface ILengthPrefixedStreamReader : IDisposable
     {
-        ValueTask<ReceivedFrame> GetNextFrame();
+        ValueTask<StreamOrCode> GetNextFrame();
     }
 }

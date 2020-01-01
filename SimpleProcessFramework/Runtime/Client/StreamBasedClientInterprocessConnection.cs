@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Client
@@ -22,7 +21,6 @@ namespace Spfx.Runtime.Client
     internal abstract class StreamBasedClientInterprocessConnection : StreamBasedInterprocessConnection, IClientInterprocessConnection
     {
         private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
-        private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();
         private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
 
         protected StreamBasedClientInterprocessConnection(ITypeResolver typeResolver)
@@ -30,17 +28,12 @@ namespace Spfx.Runtime.Client
         {
         }
 
-        protected override void HandleExternalMessage(IInterprocessMessage msg)
+        protected override void ProcessReceivedMessage(IInterprocessMessage msg)
         {
-            msg = ((WrappedInterprocessMessage)msg).Unwrap(BinarySerializer);
+            msg = msg.Unwrap(BinarySerializer);
+
             switch (msg)
             {
-                case RemoteInvocationResponse callResponse:
-                    {
-                        using var op = m_pendingRequests.RemoveById(callResponse.GetValidCallId());
-                        callResponse.ForwardResult(op);
-                    }
-                    break;
                 case EventRaisedMessage eventMsg:
                     {
                         var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
@@ -48,7 +41,7 @@ namespace Spfx.Runtime.Client
                     }
                     break;
                 default:
-                    base.HandleExternalMessage(msg);
+                    base.ProcessReceivedMessage(msg);
                     break;
             }
         }
@@ -59,13 +52,13 @@ namespace Spfx.Runtime.Client
 
             try
             {
-                if (op.Request is IInterprocessRequest req && req.ExpectResponse)
+                if (op.Message is IInterprocessRequest req && req.ExpectResponse)
                 {
                     expectResponse = true;
 
                     op.Task.ContinueWith(t =>
                     {
-                        m_pendingRequests.RemoveById(req.CallId);
+                        DiscardPendingRequest(req.CallId);
                     }).FireAndForget();
                 }
 
@@ -82,23 +75,6 @@ namespace Spfx.Runtime.Client
                 op.Dispose();
                 throw;
             }
-        }
-
-        private class ClientPendingOperation : PendingOperation
-        {
-            public ClientPendingOperation(StreamBasedClientInterprocessConnection owner, SimpleUniqueIdFactory<PendingOperation> pendingCalls, IInterprocessMessage msg, CancellationToken ct)
-                : base(owner, msg, ct)
-            {
-                if (msg is IInterprocessRequest req && req.ExpectResponse)
-                {
-                    req.CallId = pendingCalls.GetNextId(this);
-                }
-            }
-        }
-
-        protected override PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
-        {
-            return new ClientPendingOperation(this, m_pendingRequests, msg, ct);
         }
 
         private class DescribedRemoteEndpoint
