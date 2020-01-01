@@ -22,13 +22,11 @@ namespace Spfx.Tests.Integration
             : base(options)
         {
         }
-        
+
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicDefaultNameSubprocess() => CreateAndDestroySuccessfulSubprocess();
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicDefaultNameSubprocess_NetCore() => CreateAndDestroySuccessfulSubprocess(p => p.TargetFramework = TargetFramework.Create(ProcessKind.Netcore));
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicDefaultNameSubprocess_NetCore32() => CreateAndDestroySuccessfulSubprocess(p => p.TargetFramework = TargetFramework.Create(ProcessKind.Netcore32));
+        [TestCaseSource(nameof(AllGenericSupportedFrameworks))]
+        public void BasicDefaultSubprocess(TargetFramework fw)
+            => CreateAndDestroySuccessfulSubprocess(p => p.TargetFramework = fw);
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicTestInMasterProcess()
@@ -45,16 +43,15 @@ namespace Spfx.Tests.Integration
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicNetcore_Runtime2X() => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = NetcoreTargetFramework.Create("2"); });
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicNetcore_Runtime3X() => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = NetcoreTargetFramework.Create("3"); });
+
+        [TestCaseSource(nameof(AllNetcore_AllArchs))]
+        public void BasicNetcore_SpecificRuntime(TargetFramework fw) => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = fw; });
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         public void BasicEnvironmentVariableSubprocess()
         {
-            var envVar = "AWGJIEAJWIGJIAWE";
-            var envValue = "JIAEWIGJEWIGHJRIEHJI";
+            var envVar = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
+            var envValue = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
 
             using var cluster = CreateTestCluster();
             using var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
@@ -65,22 +62,28 @@ namespace Spfx.Tests.Integration
             Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
         }
 
-        public class CustomExceptionNotMarshalled : Exception
-        {
-            public CustomExceptionNotMarshalled(string msg)
-                : base(msg)
-            {
-            }
-        }
-
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void ThrowCustomException()
+        public void ThrowCustomException_NotSerializable()
         {
             using var cluster = CreateTestCluster();
             using var svc = CreateSuccessfulSubprocess(cluster, p => p.TargetFramework = TargetFramework.DirectlyInRootProcess);
 
             var text = Guid.NewGuid().ToString("N");
-            ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomExceptionNotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
+            ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomException_NotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        public void ThrowCustomException_Serializable()
+        {
+            using var cluster = CreateTestCluster();
+            using var svc = CreateSuccessfulSubprocess(cluster, p => p.TargetFramework = TargetFramework.DirectlyInRootProcess);
+
+            var text = Guid.NewGuid().ToString("N");
+            ExpectException<CustomException_Marshalled>(svc.TestInterface.GetDummyValue(typeof(CustomException_Marshalled), exceptionText: text),
+                ex =>
+                {
+                    ex.AssertValues(text);
+                });
         }
 
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
@@ -127,9 +130,9 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null)
+        private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null, Action<ProcessClusterConfiguration> customConfig = null)
         {
-            using var cluster = CreateTestCluster();
+            using var cluster = CreateTestCluster(customConfig);
             CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
         }
 
@@ -269,11 +272,8 @@ namespace Spfx.Tests.Integration
             if (expectedProcessKind == ProcessKind.Wsl)
                 expectedProcessKind = ProcessKind.Netcore;
 
-            Log("GetRealProcessKind");
             Assert.AreEqual(expectedProcessKind, Unwrap(iface.GetRealProcessKind()));
-            Log("GetOsKind");
             Assert.AreEqual(expectedOsKind, Unwrap(iface.GetOsKind()));
-            Log("GetPointerSize");
             Assert.AreEqual(expectedPtrSize, Unwrap(iface.GetPointerSize()));
 
             using (var cts = new CancellationTokenSource())
@@ -286,12 +286,12 @@ namespace Spfx.Tests.Integration
 
             if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
             {
-                var ver = Unwrap(iface.GetNetCoreVersion());
                 var requestedVersion = NetcoreHelper.ParseNetcoreVersion(targetNetcoreRuntime);
-                Assert.AreEqual(requestedVersion.Major, ver.Major, "Unexpected runtime version");
-
-                if (requestedVersion.Minor > 0)
-                    Assert.AreEqual(requestedVersion.Minor, ver.Minor, "Unexpected runtime version");
+                if (requestedVersion.Major >= 3) // it's not possible to accurately tell netcore version before 3. Assume it just works for < 2.
+                {
+                    var ver = Unwrap(iface.GetNetCoreVersion());
+                    Assert.GreaterOrEqual(ver, requestedVersion, "Unexpected runtime version");
+                }
             }
 
             Log("CreateSuccessfulSubprocess success");

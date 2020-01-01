@@ -36,28 +36,27 @@ namespace Spfx.Tests.Integration
         [Description("Ensures that remote serialization exceptions are noticed by the test")]
         public void DetectUnhandledExceptionOnSubprocessSerialize()
         {
-            using (var cluster = CreateTestCluster())
+            using var cluster = CreateTestCluster();
+
+            var procId = "wawawa";
+            var epId = "wowowo";
+
+            var procInfo = new ProcessCreationRequest
             {
-                var procId = "wawawa";
-                var epId = "wowowo";
+                ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId, TargetFramework = SimpleIsolationKind }
+            };
 
-                var procInfo = new ProcessCreationRequest
-                {
-                    ProcessInfo = new ProcessCreationInfo { ProcessUniqueId = procId, TargetFramework = SimpleIsolationKind }
-                };
+            var epInfo = new EndpointCreationRequest
+            {
+                EndpointId = epId,
+                ImplementationType = typeof(TestInterface),
+                EndpointType = typeof(ITestInterface),
+            };
 
-                var epInfo = new EndpointCreationRequest
-                {
-                    EndpointId = epId,
-                    ImplementationType = typeof(TestInterface),
-                    EndpointType = typeof(ITestInterface),
-                };
+            Unwrap(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo));
 
-                Unwrap(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo));
-
-                var ep = CreateProxyInterface<ITestInterface>(cluster, procId, epId);
-                ExpectException(ep.Test());
-            }
+            var ep = CreateProxyInterface<ITestInterface>(cluster, procId, epId);
+            ExpectException(ep.Test());
         }
     }
 }

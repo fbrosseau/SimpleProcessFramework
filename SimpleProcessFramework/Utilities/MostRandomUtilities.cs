@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace Spfx.Utilities
@@ -23,10 +24,13 @@ namespace Spfx.Utilities
             typeof(float),
             typeof(double),
             typeof(decimal),
-            typeof(Guid)
+            typeof(Guid),
+            typeof(Version),
+            typeof(IPAddress),
+            typeof(EndPoint)
         };
 
-        internal static string FormatObjectToTinyString(object result, int targetMaxDisplayLength = 32)
+        internal static string FormatObjectToTinyString(object result, int suggestedMaxCharacters = 32)
         {
             if (result is null)
                 return "<null>";
@@ -36,11 +40,12 @@ namespace Spfx.Utilities
 
             if (t == typeof(string))
             {
+                // I know this can exceed the max by a few characters but I didn't bother to make this exact :)
                 var str = result.ToString();
 
-                var crop = targetMaxDisplayLength - 6;
+                var crop = suggestedMaxCharacters - 6;
 
-                if (str.Length > targetMaxDisplayLength)
+                if (str.Length > suggestedMaxCharacters)
                     return "\"" + str.Substring(0, crop) + "...\"+" + (str.Length - crop);
                 else
                     return "\"" + str + "\"";
@@ -48,6 +53,15 @@ namespace Spfx.Utilities
 
             if (t.IsArray)
                 return "<" + ((ICollection)result).Count + " " + t.Name + ">";
+
+            var baseT = t.BaseType;
+            while (baseT != null && baseT != typeof(object))
+            {
+                if (s_trivialDisplayTypes.Contains(t))
+                    return result.ToString();
+                baseT = baseT.BaseType;
+            }
+
             return "<" + t.Name + ">";
         }
     }

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Spfx.Tests.Integration
 {
@@ -22,6 +23,7 @@ namespace Spfx.Tests.Integration
         Task<ProcessKind> GetRealProcessKind();
         Task<OsKind> GetOsKind();
         Task<Version> GetNetCoreVersion();
+        Task<string> GetLongFormFrameworkDescription(); // RuntimeInformation.FrameworkDescription
         Task<int> GetProcessId();
         Task<bool> IsWsl();
     }
@@ -119,5 +121,6 @@ namespace Spfx.Tests.Integration
         public Task<ProcessKind> GetRealProcessKind() => Task.FromResult(HostFeaturesHelper.LocalProcessKind);
         public Task<int> GetProcessId() => Task.FromResult(Process.GetCurrentProcess().Id);
         public Task<bool> IsWsl() => Task.FromResult(HostFeaturesHelper.IsInsideWsl);
+        public Task<string> GetLongFormFrameworkDescription() => Task.FromResult(RuntimeInformation.FrameworkDescription);
     }
 }

@@ -52,7 +52,6 @@ namespace Spfx.Tests
             if (!wrapped.WaitSilent(DefaultTestTimeout))
                 throw new TimeoutException();
 
-            // to rethrow the original clean exception
             wrapped.WaitOrRethrow();
         }
 
