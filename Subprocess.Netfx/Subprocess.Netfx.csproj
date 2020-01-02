@@ -20,7 +20,11 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
+  </PropertyGroup> 
+
+  <ItemGroup>
+    <Compile Include="..\Subprocess.Netcore\SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />

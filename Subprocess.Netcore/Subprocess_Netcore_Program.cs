@@ -1,8 +1,8 @@
 ﻿#if NETCOREAPP
 
+using Spfx.Subprocess;
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
@@ -13,12 +13,10 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
     {
         private static readonly string BinFolder = new FileInfo(new Uri(typeof(SpfxProgram).Assembly.Location, UriKind.Absolute).LocalPath).Directory.FullName;
 
-        private static bool s_verboseLogs;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // in case a custom hosts calls this, remove the noise in the callstack
-        public static void Main(string[] args)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Main()
         {
-            s_verboseLogs = args?.Contains("--spfxdebug") == true;
+            SubprocessMainShared.Initialize();
 
             try
             {
@@ -73,7 +71,7 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
 
         private static void Log(string msg)
         {
-            if (!s_verboseLogs)
+            if (!SubprocessMainShared.VerboseLogs)
                 return;
 
             Console.WriteLine(msg);

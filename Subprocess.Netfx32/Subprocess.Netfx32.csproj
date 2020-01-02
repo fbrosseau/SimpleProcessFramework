@@ -26,6 +26,7 @@
   <ItemGroup>
     <Folder Include="Properties\" />
     <Compile Include="../Subprocess.Netfx/Subprocess_Netfx_Program.cs" Link="Subprocess_Netfx_Program.cs" />
+    <Compile Include="..\Subprocess.Netcore\SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties/spfx.snk" />
     <None Include="../Resources/Gear.ico" Link="Properties/Gear.ico" />
   </ItemGroup>

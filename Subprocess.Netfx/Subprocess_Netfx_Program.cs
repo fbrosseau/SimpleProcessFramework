@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Spfx.Subprocess;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -7,8 +8,10 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
     public class SpfxProgram
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // in case a custom hosts calls this, remove the noise in the callstack
-        public static void Main(string[] args = null)
+        public static void Main()
         {
+            SubprocessMainShared.Initialize();
+
             var asm = Assembly.Load("Spfx");
             if (asm is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework");
