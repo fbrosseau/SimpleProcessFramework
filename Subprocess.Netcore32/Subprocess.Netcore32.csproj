@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(NetCore3PlusVersions)</TargetFrameworks>
+    <OutputPath>$(SolutionDir)bin/$(Configuration)/</OutputPath>
+    <AssemblyName>Spfx.Process.Netcore32</AssemblyName>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
+    <Title>SimpleProcessFramework subprocess (netcore x86)</Title>
+    <Description>SimpleProcessFramework subprocess (netcore x86)</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Subprocess.Netcore\SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
+    <Compile Include="..\Subprocess.Netcore\Subprocess_Netcore_Program.cs" Link="Subprocess_Netcore_Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties/" />
+    <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties/spfx.snk" />
+    <None Include="../Resources/Gear.ico" Link="Properties/Gear.ico" />
+  </ItemGroup>
+
+</Project>

@@ -4,17 +4,13 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netstandard2.0;$(AllNetCoreVersions)</TargetFrameworks>
     <OutputPath>$(SolutionDir)bin/$(Configuration)/</OutputPath>
-    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <AssemblyName>Spfx.Process.Netcore</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <ApplicationIcon />
     <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
-    <StartupObject />
-    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
+    <Title>SimpleProcessFramework subprocess (netcore anycpu)</Title>
+    <Description>SimpleProcessFramework subprocess (netcore anycpu)</Description>
   </PropertyGroup>
 
   <ItemGroup>
