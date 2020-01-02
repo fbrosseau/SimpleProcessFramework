@@ -3,30 +3,25 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;$(AllNetCoreVersions)</TargetFrameworks>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>    
+    <OutputPath>$(SolutionDir)bin/$(Configuration)/</OutputPath>
     <AssemblyName>Spfx</AssemblyName>
     <RootNamespace>Spfx</RootNamespace>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
-    <NuspecFile>../nuspec/SimpleProcessFramework.nuspec</NuspecFile>
-    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CoreEndpoints\**" />
-    <EmbeddedResource Remove="CoreEndpoints\**" />
-    <None Remove="CoreEndpoints\**" />
+    <Compile Remove="CoreEndpoints/**" />
+    <EmbeddedResource Remove="CoreEndpoints/**" />
+    <None Remove="CoreEndpoints/**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Properties\spfx.snk" />
+    <None Remove="Properties/spfx.snk" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Properties\spfx.snk" />
+    <EmbeddedResource Include="Properties/spfx.snk" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,13 +34,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Codegen\" />
+    <Folder Include="Codegen/" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='test'">
-    <ProjectReference Include="..\Subprocess.Netcore\Subprocess.Netcore.csproj" />
-    <ProjectReference Include="..\Subprocess.Netfx32\Subprocess.Netfx32.csproj" />
-    <ProjectReference Include="..\Subprocess.Netfx\Subprocess.Netfx.csproj" />
+    <ProjectReference Include="../Subprocess.Netcore/Subprocess.Netcore.csproj" />
+    <ProjectReference Include="../Subprocess.Netfx32/Subprocess.Netfx32.csproj" />
+    <ProjectReference Include="../Subprocess.Netfx/Subprocess.Netfx.csproj" />
   </ItemGroup>
 
 </Project>

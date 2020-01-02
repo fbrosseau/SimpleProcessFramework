@@ -3,33 +3,25 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)\</OutputPath>
+    <OutputPath>$(SolutionDir)bin/$(Configuration)/</OutputPath>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <AssemblyName>Spfx.Process.Netfx</AssemblyName>
     <RootNamespace>Spfx.Process.Netfx</RootNamespace>
-    <SignAssembly>true</SignAssembly>
     <ApplicationIcon>../Resources/Gear.ico</ApplicationIcon>
-    <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <Title>SimpleProcessFramework subprocess (netfx anycpu)</Title>
     <Description>SimpleProcessFramework subprocess (netfx anycpu)</Description>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup> 
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup> 
-
   <ItemGroup>
-    <Compile Include="..\Subprocess.Netcore\SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
+    <Compile Include="../Subprocess.Netcore/SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
-    <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
-    <None Include="../Resources/Gear.ico" Link="Properties\Gear.ico" />
+    <Folder Include="Properties/" />
+    <Compile Include="../Subprocess.Netcore/SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
+    <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties/spfx.snk" />
+    <None Include="../Resources/Gear.ico" Link="Properties/Gear.ico" />
   </ItemGroup>
 
 </Project>
