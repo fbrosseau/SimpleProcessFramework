@@ -4,7 +4,7 @@
     <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
-    <OutputPath>bin/$(Configuration)</OutputPath>
+    <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
     <IsTestProject>true</IsTestProject>
     <Configurations>Debug;Release;Netcore_Debug;Netcore_Release</Configurations>
   </PropertyGroup>
@@ -26,6 +26,10 @@
 
   <ItemGroup>
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net48'">
+    <ProjectReference Include="..\TestCustomHostExe\TestCustomHostExe.csproj" />
   </ItemGroup>
 
 </Project>

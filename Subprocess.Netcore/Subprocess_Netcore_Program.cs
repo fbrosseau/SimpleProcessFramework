@@ -4,9 +4,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 
-namespace Spfx.Runtime.Server.Processes.NetcoreHost
+namespace Spfx.Runtime.Server.Processes.HostProgram
 {
     public class SpfxProgram
     {
@@ -14,6 +15,7 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
 
         private static bool s_verboseLogs;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // in case a custom hosts calls this, remove the noise in the callstack
         public static void Main(string[] args)
         {
             s_verboseLogs = args?.Contains("--spfxdebug") == true;
@@ -79,7 +81,7 @@ namespace Spfx.Runtime.Server.Processes.NetcoreHost
     }
 }
 #else
-namespace Spfx.Runtime.Server.Processes.NetcoreHost
+namespace Spfx.Runtime.Server.Processes.HostProgram
 {
     public class SpfxProgram
     {

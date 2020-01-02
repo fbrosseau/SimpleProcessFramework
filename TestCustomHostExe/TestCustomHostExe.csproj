@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48</TargetFrameworks>
+    <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
+    <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SimpleProcessFramework" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='true'" />
+    <PackageReference Include="SimpleProcessFramework.Core" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='false'" />
+  </ItemGroup>
+
+</Project>

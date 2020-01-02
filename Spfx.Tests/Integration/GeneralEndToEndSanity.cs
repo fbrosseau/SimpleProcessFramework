@@ -224,10 +224,14 @@ namespace Spfx.Tests.Integration
                 Assert.Fail(details);
             
             var expectedProcessName = req.ProcessInfo.ProcessName;
-            if (string.IsNullOrWhiteSpace(expectedProcessName)
-                && !expectedProcessKind.IsFakeProcess()
-                && !expectedProcessKind.IsNetcore())
-                expectedProcessName = GenericProcessStartupParameters.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
+            if (string.IsNullOrWhiteSpace(expectedProcessName))
+            {
+                if (!expectedProcessKind.IsFakeProcess()
+                    && !expectedProcessKind.IsNetcore())
+                {
+                    expectedProcessName = GenericProcessStartupParameters.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
+                }
+            }
 
             int expectedPtrSize;
 
@@ -256,7 +260,11 @@ namespace Spfx.Tests.Integration
             Log("Doing basic validation on target process..");
 
             if (expectedProcessName != null)
-                Assert.AreEqual(expectedProcessName, Unwrap(iface.GetActualProcessName()));
+            {
+                if (expectedProcessName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    expectedProcessName = expectedProcessName.Substring(0, expectedProcessName.Length - 4);
+                Assert.AreEqual(expectedProcessName, iface.GetActualProcessName().Result);
+            }
 
             var processObject = Process.GetProcessById(processInfo.OsPid);
 

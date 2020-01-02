@@ -1,10 +1,12 @@
 ﻿using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
-namespace Spfx.Runtime.Server.Processes.NetfxHost
+namespace Spfx.Runtime.Server.Processes.HostProgram
 {
     public class SpfxProgram
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // in case a custom hosts calls this, remove the noise in the callstack
         public static void Main(string[] args = null)
         {
             var asm = Assembly.Load("Spfx");

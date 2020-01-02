@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Linq;
+using NUnit.Framework;
 
 namespace Spfx.Tests.Integration
 {
@@ -26,6 +28,7 @@ namespace Spfx.Tests.Integration
         Task<string> GetLongFormFrameworkDescription(); // RuntimeInformation.FrameworkDescription
         Task<int> GetProcessId();
         Task<bool> IsWsl();
+        Task ValidateCustomProcessEntryPoint();
     }
 
     internal class TestInterface : AbstractProcessEndpoint, ITestInterface
@@ -122,5 +125,21 @@ namespace Spfx.Tests.Integration
         public Task<int> GetProcessId() => Task.FromResult(Process.GetCurrentProcess().Id);
         public Task<bool> IsWsl() => Task.FromResult(HostFeaturesHelper.IsInsideWsl);
         public Task<string> GetLongFormFrameworkDescription() => Task.FromResult(RuntimeInformation.FrameworkDescription);
+
+        public Task ValidateCustomProcessEntryPoint()
+        {
+#if NETFRAMEWORK
+            var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.StartsWith("TestCustomHostExe"));
+            if (asm is null)
+                throw new InvalidOperationException("Could not find TestCustomHostExe in the loaded assemblies");
+
+            var entryPoint = asm.GetType(nameof(TestCustomHostExe));
+            Assert.IsTrue((bool)entryPoint.GetProperty(nameof(TestCustomHostExe.WasMainCalled)).GetValue(null));
+
+            return Task.CompletedTask;
+#else
+            throw new NotSupportedException();
+#endif
+        }
     }
 }

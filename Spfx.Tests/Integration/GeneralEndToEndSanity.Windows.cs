@@ -23,6 +23,32 @@ namespace Spfx.Tests.Integration
         }
 #endif
 
+        private static IEnumerable<object[]> GetAllValidPreExistingFileCombinations()
+        {
+            foreach (var fw in Netfx_AllArchs)
+                yield return new object[] { fw, "" };
+            /*foreach (var fw in AllNetcore_AllArchs)
+                yield return new object[] { fw, ".dll" };*/
+            foreach (var fw in Netfx_AllArchs)
+                yield return new object[] { fw, ".exe" };
+        }
+
+#if NETFRAMEWORK
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Category("Windows-Only")]
+        [TestCaseSource(nameof(GetAllValidPreExistingFileCombinations))]
+        public void CustomNameSubprocess_ValidPreExistingFile(TargetFramework targetFramework, string ext)
+        {
+            string customProcessName = TestCustomHostExe.ExecutableName;
+            if (targetFramework.ProcessKind.Is32Bit())
+                customProcessName += "32";
+
+            customProcessName += ext;
+
+            CustomNameSubprocessTest(targetFramework, customProcessName, validateCustomEntryPoint: true);
+        }
+#endif
+
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
         [Category("Windows-Only")]
         [TestCaseSource(nameof(Netfx_AllArchs))]
@@ -62,7 +88,7 @@ namespace Spfx.Tests.Integration
             });
         }
 
-        private void CustomNameSubprocessTest(TargetFramework targetFramework, string customProcessName, bool allowCreate = false)
+        private void CustomNameSubprocessTest(TargetFramework targetFramework, string customProcessName, bool validateCustomEntryPoint = false, bool allowCreate = false)
         {
             using var cluster = CreateTestCluster(cfg =>
             {
@@ -74,6 +100,9 @@ namespace Spfx.Tests.Integration
                 procInfo.TargetFramework = targetFramework;
                 procInfo.ProcessName = customProcessName;
             });
+
+            if (validateCustomEntryPoint)
+                Unwrap(subprocess.TestInterface.ValidateCustomProcessEntryPoint());
         }
     }
 }
