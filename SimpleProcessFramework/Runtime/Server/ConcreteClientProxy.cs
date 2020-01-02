@@ -15,9 +15,9 @@ namespace Spfx.Runtime.Server
             m_actualChannel = actualChannel;
         }
 
-        public Task<IInterprocessClientChannel> GetClientInfo()
+        public ValueTask<IInterprocessClientChannel> GetClientInfo()
         {
-            return Task.FromResult(m_actualChannel);
+            return new ValueTask<IInterprocessClientChannel>(m_actualChannel);
         }
 
         public void SendMessage(IInterprocessMessage msg)

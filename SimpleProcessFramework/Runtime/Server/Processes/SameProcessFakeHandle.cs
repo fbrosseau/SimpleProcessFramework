@@ -94,7 +94,7 @@ namespace Spfx.Runtime.Server.Processes
             {
             }
 
-            public Task<IInterprocessClientChannel> GetClientInfo(string uniqueId)
+            public ValueTask<IInterprocessClientChannel> GetClientInfo(string uniqueId)
             {
                 throw new System.NotImplementedException();
             }

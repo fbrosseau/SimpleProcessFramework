@@ -117,7 +117,7 @@ namespace Spfx.Runtime.Server.Processes
             m_processBroker.ForwardMessage(new ShallowConnectionProxy(this, msg.SourceConnectionId), msg);
         }
 
-        Task<IInterprocessClientChannel> IMessageCallbackChannel.GetClientInfo(string uniqueId)
+        ValueTask<IInterprocessClientChannel> IMessageCallbackChannel.GetClientInfo(string uniqueId)
         {
             throw new NotImplementedException();
         }

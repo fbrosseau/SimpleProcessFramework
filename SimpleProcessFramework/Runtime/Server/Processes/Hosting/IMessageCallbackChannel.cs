@@ -6,6 +6,6 @@ namespace Spfx.Runtime.Server.Processes.Hosting
     internal interface IMessageCallbackChannel
     {
         void HandleMessage(string connectionId, IInterprocessMessage msg);
-        Task<IInterprocessClientChannel> GetClientInfo(string uniqueId);
+        ValueTask<IInterprocessClientChannel> GetClientInfo(string uniqueId);
     }
 }

@@ -20,7 +20,7 @@ namespace Spfx.Runtime.Server.Processes
             m_owner = owner;
         }
 
-        public Task<IInterprocessClientChannel> GetClientInfo()
+        public ValueTask<IInterprocessClientChannel> GetClientInfo()
         {
             return m_owner.GetClientInfo(UniqueId);
         }

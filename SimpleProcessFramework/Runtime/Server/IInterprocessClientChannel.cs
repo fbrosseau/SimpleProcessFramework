@@ -21,7 +21,7 @@ namespace Spfx.Runtime.Server
         string UniqueId { get; }
         bool IsExternalConnection { get; }
 
-        Task<IInterprocessClientChannel> GetClientInfo();
+        ValueTask<IInterprocessClientChannel> GetClientInfo();
 
         void SendMessage(IInterprocessMessage msg);
     }
