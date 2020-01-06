@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
@@ -44,6 +45,33 @@ namespace Spfx.Utilities
 
                 foreach (var sublist in GenerateCombinations(list, minLen, maxLen, i + 1, newList))
                     yield return sublist;
+            }
+        }
+
+        public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp, out TKey key, out TValue val)
+        {
+            (key, val) = (kvp.Key, kvp.Value);
+        }
+
+        public static void AddRange<T>(this ICollection<T> icol, IEnumerable<T> items)
+        {
+            Guard.ArgumentNotNull(icol, nameof(icol));
+            Guard.ArgumentNotNull(items, nameof(items));
+
+            if (icol is List<T> list)
+            {
+                list.AddRange(items);
+            }
+            else if (icol is ISet<T> set)
+            {
+                set.UnionWith(items);
+            }
+            else
+            {
+                foreach (var i in items)
+                {
+                    icol.Add(i);
+                }
             }
         }
     }

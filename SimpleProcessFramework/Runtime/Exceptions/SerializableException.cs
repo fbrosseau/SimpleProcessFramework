@@ -21,5 +21,11 @@ namespace Spfx.Runtime.Exceptions
         {
             m_message = base.Message;
         }
+
+        public SerializableException(string message, Exception innerEx)
+            : base(message, innerEx)
+        {
+            m_message = base.Message;
+        }
     }
 }

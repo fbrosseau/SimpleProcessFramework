@@ -14,7 +14,15 @@ namespace Spfx.Runtime.Server.Processes
         private readonly Socket m_listenSocket;
         private Socket m_acceptedSocket;
         private readonly string m_linuxAddressName;
-        private static readonly Lazy<string> s_tempFolderWslPath = new Lazy<string>(() => WslUtilities.GetLinuxPath(Path.GetTempPath()), false);
+        private static readonly Lazy<string> s_tempFolderWslPath = new Lazy<string>(GetWslTempFolder, false);
+
+        private static string GetWslTempFolder()
+        {
+            var temp = Path.GetTempPath();
+            if (!temp.EndsWith("\\"))
+                temp += "\\";
+            return WslUtilities.GetLinuxPath(temp);
+        }
 
         public WslProcessSpawnPunchHandles()
         {

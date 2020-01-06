@@ -14,8 +14,6 @@ namespace Spfx.Runtime.Server.Processes
 {
     internal abstract class GenericRemoteTargetHandle : GenericProcessHandle, IIpcConnectorListener
     {
-        protected static string EscapeArg(string a) => ProcessUtilities.FormatArgument(a);
-
         private Process m_targetProcess;
 
         public string ProcessName => ProcessCreationInfo.ProcessName;
@@ -36,58 +34,52 @@ namespace Spfx.Runtime.Server.Processes
             return new GenericManagedProcessTargetHandle(info, typeResolver);
         }
 
-        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
+        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct)
         {
             RemotePunchPayload = punchPayload;
 
-            using (var disposeBag = new DisposeBag())
-            using (var cts = new CancellationTokenSource(Config.CreateProcessTimeout))
+            using var disposeBag = new DisposeBag();
+
+            var remoteProcessHandles = CreatePunchHandles();
+            disposeBag.Add(remoteProcessHandles);
+
+            await remoteProcessHandles.InitializeAsync(ct).ConfigureAwait(false);
+
+            try
             {
-                var ct = cts.Token;
-                var remoteProcessHandles = CreatePunchHandles();
-                disposeBag.Add(remoteProcessHandles);
-
-                await remoteProcessHandles.InitializeAsync(ct).ConfigureAwait(false);
-
-                try
-                {
-                    m_targetProcess = await SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
-                }
-                catch (Exception ex)
-                {
-                    OnProcessLost("SpawnProcess failed: " + ex.Message);
-                    throw await GetInitFailureException(ex);
-                }
-
-                var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, TypeResolver);
-                disposeBag.Add(connector);
-
-                var initTask = connector.InitializeAsync(ct).WithCancellation(ct);
-                var failureTask = m_processExitEvent.Task;
-                var winnerTask = await Task.WhenAny(initTask, failureTask);
-                if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
-                {
-                    var ex = initTask.IsFaultedOrCanceled() ? initTask.GetExceptionOrCancel() : null;
-                    throw await GetInitFailureException(ex);
-                }
-
-                m_ipcConnector = connector;
-                disposeBag.ReleaseAll();
-
-                OnInitializationCompleted();
-
-                return new ProcessInformation(ProcessUniqueId, m_targetProcess.Id, ProcessCreationInfo.TargetFramework);
+                m_targetProcess = await SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
             }
+            catch (Exception ex)
+            {
+                ReportFatalException(ex);
+                ex = await GetInitFailureException();
+                OnProcessLost("SpawnProcess failed", ex);
+                throw;
+            }
+
+            var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, TypeResolver);
+            disposeBag.Add(connector);
+
+            var initTask = connector.InitializeAsync(ct).WithCancellation(ct);
+            var failureTask = m_processExitEvent.Task;
+            var winnerTask = await Task.WhenAny(initTask, failureTask);
+            if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
+            {
+                var ex = initTask.IsFaultedOrCanceled() ? initTask.GetExceptionOrCancel() : null;
+                ReportFatalException(ex);
+                (await GetInitFailureException()).Rethrow();
+            }
+
+            m_ipcConnector = connector;
+            disposeBag.ReleaseAll();
+
+            OnInitializationCompleted();
+
+            return new ProcessInformation(ProcessUniqueId, m_targetProcess.Id, ProcessCreationInfo.TargetFramework);
         }
 
         protected virtual void OnInitializationCompleted()
         {
-        }
-
-        protected virtual Task<Exception> GetInitFailureException(Exception caughtException)
-        {
-            caughtException?.Rethrow();
-            throw new ProcessInitializationException();
         }
 
         protected virtual IRemoteProcessInitializer CreatePunchHandles()
@@ -103,9 +95,13 @@ namespace Spfx.Runtime.Server.Processes
         }
 
         protected abstract Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct);
-        
+
         protected void OnProcessLost(string reason, Exception ex = null)
         {
+            ex = new SubprocessLostException(reason, ex);
+            ReportFatalException(ex);
+
+            Logger.Info?.Trace(ex, "The process was lost: " + reason);
             m_processExitEvent.TrySetResult(reason);
         }
 
@@ -132,7 +128,7 @@ namespace Spfx.Runtime.Server.Processes
             m_ipcConnector.ForwardMessage(wrappedMessage);
         }
 
-        Task IIpcConnectorListener.CompleteInitialization()
+        Task IIpcConnectorListener.CompleteInitialization(CancellationToken ct)
         {
             return Task.CompletedTask;
         }

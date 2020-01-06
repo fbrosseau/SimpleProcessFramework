@@ -2,15 +2,16 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.467</Version>
+    <Version>0.0.531</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
     <PackageVersion>$(Version)</PackageVersion>
     <ProductName>The SimpleProcessFramework</ProductName>
     <Description>Spfx ($(TargetFramework))</Description>
     <Title>Spfx ($(TargetFramework))</Title>
+    <Company>The SimpleProcessFramework</Company>
     <AssemblyTitle>$(Title)</AssemblyTitle>
-    <InformationalVersion>$(SpfxNugetVersion)</InformationalVersion>
+    <InformationalVersion>$(SpfxNugetVersion) ($(TargetFramework))</InformationalVersion>
     <Configurations>Debug;Release;Netcore_Debug;Netcore_Release;Debug_NoTests;Release_NoTests</Configurations>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <SignAssembly>true</SignAssembly>

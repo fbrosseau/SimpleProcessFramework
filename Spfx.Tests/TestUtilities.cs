@@ -49,7 +49,7 @@ namespace Spfx.Tests
         {
             var wrapped = WrapWithUnhandledExceptions(task);
 
-            if (!wrapped.WaitSilent(DefaultTestTimeout))
+            if (!wrapped.WaitSilent(Math.Min(15000, DefaultTestTimeout)))
                 throw new TimeoutException();
 
             wrapped.WaitOrRethrow();
@@ -111,16 +111,23 @@ namespace Spfx.Tests
 
         public static void DeleteFileIfExists(string file)
         {
-            var fileInfo = new FileInfo(file);
-            if (!Path.IsPathRooted(file))
-                fileInfo = PathHelper.GetFileRelativeToBin(file);
-
-            if (fileInfo.Exists)
+            try
             {
-                if (fileInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
-                    fileInfo.Attributes &= ~FileAttributes.ReadOnly;
+                var fileInfo = new FileInfo(file);
+                if (!Path.IsPathRooted(file))
+                    fileInfo = PathHelper.GetFileRelativeToBin(file);
 
-                fileInfo.Delete();
+                if (fileInfo.Exists)
+                {
+                    if (fileInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
+                        fileInfo.Attributes &= ~FileAttributes.ReadOnly;
+
+                    fileInfo.Delete();
+                }
+            }
+            catch
+            {
+                // oh well.
             }
         }
     }

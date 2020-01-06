@@ -2,6 +2,7 @@
 
 using Spfx.Subprocess;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -27,7 +28,7 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
                 var asm = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName("Spfx"));
                 if (asm is null)
                     throw new FileNotFoundException("Could not load SimpleProcessFramework");
-                var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint");
+                var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint", throwOnError: true);
                 if (entryPointType is null)
                     throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
                 entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);

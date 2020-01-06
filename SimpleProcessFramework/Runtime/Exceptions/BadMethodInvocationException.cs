@@ -2,11 +2,11 @@
 
 namespace Spfx.Runtime.Exceptions
 {
-    public class BadMethodInvocationException : Exception
+    public class BadMethodInvocationException : SerializableException
+    {
+        public BadMethodInvocationException(string msg)
+            : base(msg)
         {
-            public BadMethodInvocationException(string msg)
-                : base(msg)
-            {
-            }
         }
+    }
 }

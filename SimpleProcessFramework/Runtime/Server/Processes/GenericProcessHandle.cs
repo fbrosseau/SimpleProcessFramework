@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Serialization;
@@ -23,6 +25,8 @@ namespace Spfx.Runtime.Server.Processes
         protected ILogger Logger { get; }
 
         private readonly AsyncManualResetEvent m_initEvent = new AsyncManualResetEvent();
+        private Exception m_firstCaughtException;
+        private CancellationTokenSource m_createProcessCancellation;
 
         protected IBinarySerializer BinarySerializer { get; }
 
@@ -51,16 +55,23 @@ namespace Spfx.Runtime.Server.Processes
 
             try
             {
+                using var cts = new CancellationTokenSource(Config.CreateProcessTimeout);
+                m_createProcessCancellation = cts;
+
                 Logger.Debug?.Trace("Starting CreateProcess...");
-                ProcessInfo = await CreateActualProcessAsync(punchPayload);
+                ProcessInfo = await CreateActualProcessAsync(punchPayload, cts.Token);
                 m_initEvent.Set();
+                m_createProcessCancellation = null;
                 Logger.Info?.Trace($"CreateProcess succeeded (PID {ProcessInfo.OsPid})");
             }
             catch (Exception ex)
             {
+                ReportFatalException(ex);
+                ex = await GetInitFailureException();
+
                 Logger.Warn?.Trace(ex, "CreateProcess failed: " + ex.Message);
                 m_initEvent.Dispose();
-                throw;
+                ex.Rethrow();
             }
         }
 
@@ -72,7 +83,7 @@ namespace Spfx.Runtime.Server.Processes
             Logger.Dispose();
         }
 
-        protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload);
+        protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct);
 
         void IProcessHandle.HandleMessage(string connectionId, WrappedInterprocessMessage wrappedMessage)
         {
@@ -125,6 +136,17 @@ namespace Spfx.Runtime.Server.Processes
         public ValueTask WaitForInitializationComplete()
         {
             return m_initEvent.WaitAsync();
+        }
+
+        protected virtual Task<Exception> GetInitFailureException()
+        {
+            return Task.FromResult(m_firstCaughtException ?? new ProcessInitializationException());
+        }
+
+        protected bool ReportFatalException(Exception ex)
+        {
+            m_createProcessCancellation?.SafeCancelAsync();
+            return null == Interlocked.CompareExchange(ref m_firstCaughtException, ex, null);
         }
     }
 }

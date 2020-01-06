@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.Serialization;
+using static Spfx.Interfaces.ProcessCreationInfo;
 
 namespace Spfx
 {
@@ -12,7 +14,13 @@ namespace Spfx
     {
         public bool IsReadOnly { get; private set; }
 
-        internal static ProcessClusterConfiguration Default { get; } = new ProcessClusterConfiguration();
+        internal static ProcessClusterConfiguration Default { get; }
+
+        static ProcessClusterConfiguration()
+        {
+            Default = new ProcessClusterConfiguration();
+            Default.IsReadOnly = true;
+        }
 
         public Type TypeResolverFactoryType { get; set; } = typeof(DefaultTypeResolverFactory);
 
@@ -51,13 +59,21 @@ namespace Spfx
 
         public bool EnableDebugChecks { get; set; } = HostFeaturesHelper.IsDebugBuild;
 
-        public Dictionary<TargetFramework, DirectoryInfo> CodeBaseOverrides { get; set; } 
-            = new Dictionary<TargetFramework, DirectoryInfo>();
+        public Dictionary<TargetFramework, string> RuntimeCodeBases { get; set; } 
+            = new Dictionary<TargetFramework, string>();
+        public Dictionary<TargetFramework, string> DefaultExecutableNames { get; set; }
+            = new Dictionary<TargetFramework, string>();
 
         public string DefaultNetcoreRuntime { get; set; } = "2";
         public bool PrintErrorInRegularOutput { get; set; }
 
         public TimeSpan IpcConnectionKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(30);
+        
+        public bool Append32BitSuffix { get; set; } = true;
+        public string SuffixFor32BitProcesses { get; set; } = "32";
+
+        [DataMember]
+        public StringKeyValuePair[] ExtraEnvironmentVariables { get; set; }
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

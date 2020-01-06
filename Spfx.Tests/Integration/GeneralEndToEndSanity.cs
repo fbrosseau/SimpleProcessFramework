@@ -1,11 +1,13 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using static Spfx.Tests.TestUtilities;
@@ -49,7 +51,8 @@ namespace Spfx.Tests.Integration
         public void BasicNetcore_SpecificRuntime(TargetFramework fw) => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = fw; });
 
         [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
-        public void BasicEnvironmentVariableSubprocess()
+        [TestCaseSource(nameof(Simple_Netfx_And_Netcore))]
+        public void BasicEnvironmentVariableSubprocess(TargetFramework fw)
         {
             var envVar = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
             var envValue = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
@@ -57,9 +60,10 @@ namespace Spfx.Tests.Integration
             using var cluster = CreateTestCluster();
             using var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
             {
-                procInfo.ExtraEnvironmentVariables = new[] { new ProcessCreationInfo.KeyValuePair(envVar, envValue) };
+                procInfo.TargetFramework = fw;
+                procInfo.ExtraEnvironmentVariables = new[] { new StringKeyValuePair(envVar, envValue) };
             });
-
+             
             Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
         }
 
@@ -85,6 +89,117 @@ namespace Spfx.Tests.Integration
                 {
                     ex.AssertValues(text);
                 });
+        }
+
+        private static IEnumerable<object[]> GetAllValidPreExistingFileCombinations()
+        {
+            foreach (var fw in Netfx_AllArchs)
+                yield return new object[] { fw, TestCustomHostExe.ExecutableName };
+
+            foreach (var fw in AllNetcore_AllArchs)
+            {
+                yield return new object[] { fw, TestCustomHostExe.ExecutableName };
+                yield return new object[] { fw, TestCustomHostExe.StandaloneDllName };
+                yield return new object[] { fw, $"{TestCustomHostExe.ExecutableName}.dll" };
+                yield return new object[] { fw, $"{TestCustomHostExe.StandaloneDllName}.dll" };
+            }
+
+            foreach (var fw in Netfx_And_Netcore3Plus_AllArchs)
+                yield return new object[] { fw, $"{TestCustomHostExe.ExecutableName}.exe" };
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable(ParallelScope.Children)*/]
+        [TestCaseSource(nameof(GetAllValidPreExistingFileCombinations))]
+        public void CustomNameSubprocess_ValidPreExistingFile(TargetFramework targetFramework, string customProcessName)
+        {
+            CustomNameSubprocessTest(targetFramework, customProcessName, validateCustomEntryPoint: true);
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
+        public void CustomNameSubprocess_NewFileAllowed(TargetFramework targetFramework)
+        {
+            string customProcessName = GetNewCustomHostName();
+
+            void CleanupFile()
+            {
+                DeleteFileIfExists(customProcessName + ".exe");
+                DeleteFileIfExists(customProcessName + ".dll");
+            }
+
+            CleanupFile();
+            try
+            {
+                CustomNameSubprocessTest(targetFramework, customProcessName, allowCreate: true);
+            }
+            finally
+            {
+                CleanupFile();
+            }
+        }
+
+        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
+        public void CustomNameSubprocessTestDenied(TargetFramework targetFramework)
+        {
+            string customProcessName = GetNewCustomHostName();
+            AssertThrows(() =>
+            {
+                CustomNameSubprocessTest(targetFramework, customProcessName);
+            }, (MissingSubprocessExecutableException ex) =>
+            {
+                Assert.AreEqual(customProcessName, ex.Filename);
+            });
+        }
+
+        private const string CustomHostNamePrefix = "Spfx.Tests.CustomName.";
+
+        private string GetNewCustomHostName()
+        {
+            return CustomHostNamePrefix + Guid.NewGuid().GetHashCode().ToString("X8") + "_";
+        }
+
+        [OneTimeSetUp]
+        public void ClassSetUp()
+        {
+            NetcoreHelper.GetInstalledNetcoreRuntimes();
+            if (HostFeaturesHelper.Is32BitSupported)
+                NetcoreHelper.GetInstalledNetcoreRuntimes(false);
+        }
+
+        [OneTimeTearDown]
+        public void ClassTearDown()
+        {
+            try
+            {
+                // best effort to delete hosts...
+                foreach (var f in PathHelper.CurrentBinFolder.GetFiles(CustomHostNamePrefix + "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        f.Delete();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private void CustomNameSubprocessTest(TargetFramework targetFramework, string customProcessName, bool validateCustomEntryPoint = false, bool allowCreate = false)
+        {
+            using var cluster = CreateTestCluster(cfg =>
+            {
+                cfg.CreateExecutablesIfMissing = allowCreate;
+            });
+
+            using var subprocess = CreateSuccessfulSubprocess(cluster, procInfo =>
+            {
+                procInfo.TargetFramework = targetFramework;
+                procInfo.ProcessName = customProcessName;
+            });
+
+            if (validateCustomEntryPoint)
+                Unwrap(subprocess.TestInterface.ValidateCustomProcessEntryPoint());
         }
 
         private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
@@ -229,7 +344,20 @@ namespace Spfx.Tests.Integration
                 if (!expectedProcessKind.IsFakeProcess()
                     && !expectedProcessKind.IsNetcore())
                 {
-                    expectedProcessName = GenericProcessStartupParameters.GetDefaultExecutableFileName(expectedProcessKind, ProcessClusterConfiguration.Default);
+                    expectedProcessName = ProcessConfig.GetDefaultExecutableName(expectedFramework, cluster.Configuration);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(expectedProcessName))
+            {
+                if (expectedProcessName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    expectedProcessName = expectedProcessName.Substring(0, expectedProcessName.Length - 4);
+
+                if (!string.IsNullOrWhiteSpace(expectedProcessName) && expectedProcessKind.Is32Bit() && cluster.Configuration.Append32BitSuffix
+                    && !expectedProcessName.EndsWith(cluster.Configuration.SuffixFor32BitProcesses, StringComparison.OrdinalIgnoreCase)
+                    && !expectedProcessName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    expectedProcessName += cluster.Configuration.SuffixFor32BitProcesses;
                 }
             }
 
@@ -259,11 +387,35 @@ namespace Spfx.Tests.Integration
 
             Log("Doing basic validation on target process..");
 
-            if (expectedProcessName != null)
+            bool expectDotNetExe = expectedProcessName?.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) == true;
+
+            if(expectedProcessKind.IsNetcore())
             {
-                if (expectedProcessName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    expectedProcessName = expectedProcessName.Substring(0, expectedProcessName.Length - 4);
-                Assert.AreEqual(expectedProcessName, iface.GetActualProcessName().Result);
+                var ver = Unwrap(iface.GetNetCoreVersion());
+                expectDotNetExe |= ver.Major < 3 || expectedProcessName?.StartsWith(TestCustomHostExe.StandaloneDllName) == true;
+
+                if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
+                {
+                    var requestedVersion = NetcoreHelper.ParseNetcoreVersion(targetNetcoreRuntime);
+                    if (requestedVersion.Major >= 3) // it's not possible to accurately tell netcore version before 3. Assume it just works for < 2.
+                    {
+                        Assert.GreaterOrEqual(ver, requestedVersion, "Unexpected runtime version");
+                    }
+                }
+            }
+
+            var realProcName = Unwrap(iface.GetActualProcessName());
+            if (realProcName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                realProcName = realProcName.Substring(0, realProcName.Length - 4);
+
+            if (expectDotNetExe)
+            {
+                if(!realProcName.EndsWith("dotnet", StringComparison.OrdinalIgnoreCase))
+                    Assert.Fail("Expected to be hosted by dotnet.exe, actual was " + realProcName);
+            }
+            else if (expectedProcessName != null)
+            {
+                Assert.AreEqual(expectedProcessName, realProcName);
             }
 
             var processObject = Process.GetProcessById(processInfo.OsPid);
@@ -291,16 +443,6 @@ namespace Spfx.Tests.Integration
                 Assert.IsFalse(cancellableCall.IsCompleted);
                 cts.Cancel();
                 ExpectException(cancellableCall);
-            }
-
-            if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
-            {
-                var requestedVersion = NetcoreHelper.ParseNetcoreVersion(targetNetcoreRuntime);
-                if (requestedVersion.Major >= 3) // it's not possible to accurately tell netcore version before 3. Assume it just works for < 2.
-                {
-                    var ver = Unwrap(iface.GetNetCoreVersion());
-                    Assert.GreaterOrEqual(ver, requestedVersion, "Unexpected runtime version");
-                }
             }
 
             Log("CreateSuccessfulSubprocess success");

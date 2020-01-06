@@ -28,7 +28,7 @@
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net48'">
+  <ItemGroup>
     <ProjectReference Include="..\TestCustomHostExe\TestCustomHostExe.csproj" />
   </ItemGroup>
 

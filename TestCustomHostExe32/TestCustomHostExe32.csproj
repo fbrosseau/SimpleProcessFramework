@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48</TargetFrameworks>
+    <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
     <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
     <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
-    <Prefer32Bit>true</Prefer32Bit>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>

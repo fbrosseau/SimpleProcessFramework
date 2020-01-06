@@ -11,6 +11,7 @@ using Spfx.Interfaces;
 using System;
 using NUnit.Framework;
 using System.Collections.Generic;
+using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests
 {
@@ -51,6 +52,9 @@ namespace Spfx.Tests
         internal static readonly TargetFramework[] Netfx_And_AllNetcore_AllArchs
             = Netfx_AllArchs.Concat(AllNetcore_AllArchs).ToArray();
 
+        internal static readonly TargetFramework[] Simple_Netfx_And_Netcore
+            = CleanupFrameworks(new[] { LatestNetcore, TargetFramework.Create(ProcessKind.Netfx) });
+
         internal static readonly TargetFramework[] Netfx_And_NetcoreLatest_AllArchs = new[]
         {
             TargetFramework.Create(ProcessKind.Netfx),
@@ -82,6 +86,30 @@ namespace Spfx.Tests
             return result.ToArray();
         }
 
+        private static TargetFramework[] CleanupFrameworks(TargetFramework[] targetFrameworks)
+        {
+            return targetFrameworks.Where(fw =>
+            {
+                switch (fw.ProcessKind)
+                {
+                    case ProcessKind.AppDomain:
+                        return HostFeaturesHelper.IsAppDomainSupported;
+                    case ProcessKind.Netcore:
+                        return HostFeaturesHelper.IsNetCoreSupported;
+                    case ProcessKind.Netcore32:
+                        return HostFeaturesHelper.IsNetCore32Supported;
+                    case ProcessKind.Netfx:
+                        return HostFeaturesHelper.IsNetFxSupported;
+                    case ProcessKind.Netfx32:
+                        return HostFeaturesHelper.IsNetFxSupported && HostFeaturesHelper.Is32BitSupported;
+                    case ProcessKind.Wsl:
+                        return HostFeaturesHelper.IsWslSupported;
+                    default:
+                        return false;
+                }
+            }).ToArray();
+        }
+        
         internal static readonly TargetFramework[] Netfx_And_NetcoreLatest = Netfx_And_NetcoreLatest_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
         internal static readonly TargetFramework[] Netfx_And_Netcore3Plus_AllArchs = Netfx_AllArchs.Concat(AllNetcore_AllArchs.Where(n => n.ParsedVersion >= new Version(3, 0))).ToArray();
         internal static readonly TargetFramework[] Netfx_And_Netcore3Plus = Netfx_And_Netcore3Plus_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
@@ -106,6 +134,13 @@ namespace Spfx.Tests
 
             var cluster = new ProcessCluster(config);
 
+          /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
+            {
+                EndpointId = "TestLogListener",
+                EndpointType = typeof(ITestLogListener),
+                ImplementationType = typeof(TestLogListener)
+            }));
+            */
             if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 
@@ -114,6 +149,17 @@ namespace Spfx.Tests
 
             return cluster;
         }
+
+        /*
+        public class ITestLogListener
+        {
+
+        }
+
+        private class TestLogListener : ILogListener
+        {
+
+        }*/
 
         private class TestTypeResolverFactory : DefaultTypeResolverFactory
         {
@@ -188,7 +234,7 @@ namespace Spfx.Tests
         {
             AssertThrows(callback, (Exception ex) =>
             {
-                Assert.IsAssignableFrom(typeof(TEx), ex);
+                Assert.IsTrue(typeof(TEx).IsInstanceOfType(ex), $"Expected the exception to be of type {typeof(TEx).FullName}, not {ex.GetType().FullName}");
                 exceptionCallback((TEx)ex);
             });
         }

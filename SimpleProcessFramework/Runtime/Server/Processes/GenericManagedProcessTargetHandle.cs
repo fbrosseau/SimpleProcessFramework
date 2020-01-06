@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -23,18 +24,20 @@ namespace Spfx.Runtime.Server.Processes
         {
         }
 
-        protected override async Task<Exception> GetInitFailureException(Exception caughtException)
+        protected override async Task<Exception> GetInitFailureException()
         {
+            var caughtException = await base.GetInitFailureException();
+
             var outputsClosedTask = Task.WhenAll(m_errStreamClosed.WaitAsync().AsTask(), m_outStreamClosed.WaitAsync().AsTask());
             if (await outputsClosedTask.WaitAsync(TimeSpan.FromMilliseconds(500)))
             {
-                throw new ProcessInitializationException("The process initialization failed", caughtException)
+                return new ProcessInitializationException("The process initialization failed", caughtException)
                 {
                     ProcessOutput = m_remoteProcessInitOutput.ToString()
                 };
             }
 
-            throw await base.GetInitFailureException(caughtException);
+            return caughtException;
         }
 
         protected override void OnInitializationCompleted()
@@ -44,31 +47,15 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override async Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct)
         {
-            var startupParameters = GenericProcessStartupParameters.Create(TargetFramework);
-            startupParameters.Initialize(Config, ProcessCreationInfo);
-
-            var startInfo = new ProcessStartInfo(startupParameters.ExecutableName, startupParameters.CommandLineArguments)
-            {
-                RedirectStandardInput = true,
-                RedirectStandardOutput = ProcessCreationInfo.ManuallyRedirectConsole,
-                RedirectStandardError = ProcessCreationInfo.ManuallyRedirectConsole,
-                WorkingDirectory = startupParameters.WorkingDirectory,
-                UseShellExecute = false,
-                CreateNoWindow = false
-            };
-
-            Logger.Debug?.Trace($"Spawning process with executable=[{startInfo.FileName}] cmdline=[{startInfo.Arguments}]");
-
-            foreach (var kvp in startupParameters.EnvironmentBlock)
-            {
-                startInfo.Environment[kvp.Key] = kvp.Value;
-            }
+            using var builder = new CommandLineBuilder(TypeResolver, Config, ProcessCreationInfo);
+            Logger.Debug?.Trace($"Spawning process with executable=[{builder.PrimaryExecutableName}] cmdline=[{builder.AllFormattedArguments}]");
+            ProcessStartInfo startInfo = builder.CreateProcessStartupInfo();
 
             Process process = null;
 
             try
             {
-                RemotePunchPayload.HandshakeTimeout = 120000;
+                RemotePunchPayload.HandshakeTimeout = (int)Config.CreateProcessTimeout.TotalMilliseconds;
 
                 await ProcessCreationUtilities.InvokeCreateProcess(() =>
                 {
@@ -82,7 +69,7 @@ namespace Spfx.Runtime.Server.Processes
 
                 ct.ThrowIfCancellationRequested();
 
-                if (ProcessCreationInfo.ManuallyRedirectConsole)
+                if (builder.ManuallyRedirectConsole)
                 {
                     DataReceivedEventHandler GetLogHandler(bool isOut)
                     {

@@ -199,31 +199,5 @@ namespace Spfx.Utilities
 
             return true;
         }
-
-        internal static string GetCodeBase(TargetFramework framework, ProcessClusterConfiguration config)
-        {
-            if (config.CodeBaseOverrides.TryGetValue(framework, out var dir))
-                return dir.FullName;
-
-            if (framework == TargetFramework.CurrentFramework || framework.ProcessKind.IsFakeProcess())
-                return PathHelper.CurrentBinFolder.FullName;
-
-            string relativeFolder;
-            if (framework.ProcessKind.IsNetfx())
-            {
-                relativeFolder = "..\\net48";
-            }
-            else if (framework.ProcessKind.IsNetcore())
-            {
-                var runtime = NetcoreHelper.GetBestNetcoreRuntime((framework as NetcoreTargetFramework)?.TargetRuntime, framework.ProcessKind);
-                relativeFolder = "../" + NetcoreHelper.GetDefaultNetcoreBinSubfolderName(runtime);
-            }
-            else
-            {
-                throw new ArgumentException("Framework not handled: " + framework);
-            }
-
-            return PathHelper.GetFullPath(relativeFolder);
-        }
     }
 }

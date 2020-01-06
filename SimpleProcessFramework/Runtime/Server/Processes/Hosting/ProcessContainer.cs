@@ -113,7 +113,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             }
         }
 
-        Task IIpcConnectorListener.CompleteInitialization()
+        Task IIpcConnectorListener.CompleteInitialization(CancellationToken ct)
         {
             m_logger.Info?.Trace("IIpcConnectorListener.CompleteInitialization");
             return m_processCore.InitializeAsync();

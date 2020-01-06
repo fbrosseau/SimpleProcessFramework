@@ -14,10 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../Subprocess.Netcore/SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Properties/" />
     <Compile Include="../Subprocess.Netcore/SubprocessMainShared.cs" Link="SubprocessMainShared.cs" />
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties/spfx.snk" />

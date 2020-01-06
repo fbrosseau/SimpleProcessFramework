@@ -9,6 +9,7 @@ namespace Spfx.Interfaces
     public class NetcoreTargetFramework : TargetFramework, IEquatable<NetcoreTargetFramework>
     {
         public static new NetcoreTargetFramework Default { get; } = (NetcoreTargetFramework)Create("3");
+        public static NetcoreTargetFramework Default32 { get; } = (NetcoreTargetFramework)Create(ProcessKind.Netcore32, Default.TargetRuntime);
 
         [DataMember]
         public string TargetRuntime { get; }
@@ -114,7 +115,7 @@ namespace Spfx.Interfaces
             if (!m.Success)
                 return s_zero;
 
-            var major = int.Parse(m.Groups["major"].Value) * 1000;
+            var major = int.Parse(m.Groups["major"].Value);
             int minor = 0;
             if (m.Groups["minor"].Success)
             {

@@ -4,18 +4,24 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Spfx.Utilities
 {
     internal static class NetcoreHelper
     {
+        public static class WellKnownArguments
+        {
+            public const string FrameworkVersion = "--fx-version";
+            public const string ListRuntimesCommand = "--list-runtimes";
+        }
+
         private static readonly Regex s_runtimeDescriptionRegex = new Regex(@"\s*Microsoft\.NETCore\.App\s+(?<fullName>(?<numbers>[0-9.]+)[a-z0-9.-]*)\s*\[.*?\]", RegexOptions.IgnoreCase);
         private static readonly Regex s_runtimeVersionRegex = new Regex(@"^(?<ver>[0-9.]+)[a-z0-9.-]*$", RegexOptions.IgnoreCase);
         private static readonly Lazy<Version> s_netcoreVersion = new Lazy<Version>(GetCurrentNetcoreVersion);
 
-        private static string[] s_installedNetcoreRuntimes;
-        private static string[] s_installedNetcore32Runtimes;
-        internal static readonly string ListRuntimesCommand = "--list-runtimes";
+        private static readonly Lazy<string[]> s_installedNetcoreRuntimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(true), LazyThreadSafetyMode.PublicationOnly);
+        private static readonly Lazy<string[]> s_installedNetcore32Runtimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(false), LazyThreadSafetyMode.PublicationOnly);
 
         public static Version NetcoreVersion => s_netcoreVersion.Value;
 
@@ -36,25 +42,20 @@ namespace Spfx.Utilities
 
         public static string[] GetInstalledNetcoreRuntimes(bool anyCpu = true)
         {
-            return (string[])GetInstalledNetcoreRuntimesInternal(anyCpu).Clone();
+            if (anyCpu)
+                return (string[])s_installedNetcoreRuntimes.Value.Clone();
+            return (string[])s_installedNetcore32Runtimes.Value.Clone();
         }
 
         private static string[] GetInstalledNetcoreRuntimesInternal(bool anyCpu)
         {
-            if (anyCpu)
-                return GetInstalledNetcoreRuntimes(true, ref s_installedNetcoreRuntimes);
-            return GetInstalledNetcoreRuntimes(false, ref s_installedNetcore32Runtimes);
+            var versions = RunDotNetExe(anyCpu, WellKnownArguments.ListRuntimesCommand);
+            return ParseNetcoreRuntimes(versions);
         }
 
-        private static string[] GetInstalledNetcoreRuntimes(bool anyCpu, ref string[] cachedResult)
+        internal static string RunDotNetExe(bool anyCpu, string command)
         {
-            var runtimes = cachedResult;
-            if (runtimes != null)
-                return runtimes;
-
-            var versions = ProcessUtilities.ExecAndGetConsoleOutput(GetNetCoreHostPath(anyCpu), ListRuntimesCommand, TimeSpan.FromSeconds(30)).Result;
-            cachedResult = ParseNetcoreRuntimes(versions);
-            return cachedResult;
+            return ProcessUtilities.ExecAndGetConsoleOutput(GetNetCoreHostPath(anyCpu), command, TimeSpan.FromSeconds(30)).Result;
         }
 
         internal static string[] ParseNetcoreRuntimes(string listRuntimesProgramOutput)

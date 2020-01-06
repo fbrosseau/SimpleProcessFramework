@@ -55,7 +55,7 @@ namespace Spfx.Utilities
             if (s_installedRuntimesInWsl != null)
                 return s_installedRuntimesInWsl;
 
-            var cmdOutput = ExecuteWslExe("dotnet " + NetcoreHelper.ListRuntimesCommand);
+            var cmdOutput = ExecuteWslExe("dotnet " + NetcoreHelper.WellKnownArguments.ListRuntimesCommand);
             s_installedRuntimesInWsl = NetcoreHelper.ParseNetcoreRuntimes(cmdOutput);
             return s_installedRuntimesInWsl;
         }
@@ -72,14 +72,15 @@ namespace Spfx.Utilities
 
         internal static string GetLinuxPath(string fullName)
         {
-            if (fullName.EndsWith("\\"))
-                fullName = fullName.Substring(0, fullName.Length - 1);
+            bool isDir = fullName.EndsWith("\\");
 
-            var output = ExecuteWslExe($"wslpath {ProcessUtilities.FormatArgument(Path.GetFullPath(fullName))}");
+            var output = ExecuteWslExe($"wslpath {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}");
 
             output = output.Trim(' ', '\r', '\t', '\n');
-            if (!output.EndsWith("/", StringComparison.OrdinalIgnoreCase))
+
+            if (isDir && !output.EndsWith("/"))
                 output += '/';
+
             return output;
         }
 

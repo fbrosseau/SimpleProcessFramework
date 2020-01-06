@@ -13,7 +13,7 @@ namespace Spfx.Interfaces
         public string ProcessName { get; set; }
 
         [DataMember]
-        public KeyValuePair[] ExtraEnvironmentVariables { get; set; }
+        public StringKeyValuePair[] ExtraEnvironmentVariables { get; set; }
 
         [DataMember]
         public string[] ExtraCommandLineArguments { get; set; }
@@ -24,6 +24,12 @@ namespace Spfx.Interfaces
         [DataMember]
         public bool ManuallyRedirectConsole { get; set; }
 
+        [DataMember]
+        public string RuntimeVersionOverride { get; set; }
+
+        [DataMember]
+        public bool? Append32BitSuffix { get; set; }
+
         public void EnsureIsValid()
         {
             if (string.IsNullOrWhiteSpace(ProcessUniqueId))
@@ -31,24 +37,24 @@ namespace Spfx.Interfaces
             if (TargetFramework is null)
                 throw new InvalidOperationException(nameof(TargetFramework) + " is mandatory");
         }
+    }
 
-        [DataContract]
-        public class KeyValuePair
+    [DataContract]
+    public class StringKeyValuePair
+    {
+        [DataMember]
+        public string Key { get; set; }
+        [DataMember]
+        public string Value { get; set; }
+
+        public StringKeyValuePair()
         {
-            [DataMember]
-            public string Key { get; set; }
-            [DataMember]
-            public string Value { get; set; }
+        }
 
-            public KeyValuePair()
-            {
-            }
-
-            public KeyValuePair(string key, string value)
-            {
-                Key = key;
-                Value = value;
-            }
+        public StringKeyValuePair(string key, string value)
+        {
+            Key = key;
+            Value = value;
         }
     }
 }

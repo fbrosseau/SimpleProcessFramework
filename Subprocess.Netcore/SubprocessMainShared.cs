@@ -18,7 +18,7 @@ namespace Spfx.Subprocess
             {
                 Console.Error.WriteLine(
                     "This program cannot be executed directly. It is part of the SimpleProcessFramework (Spfx) version {0}.",
-                    FileVersionInfo.GetVersionInfo(typeof(SubprocessMainShared).Assembly.Location).FileVersion);
+                    FileVersionInfo.GetVersionInfo(typeof(SubprocessMainShared).Assembly.Location).ProductVersion);
 
                 Environment.Exit(BadCommandLineArgReturnCode);
             }

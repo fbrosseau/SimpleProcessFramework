@@ -24,10 +24,10 @@ namespace Spfx.Runtime.Server.Processes
             m_rawProcessContainer = m_processContainer;
         }
 
-        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload)
+        protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct)
         {
             m_processContainer.Initialize(new StringReader(punchPayload.SerializeToString()));
-            await m_rawProcessContainer.CompleteInitialization();
+            await m_rawProcessContainer.CompleteInitialization(ct);
             return new ProcessInformation(ProcessUniqueId, ProcessUtilities.CurrentProcessId, ProcessCreationInfo.TargetFramework);
         }
 

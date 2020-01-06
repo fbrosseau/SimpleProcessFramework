@@ -1,15 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
+    <TargetFrameworks>$(AllNetCoreVersions)</TargetFrameworks>
     <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
-    <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\TestCustomHostExe\TestCustomHostExe.cs" Link="TestCustomHostExe.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SimpleProcessFramework" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='true'" />
     <PackageReference Include="SimpleProcessFramework.Core" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='false'" />
   </ItemGroup>
+
+  <Target Name="DeleteExe" AfterTargets="AfterBuild" >
+    <Delete Files="$(OutputPath)/$(AssemblyName).exe" />
+  </Target>
 
 </Project>
