@@ -16,6 +16,7 @@
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
+    <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.StartsWith('Netcore_'))">
