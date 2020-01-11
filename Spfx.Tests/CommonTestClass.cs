@@ -12,6 +12,8 @@ using System;
 using NUnit.Framework;
 using System.Collections.Generic;
 using static Spfx.Tests.TestUtilities;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Spfx.Tests
 {
@@ -219,6 +221,21 @@ namespace Spfx.Tests
             NoThrow,
             Throw
         }
+
+        protected static async Task WaitForAsync(Func<bool> func, TimeSpan operationsTimeout)
+        {
+            if (func())
+                return;
+
+            var sw = Stopwatch.StartNew();
+            while (!func() && sw.Elapsed < operationsTimeout)
+            {
+                await Task.Delay(50);
+            }
+
+            throw new TimeoutException();
+        }
+
 
         internal static void MaybeAssertThrows<TEx>(ThrowAction expectThrow, Action callback, Action<TEx> exceptionCallback)
             where TEx : Exception

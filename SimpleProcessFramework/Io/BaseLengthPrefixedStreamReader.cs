@@ -39,7 +39,7 @@ namespace Spfx.Io
         
         public ValueTask<StreamOrCode> GetNextFrame()
         {
-            return m_readQueue.Dequeue();
+            return m_readQueue.DequeueAsync();
         }
 
         private async Task ReadLoop()

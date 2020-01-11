@@ -2,7 +2,7 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <Version>0.0.533</Version>
+    <Version>0.0.534</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
     <PackageVersion>$(Version)</PackageVersion>

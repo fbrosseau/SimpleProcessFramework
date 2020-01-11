@@ -83,7 +83,7 @@ namespace Spfx.Runtime.Server
         {
             m_handler.CompleteCall(this);
             
-            if (Completion.Status == TaskStatus.RanToCompletion)
+            if (Completion.IsCompletedSuccessfully())
             {
                 Client.SendMessage(new RemoteCallSuccessResponse(Request.CallId, Completion.Result));
             }

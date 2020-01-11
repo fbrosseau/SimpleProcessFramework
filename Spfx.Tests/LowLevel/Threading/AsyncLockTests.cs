@@ -3,15 +3,12 @@ using System.Threading.Tasks;
 using Spfx.Utilities.Threading;
 using FluentAssertions;
 using System;
-using System.Diagnostics;
 
 namespace Spfx.Tests.LowLevel.Threading
 {
-    [TestFixture, Parallelizable]
-    public class AsyncLockTests : CommonTestClass
+    [TestFixture, Parallelizable(ParallelScope.All)]
+    public class AsyncLockTests : CommonThreadingTestClass
     {
-        private static readonly TimeSpan OperationsTimeout = TimeSpan.FromSeconds(10);
-
         [Test, Timeout(DefaultTestTimeout)]
         public void AsyncLock_Basic()
         {

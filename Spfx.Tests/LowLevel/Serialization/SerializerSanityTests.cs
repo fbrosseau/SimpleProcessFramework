@@ -11,7 +11,7 @@ using Spfx.Reflection;
 
 namespace Spfx.Tests.LowLevel.Serialization
 {
-    [TestFixture, Parallelizable]
+    [TestFixture, Parallelizable(ParallelScope.All)]
     public class BasicSerializerSanityTests : CommonTestClass
     {
         [Test, TestCaseSource(nameof(GenerateSampleObjects)), Timeout(DefaultTestTimeout)]

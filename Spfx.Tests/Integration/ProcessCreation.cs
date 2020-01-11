@@ -54,7 +54,7 @@ namespace Spfx.Tests.Integration
 
             Task.WaitAll(tasks.ToArray());
 
-            Assert.AreEqual(1, tasks.Count(t => t.Result.Status == TaskStatus.RanToCompletion && t.Result.Result == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
 
             if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
                 Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Status == TaskStatus.Faulted), "Expected all other tasks to fail");
@@ -161,7 +161,7 @@ namespace Spfx.Tests.Integration
 
             Task.WaitAll(tasks.ToArray());
 
-            Assert.AreEqual(1, tasks.Count(t => t.Result.Status == TaskStatus.RanToCompletion && t.Result.Result.ProcessOutcome == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result.ProcessOutcome == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
 
             if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
             {

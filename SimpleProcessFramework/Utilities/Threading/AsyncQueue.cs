@@ -203,7 +203,7 @@ namespace Spfx.Utilities.Threading
             return rescheduleIterator;
         }
 
-        public ValueTask<T> Dequeue()
+        public ValueTask<T> DequeueAsync()
         {
             if (TryDequeue(out T i))
                 return new ValueTask<T>(i);

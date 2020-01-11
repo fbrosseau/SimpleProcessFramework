@@ -1,5 +1,4 @@
 ﻿using Spfx.Diagnostics;
-using Spfx.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +11,16 @@ namespace Spfx.Utilities.Threading
 {
     internal static partial class TaskEx
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsCompletedSuccessfully(this Task t)
+        {
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
+            return t.IsCompletedSuccessfully;
+#else
+            return t.Status == TaskStatus.RanToCompletion;
+#endif
+        }
+
         public static Task<Task> Wrap(this Task t)
         {
             return t.ContinueWith(innerT => innerT, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
@@ -53,7 +62,7 @@ namespace Spfx.Utilities.Threading
             task.ContinueWith((innerTask, s) =>
             {
                 var innerTcs = (TaskCompletionSource<T>)s;
-                if (innerTask.Status == TaskStatus.RanToCompletion)
+                if (innerTask.IsCompletedSuccessfully())
                 {
                     if (typeof(T) == typeof(VoidType))
                     {
@@ -82,7 +91,7 @@ namespace Spfx.Utilities.Threading
             task.ContinueWith((innerTask, s) =>
             {
                 var innerTcs = (TaskCompletionSource<object>)s;
-                if (innerTask.Status == TaskStatus.RanToCompletion)
+                if (innerTask.IsCompletedSuccessfully())
                 {
                     if (typeof(T) == typeof(VoidType))
                     {
@@ -416,7 +425,7 @@ namespace Spfx.Utilities.Threading
 
         public static Task<VoidType> ToVoidTypeTask(Task t)
         {
-            if (t.Status == TaskStatus.RanToCompletion)
+            if (t.IsCompletedSuccessfully())
                 return TaskCache.VoidTypeTask;
 
             return t.ContinueWith(t =>

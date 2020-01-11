@@ -1,7 +1,12 @@
 ﻿using NUnit.Framework;
 using Spfx.Runtime.Exceptions;
+using Spfx.Utilities;
 using System;
 using System.Runtime.Serialization;
+
+public class DisposableObject : Disposable
+{
+}
 
 [DataContract]
 public class TestContract : IEquatable<TestContract>
