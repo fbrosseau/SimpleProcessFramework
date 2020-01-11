@@ -26,15 +26,33 @@ pool:
 steps:
 - task: NuGetToolInstaller@0
 
-- task: DotNetCoreInstaller@0
-  displayName: 'Install .net core 2.1.x'
+- task: UseDotNet@2
+  displayName: 'Install .net core 2.1'
   inputs:
-    version: '2.1.300'
+    packageType: sdk
+    version: 2.1
+    installationPath: $(Agent.ToolsDirectory)/dotnet
 
-- task: DotNetCoreInstaller@0
-  displayName: 'Install .net core 3.0.x'
+- task: UseDotNet@2
+  displayName: 'Install .net core 2.2'
   inputs:
-    version: '3.0.100'
+    packageType: sdk
+    version: 2.2
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 3.0'
+  inputs:
+    packageType: sdk
+    version: 3.0
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 3.1'
+  inputs:
+    packageType: sdk
+    version: 3.1
+    installationPath: $(Agent.ToolsDirectory)/dotnet
 
 - task: DotNetCoreCLI@2
   displayName: 'Main Build without tests'
