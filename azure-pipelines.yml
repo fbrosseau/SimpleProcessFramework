@@ -1,3 +1,4 @@
+name: '$(Build.SourceBranch)_$(DayOfYear)$(Rev:r)'
 trigger:
 - master
 
@@ -8,8 +9,6 @@ variables:
   netcoreName: 'netcoreapp2.1'
   netfxName: 'net48'
   windowsImage: 'windows-2019'
-  uniqueBuild: $(DayOfYear)$(Rev:r)
-  msbuildArgs: OfficialBuildNumber:$(uniqueBuild)
 
 strategy:
   matrix:
@@ -41,14 +40,14 @@ steps:
   inputs:
     command: build
     projects: 'SimpleProcessFramework.sln'
-    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) -p $(msbuildArgs)'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) -p OfficialBuildNumber:$(DayOfYear)$(Rev:r)'
 
 #- task: DotNetCoreCLI@2
 #  displayName: 'Full Build'
 #  inputs:
 #    command: build
 #    projects: 'SimpleProcessFramework.sln'
-#    arguments: '-c $(buildConfiguration) -v $(verbosity)'
+#    arguments: '-c $(buildConfiguration) -v $(verbosity) -p OfficialBuildNumber:$(DayOfYear)$(Rev:r)'
 #
 #- task: DotNetCoreCLI@2
 #  displayName: 'Run tests (netcore)'
