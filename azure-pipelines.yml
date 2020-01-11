@@ -58,7 +58,7 @@ steps:
     projects: 'Spfx.Tests'
     buildConfiguration: '$(buildConfiguration)'
     testRunTitle: '$(buildConfiguration) $(netcoreName)'
-    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run tests (netfx)'
@@ -69,7 +69,7 @@ steps:
     projects: 'SimpleProcessFramework.sln'
     buildConfiguration: '$(buildConfiguration)'
     testRunTitle: '$(buildConfiguration) $(netfxName)'
-    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity)'
+    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 
 - task: NuGetAuthenticate@0
   inputs:
