@@ -25,9 +25,15 @@ namespace Spfx.Tests.Integration
         {
             base.ClassSetUp();
 
-            NetcoreHelper.GetInstalledNetcoreRuntimes();
-            if (HostFeaturesHelper.Is32BitSupported)
-                NetcoreHelper.GetInstalledNetcoreRuntimes(false);
+            try
+            {
+                NetcoreHelper.GetInstalledNetcoreRuntimes();
+                if (HostFeaturesHelper.Is32BitSupported)
+                    NetcoreHelper.GetInstalledNetcoreRuntimes(false);
+            }
+            catch
+            {
+            }
         }
 
         protected ProcessCluster CreateTestCluster(Action<ProcessClusterConfiguration> customConfig = null)

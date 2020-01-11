@@ -23,6 +23,9 @@ namespace Spfx.Utilities
         private static readonly Lazy<string[]> s_installedNetcoreRuntimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(true), LazyThreadSafetyMode.PublicationOnly);
         private static readonly Lazy<string[]> s_installedNetcore32Runtimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(false), LazyThreadSafetyMode.PublicationOnly);
 
+        private static readonly Lazy<string> s_dotnetExePath = new Lazy<string>(() => GetNetCoreHostPathInternal(true), LazyThreadSafetyMode.PublicationOnly);
+        private static readonly Lazy<string> s_dotnetExe32Path = new Lazy<string>(() => GetNetCoreHostPathInternal(false), LazyThreadSafetyMode.PublicationOnly);
+
         public static Version NetcoreVersion => s_netcoreVersion.Value;
 
         public static string NetcoreFrameworkVersion { get; internal set; }
@@ -103,6 +106,18 @@ namespace Spfx.Utilities
 
         public static string GetNetCoreHostPath(bool anyCpu)
         {
+            if (anyCpu)
+                return s_dotnetExePath.Value;
+            return s_dotnetExe32Path.Value;
+        }
+
+        private static string GetNetCoreHostPathInternal(bool anyCpu)
+        {
+            var variable = anyCpu ? "NETCORE_DOTNET_EXE_PATH" : "NETCORE_DOTNET_EXE32_PATH";
+            var env = Environment.GetEnvironmentVariable(variable);
+            if (!string.IsNullOrEmpty(env))
+                return env;
+
             if (!HostFeaturesHelper.IsWindows)
                 return "dotnet";
 
