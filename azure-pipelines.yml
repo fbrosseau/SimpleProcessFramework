@@ -1,4 +1,4 @@
-name: '$(Build.BuildNumber)'
+name: '$(DayOfYear)$(Rev:rr)'
 trigger:
 - master
 
