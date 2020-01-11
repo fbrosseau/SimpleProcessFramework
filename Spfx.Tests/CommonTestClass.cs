@@ -1,215 +1,32 @@
 ﻿using Spfx.Reflection;
+using Spfx.Utilities.Threading;
 using Spfx.Diagnostics.Logging;
 using Spfx.Tests.Integration;
-using Spfx.Runtime.Server.Listeners;
 using Spfx.Utilities;
-using Spfx.Diagnostics;
-using System.Net.Sockets;
-using System.Net;
 using System.Linq;
-using Spfx.Interfaces;
 using System;
 using NUnit.Framework;
 using System.Collections.Generic;
-using static Spfx.Tests.TestUtilities;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.IO;
 
 namespace Spfx.Tests
 {
     public abstract class CommonTestClass
     {
+        public static ITypeResolver DefaultTestResolver { get; } = DefaultTypeResolverFactory.CreateRootTypeResolver<TestTypeResolverFactory>();
+
         public static bool IsInMsTest { get; set; } = true;
         public static readonly bool Test32Bit = HostFeaturesHelper.Is32BitSupported;
 
-        public static readonly ProcessKind DefaultProcessKind = ProcessClusterConfiguration.DefaultDefaultProcessKind;
-
-        public static readonly TargetFramework SimpleIsolationKind = TargetFramework.Create(
-            HostFeaturesHelper.IsAppDomainSupported
-            ? ProcessKind.AppDomain : ProcessKind.Netcore);
-
-        public const int DefaultTestTimeout = TestUtilities.DefaultTestTimeout;
-
-        public static ITypeResolver DefaultTestResolver { get; } = DefaultTypeResolverFactory.CreateRootTypeResolver<TestTypeResolverFactory>();
+#if DEBUG
+        public const int DefaultTestTimeout = 30000;
+#else
+        public const int DefaultTestTimeout = 30000;
+#endif
 
         private static readonly ILogger s_logger = DefaultTypeResolverFactory.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass));
-        private readonly SanityTestOptions m_options;
-
-        internal static NetcoreTargetFramework LatestNetcore = NetcoreTargetFramework.Create(ProcessKind.Netcore, "3");
-        internal static NetcoreTargetFramework LatestNetcore32 = NetcoreTargetFramework.Create(ProcessKind.Netcore32, LatestNetcore.TargetRuntime);
-
-        internal static readonly NetcoreTargetFramework[] AllNetcore = new[]
-        {
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.1"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.2"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.0"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1"),
-        };
-
-        internal static readonly TargetFramework[] Netfx_AllArchs = new[] { TargetFramework.Create(ProcessKind.Netfx), TargetFramework.Create(ProcessKind.Netfx32) };
-
-        internal static readonly NetcoreTargetFramework[] AllNetcore_AllArchs
-            = !Test32Bit ? AllNetcore : AllNetcore.Concat(AllNetcore.Select(n => NetcoreTargetFramework.Create(ProcessKind.Netcore32, n.TargetRuntime))).ToArray();
-
-        internal static readonly TargetFramework[] Netfx_And_AllNetcore_AllArchs
-            = Netfx_AllArchs.Concat(AllNetcore_AllArchs).ToArray();
-
-        internal static readonly TargetFramework[] Simple_Netfx_And_Netcore
-            = CleanupFrameworks(new[] { LatestNetcore, TargetFramework.Create(ProcessKind.Netfx) });
-
-        internal static readonly TargetFramework[] Netfx_And_NetcoreLatest_AllArchs = new[]
-        {
-            TargetFramework.Create(ProcessKind.Netfx),
-            TargetFramework.Create(ProcessKind.Netfx32),
-            LatestNetcore,
-            LatestNetcore32
-        };
-
-        internal static readonly TargetFramework[] AllGenericSupportedFrameworks = GetAllGenericSupportedFrameworks();
-
-        private static TargetFramework[] GetAllGenericSupportedFrameworks()
-        {
-            var result = new List<TargetFramework>();
-
-            result.Add(NetcoreTargetFramework.Create(ProcessKind.Netcore));
-
-            if (HostFeaturesHelper.IsNetCore32Supported)
-                result.Add(NetcoreTargetFramework.Create(ProcessKind.Netcore32));
-
-            if (HostFeaturesHelper.IsNetFxSupported)
-            {
-                result.Add(TargetFramework.Create(ProcessKind.Netfx));
-                result.Add(TargetFramework.Create(ProcessKind.Netfx32));
-            }
-
-            if (HostFeaturesHelper.IsWslSupported)
-                result.Add(TargetFramework.Create(ProcessKind.Wsl));
-
-            return result.ToArray();
-        }
-
-        private static TargetFramework[] CleanupFrameworks(TargetFramework[] targetFrameworks)
-        {
-            return targetFrameworks.Where(fw =>
-            {
-                switch (fw.ProcessKind)
-                {
-                    case ProcessKind.AppDomain:
-                        return HostFeaturesHelper.IsAppDomainSupported;
-                    case ProcessKind.Netcore:
-                        return HostFeaturesHelper.IsNetCoreSupported;
-                    case ProcessKind.Netcore32:
-                        return HostFeaturesHelper.IsNetCore32Supported;
-                    case ProcessKind.Netfx:
-                        return HostFeaturesHelper.IsNetFxSupported;
-                    case ProcessKind.Netfx32:
-                        return HostFeaturesHelper.IsNetFxSupported && HostFeaturesHelper.Is32BitSupported;
-                    case ProcessKind.Wsl:
-                        return HostFeaturesHelper.IsWslSupported;
-                    default:
-                        return false;
-                }
-            }).ToArray();
-        }
-
-        internal static readonly TargetFramework[] Netfx_And_NetcoreLatest = Netfx_And_NetcoreLatest_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
-        internal static readonly TargetFramework[] Netfx_And_Netcore3Plus_AllArchs = Netfx_AllArchs.Concat(AllNetcore_AllArchs.Where(n => n.ParsedVersion >= new Version(3, 0))).ToArray();
-        internal static readonly TargetFramework[] Netfx_And_Netcore3Plus = Netfx_And_Netcore3Plus_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
-
-        protected CommonTestClass(SanityTestOptions options = SanityTestOptions.UseIpcProxy)
-        {
-            m_options = options;
-        }
-
-        protected ProcessCluster CreateTestCluster(Action<ProcessClusterConfiguration> customConfig = null)
-        {
-            var config = new ProcessClusterConfiguration
-            {
-                EnableFakeProcesses = true,
-                EnableAppDomains = true,
-                EnableWsl = true,
-                Enable32Bit = true,
-                TypeResolverFactoryType = typeof(TestTypeResolverFactory)
-            };
-
-            customConfig?.Invoke(config);
-
-            var cluster = new ProcessCluster(config);
-
-            /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
-              {
-                  EndpointId = "TestLogListener",
-                  EndpointType = typeof(ITestLogListener),
-                  ImplementationType = typeof(TestLogListener)
-              }));
-              */
-            if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
-                cluster.AddListener(new TcpInterprocessConnectionListener(0));
-
-            var exceptionHandler = new ExceptionReportingEndpoint();
-            cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler);
-
-            return cluster;
-        }
-
-        /*
-        public class ITestLogListener
-        {
-
-        }
-
-        private class TestLogListener : ILogListener
-        {
-
-        }*/
-
-        private class TestTypeResolverFactory : DefaultTypeResolverFactory
-        {
-            public override ITypeResolver CreateRootResolver()
-            {
-                var typeResolver = base.CreateRootResolver();
-                typeResolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new TestUnhandledExceptionsHandler(r));
-                typeResolver.RegisterFactory<ILoggerFactory>(r => new DefaultLoggerFactory(r));
-                return typeResolver;
-            }
-        }
-
-        protected ProcessProxy CreateProxy(ProcessCluster cluster)
-        {
-            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
-                return cluster.PrimaryProxy;
-            return new ProcessProxy(encryptConnections: false);
-        }
-
-        protected T CreateProxyInterface<T>(ProcessCluster cluster, string processId, string endpointId)
-        {
-            return CreateProxyInterface<T>(CreateProxy(cluster), cluster, processId, endpointId);
-        }
-
-        protected T CreateProxyInterface<T>(ProcessProxy proxy, ProcessCluster cluster, string processId, string endpointId)
-        {
-            if ((m_options & SanityTestOptions.UseIpcProxy) != 0)
-            {
-                return proxy.CreateInterface<T>($"/{processId}/{endpointId}");
-            }
-            else
-            {
-                var ep = cluster.GetListenEndpoints().OfType<IPEndPoint>().First();
-                if (ep.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    if (ep.Address.Equals(IPAddress.Any))
-                        ep = new IPEndPoint(IPAddress.Loopback, ep.Port);
-                }
-                else
-                {
-                    if (ep.Address.Equals(IPAddress.IPv6Any))
-                        ep = new IPEndPoint(IPAddress.IPv6Loopback, ep.Port);
-                }
-
-                var addr = new ProcessEndpointAddress(ep.ToString(), processId, endpointId);
-                return proxy.CreateInterface<T>(addr);
-            }
-        }
 
         protected static void Log(string msg)
         {
@@ -222,20 +39,28 @@ namespace Spfx.Tests
             Throw
         }
 
+        [OneTimeSetUp]
+        public virtual void ClassSetUp()
+        {
+        }
+
         protected static async Task WaitForAsync(Func<bool> func, TimeSpan operationsTimeout)
         {
             if (func())
                 return;
 
             var sw = Stopwatch.StartNew();
-            while (!func() && sw.Elapsed < operationsTimeout)
+            while (true)
             {
+                if (func())
+                    return;
+
+                if (sw.Elapsed >= operationsTimeout)
+                    throw new TimeoutException();
+
                 await Task.Delay(50);
             }
-
-            throw new TimeoutException();
         }
-
 
         internal static void MaybeAssertThrows<TEx>(ThrowAction expectThrow, Action callback, Action<TEx> exceptionCallback)
             where TEx : Exception
@@ -271,6 +96,118 @@ namespace Spfx.Tests
             Assert.IsNotNull(caughtEx, "The callback did not throw");
             s_logger.Debug?.Trace("Caught " + caughtEx.GetType().FullName);
             exceptionCallback?.Invoke(caughtEx);
+        }
+
+        private static Task WrapWithUnhandledExceptions(Task task)
+        {
+            var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();
+            if (unhandledEx is null)
+                return task;
+
+            return WrapWithUnhandledExceptions(task.ContinueWith(t => { t.GetAwaiter().GetResult(); return VoidType.Value; }));
+        }
+
+        private static Task<T> WrapWithUnhandledExceptions<T>(Task<T> task)
+        {
+            var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();
+            if (unhandledEx is null)
+                return task;
+
+            var combined = Task.WhenAny(task, unhandledEx);
+            return combined.ContinueWith(_ =>
+            {
+                if (ReferenceEquals(combined.Result, unhandledEx))
+                    return Task.FromException<T>(new Exception("Remote process had an unhandled exception", unhandledEx.ExtractException()));
+
+                return task;
+            }).Unwrap();
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static void Unwrap(Task task)
+        {
+            var wrapped = WrapWithUnhandledExceptions(task);
+
+            if (!wrapped.WaitSilent(Math.Min(15000, DefaultTestTimeout)))
+                throw new TimeoutException();
+
+            wrapped.WaitOrRethrow();
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static T Unwrap<T>(Task<T> task)
+        {
+            Unwrap((Task)task);
+            return task.Result;
+        }
+
+        public static void ExpectException(Task task)
+        {
+            ExpectException<Exception>(task);
+        }
+
+        public static void ExpectException<TException>(Task task, Action<TException> inspectException = null)
+            where TException : Exception
+        {
+            ExpectException(task, typeof(TException), exceptionCallback: ex => inspectException?.Invoke((TException)ex));
+        }
+
+        public static void ExpectException(Task task, Type expectedExceptionType, string expectedText = null, string expectedStackFrame = null, Action<Exception> exceptionCallback = null)
+        {
+            task = WrapWithUnhandledExceptions(task);
+
+            if (!task.WaitSilent(TimeSpan.FromSeconds(30)))
+                throw new TimeoutException();
+
+            Assert.AreEqual(TaskStatus.Faulted, task.Status);
+            var ex = task.ExtractException();
+            if (!expectedExceptionType.IsInstanceOfType(ex))
+                Assert.Fail("Expected an exception of type " + expectedExceptionType.FullName + ", got " + ex.GetType().FullName);
+
+            if (!string.IsNullOrWhiteSpace(expectedText))
+            {
+                Assert.IsTrue(ex.Message.Contains(expectedText));
+            }
+
+            if (!string.IsNullOrWhiteSpace(expectedStackFrame))
+            {
+                Assert.IsTrue(ex.StackTrace?.Contains(expectedStackFrame));
+            }
+
+            exceptionCallback?.Invoke(ex);
+        }
+
+        public static void AssertRangeEqual<T>(IEnumerable<T> expectedValues, IEnumerable<T> actualValues)
+        {
+            var expected = expectedValues.ToArray();
+            var actual = actualValues.ToArray();
+            Assert.AreEqual(expected.Length, actual.Length);
+            for (int i = 0; i < expected.Length; ++i)
+            {
+                Assert.AreEqual(expected[i], actual[i]);
+            }
+        }
+
+        public static void DeleteFileIfExists(string file)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(file);
+                if (!Path.IsPathRooted(file))
+                    fileInfo = PathHelper.GetFileRelativeToBin(file);
+
+                if (fileInfo.Exists)
+                {
+                    if (fileInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
+                        fileInfo.Attributes &= ~FileAttributes.ReadOnly;
+
+                    fileInfo.Delete();
+                }
+            }
+            catch
+            {
+                // oh well.
+            }
         }
     }
 }

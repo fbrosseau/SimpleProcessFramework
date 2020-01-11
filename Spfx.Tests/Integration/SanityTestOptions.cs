@@ -5,7 +5,7 @@ namespace Spfx.Tests.Integration
     [Flags]
     public enum SanityTestOptions
     {
-        UseIpcProxy = 1,
-        UseTcpProxy = 2
+        Interprocess = 1,
+        Tcp = 2
     }
 }

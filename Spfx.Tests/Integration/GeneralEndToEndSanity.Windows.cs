@@ -7,7 +7,6 @@ using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
 {

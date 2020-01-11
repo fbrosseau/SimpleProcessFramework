@@ -2,11 +2,10 @@
 using Spfx.Interfaces;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
 {
-    public class SanityOfSanity : CommonTestClass
+    public class SanityOfSanity : CommonSpfxIntegrationTestsClass
     {
         [DataContract]
         public class BombClassOnSerialize

@@ -82,7 +82,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface1)rawInterface;
 
-            TestUtilities.Unwrap(iface.Test());
+            Unwrap(iface.Test());
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -109,7 +109,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface3)rawInterface;
 
-            TestUtilities.Unwrap(iface.Test(longval));
+            Unwrap(iface.Test(longval));
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -136,7 +136,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface4)rawInterface;
 
-            TestUtilities.Unwrap(iface.Test(longval));
+            Unwrap(iface.Test(longval));
 
             Assert.AreEqual(expectedAddress, actualAddress);
         }
@@ -160,7 +160,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             rawInterface.Initialize(handler, expectedAddress);
             var iface = (ITestInterface2)rawInterface;
 
-            var actualResult = TestUtilities.Unwrap(iface.Test());
+            var actualResult = Unwrap(iface.Test());
 
             Assert.AreEqual(expectedAddress, actualAddress);
             Assert.AreEqual(expectedResult, actualResult);
@@ -173,7 +173,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             if (expectedArgs is null)
                 expectedArgs = Array.Empty<object>();
 
-            TestUtilities.AssertRangeEqual(expectedArgs, actualArgs);
+            AssertRangeEqual(expectedArgs, actualArgs);
         }
     }
 }

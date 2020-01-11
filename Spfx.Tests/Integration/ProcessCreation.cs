@@ -5,11 +5,10 @@ using Spfx.Utilities.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Spfx.Tests.TestUtilities;
 
 namespace Spfx.Tests.Integration
 {
-    public class ProcessCreationTests : CommonTestClass
+    public class ProcessCreationTests : CommonSpfxIntegrationTestsClass
     {
         private class LongInitEndpoint : TestInterface
         {
