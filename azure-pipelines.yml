@@ -8,6 +8,8 @@ variables:
   netcoreName: 'netcoreapp2.1'
   netfxName: 'net48'
   windowsImage: 'windows-2019'
+  uniqueBuild: '$(DayOfYear)$(Rev:r)'
+  msbuildArgs: 'OfficialBuildNumber:$(uniqueBuild)'
 
 strategy:
   matrix:
@@ -39,7 +41,7 @@ steps:
   inputs:
     command: build
     projects: 'SimpleProcessFramework.sln'
-    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity)'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) -p $(msbuildArgs)'
 
 #- task: DotNetCoreCLI@2
 #  displayName: 'Full Build'
