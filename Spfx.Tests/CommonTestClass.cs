@@ -109,7 +109,7 @@ namespace Spfx.Tests
                 }
             }).ToArray();
         }
-        
+
         internal static readonly TargetFramework[] Netfx_And_NetcoreLatest = Netfx_And_NetcoreLatest_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
         internal static readonly TargetFramework[] Netfx_And_Netcore3Plus_AllArchs = Netfx_AllArchs.Concat(AllNetcore_AllArchs.Where(n => n.ParsedVersion >= new Version(3, 0))).ToArray();
         internal static readonly TargetFramework[] Netfx_And_Netcore3Plus = Netfx_And_Netcore3Plus_AllArchs.Where(f => !f.ProcessKind.Is32Bit()).ToArray();
@@ -134,13 +134,13 @@ namespace Spfx.Tests
 
             var cluster = new ProcessCluster(config);
 
-          /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
-            {
-                EndpointId = "TestLogListener",
-                EndpointType = typeof(ITestLogListener),
-                ImplementationType = typeof(TestLogListener)
-            }));
-            */
+            /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
+              {
+                  EndpointId = "TestLogListener",
+                  EndpointType = typeof(ITestLogListener),
+                  ImplementationType = typeof(TestLogListener)
+              }));
+              */
             if ((m_options & SanityTestOptions.UseTcpProxy) != 0)
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 
@@ -229,13 +229,13 @@ namespace Spfx.Tests
                 AssertThrows(callback, exceptionCallback);
         }
 
-        internal static void AssertThrows<TEx>(Action callback, Action<TEx> exceptionCallback)
+        internal static void AssertThrows<TEx>(Action callback, Action<TEx> exceptionCallback = null)
             where TEx : Exception
         {
             AssertThrows(callback, (Exception ex) =>
             {
                 Assert.IsTrue(typeof(TEx).IsInstanceOfType(ex), $"Expected the exception to be of type {typeof(TEx).FullName}, not {ex.GetType().FullName}");
-                exceptionCallback((TEx)ex);
+                exceptionCallback?.Invoke((TEx)ex);
             });
         }
 

@@ -238,10 +238,105 @@ namespace Spfx.Utilities.Threading
                 throw new TimeoutException();
         }
 
+#if WIP
+        private class AwaitOrTimeoutState<T> : AwaitOrTimeoutState, IValueTaskSource<T>
+        {
+            internal static ValueTask<T> Create(Task<T> t, TimeSpan timeout)
+            {
+                if (t.IsCompleted)
+                    return new ValueTask<T>(t);
+                return CreateInternal(t, timeout).AsValueTaskT();
+            }
+
+            public ValueTask<T> AsValueTaskT()
+            {
+                return new ValueTask<T>(this, 0);
+            }
+
+            internal static AwaitOrTimeoutState<T> CreateInternal(Task t, TimeSpan timeout)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class AwaitOrTimeoutState : IValueTaskSource
+        {
+            protected readonly Task m_task;
+
+            protected AwaitOrTimeoutState(Task t, TimeSpan timeout)
+            {
+                m_task = t;
+            }
+
+            public ValueTask AsValueTask()
+            {
+                return new ValueTask(this, 0);
+            }
+
+            internal static ValueTask Create(Task t, TimeSpan timeout)
+            {
+                if (t.IsCompleted)
+                    return new ValueTask(t);
+                return AwaitOrTimeoutState<VoidType>.CreateInternal(t, timeout).AsValueTask();
+            }
+
+            ValueTaskSourceStatus IValueTaskSource.GetStatus(short token)
+            {
+                throw new NotImplementedException();
+            }
+
+            void IValueTaskSource.OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+            {
+                throw new NotImplementedException();
+            }
+
+            void IValueTaskSource.GetResult(short token)
+            {
+            }
+        }
+#endif
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static Task<T> WithTimeout<T>(this Task<T> t, TimeSpan timeout)
+        {
+            if (t.IsCompleted)
+                return t;
+
+            return t.WaitAsync(timeout).ContinueWith((t, s) =>
+            {
+                var innerT = (Task<T>)s;
+                if (t.Result)
+                    return innerT.GetResultOrRethrow();
+                throw new TimeoutException();
+            }, t, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static Task WithTimeout(this Task t, TimeSpan timeout)
+        {
+            if (t.IsCompleted)
+                return t;
+
+            return t.WaitAsync(timeout).ContinueWith((t, s) =>
+            {
+                var innerT = (Task)s;
+                if (t.Result)
+                    innerT.WaitOrRethrow();
+                else
+                    throw new TimeoutException();
+            }, t, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
         [DebuggerStepThrough, DebuggerHidden]
         public static void WaitOrRethrow(this Task t)
         {
             t.GetAwaiter().GetResult();
+        }
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static T GetResultOrRethrow<T>(this Task<T> t)
+        {
+            return t.GetAwaiter().GetResult();
         }
 
         [DebuggerStepThrough, DebuggerHidden]

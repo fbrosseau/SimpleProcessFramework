@@ -40,11 +40,12 @@ namespace Spfx.Utilities.Threading
             {
                 if (IsDisposed)
                 {
-                    lockSession.Cancel(canCompleteSynchronously: true);
+                    lockSession?.CancelDueToDispose();
                 }
                 else if (IsLockTaken)
                 {
-                    m_waiters.Enqueue(lockSession);
+                    if (lockSession != null)
+                        m_waiters.Enqueue(lockSession);
                 }
                 else
                 {
@@ -87,20 +88,23 @@ namespace Spfx.Utilities.Threading
 
         protected override void OnDispose()
         {
-            List<LockSession> waiters = null;
+            LockSession[] waiters = null;
             lock (m_waiters)
             {
                 if (m_waiters.Count > 0)
-                    waiters = m_waiters.ToList();
+                {
+                    waiters = m_waiters.ToArray();
+                    m_waiters.Clear();
+                }
             }
 
             if (waiters != null)
             {
                 ThreadPool.QueueUserWorkItem(s =>
                 {
-                    foreach (var waiter in (List<LockSession>)s)
+                    foreach (var waiter in (LockSession[])s)
                     {
-                        waiter.Cancel(canCompleteSynchronously: true);
+                        waiter.CancelDueToDispose();
                     }
                 }, waiters);
             }
@@ -134,12 +138,9 @@ namespace Spfx.Utilities.Threading
                     TrySetResult(this);
             }
 
-            public void Cancel(bool canCompleteSynchronously)
+            public void CancelDueToDispose()
             {
-                if (!canCompleteSynchronously)
-                    RequeueThis(false);
-                else
-                    TrySetCanceled();
+                TrySetException(new ObjectDisposedException(nameof(AsyncLock)));
             }
 
             private void RequeueThis(bool completedSuccessfully)
@@ -205,9 +206,6 @@ namespace Spfx.Utilities.Threading
             {
                 CheckToken(token);
 
-                if (Interlocked.Exchange(ref m_continuationToInvoke, continuation) != null)
-                    ThrowInvalidOperationException();
-
                 m_continuationToInvoke = continuation;
                 m_continuationToInvokeState = state;
 
@@ -236,7 +234,7 @@ namespace Spfx.Utilities.Threading
 #if NETCOREAPP2_1_PLUS || NETSTANDANDARD2_1_PLUS
                     ThreadPool.QueueUserWorkItem(continuation, state, preferLocal: true);
 #else
-                    ThreadPool.QueueUserWorkItem(s => ((FreeLockSession)s).InvokeCallback(), this);;
+                    ThreadPool.QueueUserWorkItem(s => ((FreeLockSession)s).InvokeCallback(), this);
 #endif
                 }
                 else
