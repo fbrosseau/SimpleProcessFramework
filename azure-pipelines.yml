@@ -8,8 +8,8 @@ variables:
   netcoreName: 'netcoreapp2.1'
   netfxName: 'net48'
   windowsImage: 'windows-2019'
-  uniqueBuild: '$(DayOfYear)$(Rev:r)'
-  msbuildArgs: 'OfficialBuildNumber:$(uniqueBuild)'
+  uniqueBuild: $(DayOfYear)$(Rev:r)
+  msbuildArgs: OfficialBuildNumber:$(uniqueBuild)
 
 strategy:
   matrix:
