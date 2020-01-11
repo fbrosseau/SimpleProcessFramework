@@ -1,4 +1,4 @@
-name: 'master_$(DayOfYear)$(Rev:rr)'
+name: '$(Build.BuildNumber)'
 trigger:
 - master
 
@@ -40,14 +40,14 @@ steps:
   inputs:
     command: build
     projects: 'SimpleProcessFramework.sln'
-    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) -p OfficialBuildNumber:$(DayOfYear)$(Rev:rr)'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) -p OfficialBuildNumber:$(Build.BuildNumber)'
 
 #- task: DotNetCoreCLI@2
 #  displayName: 'Full Build'
 #  inputs:
 #    command: build
 #    projects: 'SimpleProcessFramework.sln'
-#    arguments: '-c $(buildConfiguration) -v $(verbosity) -p OfficialBuildNumber:$(DayOfYear)$(Rev:rr)'
+#    arguments: '-c $(buildConfiguration) -v $(verbosity) -p OfficialBuildNumber:$(Build.BuildNumber)'
 #
 #- task: DotNetCoreCLI@2
 #  displayName: 'Run tests (netcore)'
