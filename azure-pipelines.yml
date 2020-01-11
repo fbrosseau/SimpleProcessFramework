@@ -40,14 +40,14 @@ steps:
   inputs:
     command: build
     projects: 'SimpleProcessFramework.sln'
-    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p OfficialBuildNumber:$(Build.BuildNumber)'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 
 #- task: DotNetCoreCLI@2
 #  displayName: 'Full Build'
 #  inputs:
 #    command: build
 #    projects: 'SimpleProcessFramework.sln'
-#    arguments: '-c $(buildConfiguration) -v $(verbosity) /p OfficialBuildNumber:$(Build.BuildNumber)'
+#    arguments: '-c $(buildConfiguration) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 #
 #- task: DotNetCoreCLI@2
 #  displayName: 'Run tests (netcore)'
