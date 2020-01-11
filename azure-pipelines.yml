@@ -1,4 +1,4 @@
-name: '$(Build.SourceBranch)_$(DayOfYear)$(Rev:rr)'
+name: 'master_$(DayOfYear)$(Rev:rr)'
 trigger:
 - master
 
