@@ -105,6 +105,9 @@ steps:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
     arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 
+- script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH;]$(Agent.ToolsDirectory)/dotnet/dotnet'
+  displayName: Set SPFX_DOTNET_EXE_PATH
+
 - script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH32;]$(Agent.ToolsDirectory)/dotnet32/dotnet'
   displayName: Set SPFX_DOTNET_EXE_PATH32
 
