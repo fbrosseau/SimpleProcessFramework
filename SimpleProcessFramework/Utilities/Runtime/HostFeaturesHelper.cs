@@ -234,7 +234,6 @@ namespace Spfx.Utilities.Runtime
             sb.AppendLine("Is Debug: " + IsDebugBuild);
             sb.AppendLine("NetFX Supported: " + IsNetFxSupported);
             sb.AppendLine("32-bit Supported: " + Is32BitSupported);
-            sb.AppendLine("Wsl Supported: " + IsWslSupported);
 
             void WriteNetcore(string name, NetcoreInfo h)
             {
