@@ -33,7 +33,7 @@ steps:
 - pwsh: '[Environment]::SetEnvironmentVariable("SPFX_DOTNET_EXE_PATH32", "$(Agent.ToolsDirectory)/dotnet32/dotnet", "User")'
   displayName: Set SPFX_DOTNET_EXE_PATH32
 
-- pwsh: 'Write-Host "$env:SPFX_DOTNET_EXE_PATH32"'
+- script: 'echo %SPFX_DOTNET_EXE_PATH32%'
   displayName: Test
 
 #steps:
