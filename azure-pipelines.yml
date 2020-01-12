@@ -123,40 +123,40 @@ steps:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
     arguments: '-Assembly "$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)/Spfx.dll"'
 
-#- task: DotNetCoreCLI@2
-#  displayName: 'Run tests (netcore)'
-#  continueOnError: true
-#  inputs:
-#    command: test
-#    projects: 'Spfx.Tests'
-#    buildConfiguration: '$(buildConfiguration)'
-#    testRunTitle: '$(buildConfiguration) $(netcoreName)'
-#    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore'
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Run tests (netfx)'
-#  continueOnError: true
-#  condition: eq(variables['buildNetfx'], 'true')
-#  inputs:
-#    command: test
-#    projects: 'SimpleProcessFramework.sln'
-#    buildConfiguration: '$(buildConfiguration)'
-#    testRunTitle: '$(buildConfiguration) $(netfxName)'
-#    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity) --no-build --no-restore'
-#
-##----------------------------------------------------------------------------------------------------
-## Nuget publish
-##----------------------------------------------------------------------------------------------------
-#
-#- task: NuGetAuthenticate@0
-#  inputs:
-#    nuGetServiceConnections: 'Github-Packages'
-#
-#- task: NuGetCommand@2
-#  displayName: 'Nuget Push'
-#  inputs:
-#    command: 'push'
-#    packagesToPush: '$(Build.Repository.LocalPath)\nuspec\*.nupkg'
-#    nuGetFeedType: 'external'
-#    publishFeedCredentials: 'Github-Packages'
-#    verbosityPush: 'Detailed'
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netcore)'
+  continueOnError: true
+  inputs:
+    command: test
+    projects: 'Spfx.Tests'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netfx)'
+  continueOnError: true
+  condition: eq(variables['buildNetfx'], 'true')
+  inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netfxName)'
+    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity) --no-build --no-restore'
+
+#----------------------------------------------------------------------------------------------------
+# Nuget publish
+#----------------------------------------------------------------------------------------------------
+
+- task: NuGetAuthenticate@0
+  inputs:
+    nuGetServiceConnections: 'Github-Packages'
+
+- task: NuGetCommand@2
+  displayName: 'Nuget Push'
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.Repository.LocalPath)\nuspec\*.nupkg'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'Github-Packages'
+    verbosityPush: 'Detailed'
