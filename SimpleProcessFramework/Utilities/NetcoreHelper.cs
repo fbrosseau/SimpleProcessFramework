@@ -32,7 +32,14 @@ namespace Spfx.Utilities
 
         internal static bool NetCoreExists(bool anyCpu)
         {
-            return (anyCpu && !HostFeaturesHelper.IsWindows) || new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
+            try
+            {
+                return (anyCpu && !HostFeaturesHelper.IsWindows) || new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         internal static bool IsNetcoreAtLeastVersion(int major, int minor = -1)
