@@ -113,7 +113,7 @@ namespace Spfx.Utilities
 
         private static string GetNetCoreHostPathInternal(bool anyCpu)
         {
-            var variable = anyCpu ? "NETCORE_DOTNET_EXE_PATH" : "NETCORE_DOTNET_EXE32_PATH";
+            var variable = anyCpu ? "SPFX_DOTNET_EXE_PATH" : "SPFX_DOTNET_EXE_PATH32";
             var env = Environment.GetEnvironmentVariable(variable);
             if (!string.IsNullOrEmpty(env))
                 return env;
