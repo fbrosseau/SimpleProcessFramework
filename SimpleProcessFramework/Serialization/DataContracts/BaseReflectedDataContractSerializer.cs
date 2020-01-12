@@ -78,19 +78,25 @@ namespace Spfx.Serialization.DataContracts
                     var pi = (PropertyInfo)memberInfo;
                     memberType = pi.PropertyType;
 
+                    var declaringType = pi.DeclaringType;
+
                     var getter = pi.GetGetMethod(true);
                     if (getter is null)
-                        throw new InvalidOperationException($"Property {actualType.FullName}::{pi.Name} has no getter");
+                        throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} has no getter");
 
                     member.GetAccessor = o => getter.Invoke(o, null);
 
                     var setter = pi.GetSetMethod(true);
                     if (setter is null)
                     {
-                        var autoBackingField = actualType.GetField($"<{pi.Name}>k__BackingField", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var autoBackingField = declaringType.GetField($"<{pi.Name}>k__BackingField", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         if (autoBackingField is null)
-                            throw new InvalidOperationException($"Property {actualType.FullName}::{pi.Name} has no setter");
-
+                        {
+                            if (declaringType == actualType)
+                                throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} has no setter");
+                            else
+                                throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} (in {actualType.FullName}) has no setter");
+                        }
                         member.SetAccessor = (o, v) => autoBackingField.SetValue(o, v);
                     }
                     else
