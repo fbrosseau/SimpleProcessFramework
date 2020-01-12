@@ -2,6 +2,7 @@
 using Spfx.Interfaces;
 using Spfx.Runtime.Server.Listeners;
 using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Linq;
 using System.Diagnostics;
@@ -27,9 +28,9 @@ namespace Spfx.Tests.Integration
 
             try
             {
-                _ = NetcoreHelper.Default.InstalledVersions;
-                if (NetcoreHelper.X86.IsSupported)
-                    _ = NetcoreHelper.X86.InstalledVersions;
+                _ = NetcoreInfo.Default.InstalledVersions;
+                if (NetcoreInfo.X86.IsSupported)
+                    _ = NetcoreInfo.X86.InstalledVersions;
             }
             catch
             {
@@ -90,9 +91,9 @@ namespace Spfx.Tests.Integration
             if (requestedRuntime is NetcoreTargetFramework netcore && !string.IsNullOrWhiteSpace(netcore.TargetRuntime))
             {
                 targetNetcoreRuntime = netcore.TargetRuntime;
-                if (NetcoreHelper.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
+                if (NetcoreInfo.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
                     Assert.Fail($".net core runtime {requestedRuntime} is not supported by this host. The supported runtimes are: \r\n"
-                        + string.Join("\r\n", NetcoreHelper.Default.InstalledVersions.Select(r => "- " + r)));
+                        + string.Join("\r\n", NetcoreInfo.Default.InstalledVersions.Select(r => "- " + r)));
             }
 
             if (!requestedRuntime.IsSupportedByCurrentProcess(cluster.Configuration, out var details))
@@ -156,7 +157,7 @@ namespace Spfx.Tests.Integration
 
                 if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
                 {
-                    var requestedVersion = NetcoreHelper.ParseNetcoreVersion(targetNetcoreRuntime);
+                    var requestedVersion = NetcoreInfo.ParseNetcoreVersion(targetNetcoreRuntime);
                     if (requestedVersion.Major >= 3) // it's not possible to accurately tell netcore version before 3. Assume it just works for < 2.
                     {
                         Assert.GreaterOrEqual(ver, requestedVersion, "Unexpected runtime version");

@@ -3,6 +3,7 @@ using System.Linq;
 using Spfx.Interfaces;
 using System;
 using System.Collections.Generic;
+using Spfx.Utilities.Runtime;
 
 namespace Spfx.Tests
 {

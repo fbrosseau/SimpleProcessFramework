@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
+using Spfx.Utilities.Runtime;
 
 namespace Spfx.Tests
 {

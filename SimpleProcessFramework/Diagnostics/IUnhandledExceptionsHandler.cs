@@ -1,6 +1,6 @@
 ﻿using Spfx.Diagnostics.Logging;
 using Spfx.Reflection;
-using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Diagnostics;
 

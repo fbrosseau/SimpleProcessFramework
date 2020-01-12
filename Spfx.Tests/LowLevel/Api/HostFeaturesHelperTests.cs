@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 
 namespace Spfx.Tests.LowLevel.Api

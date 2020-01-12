@@ -8,6 +8,7 @@ using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes

@@ -1,6 +1,6 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Reflection;
-using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

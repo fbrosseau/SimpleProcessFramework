@@ -1,4 +1,4 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Utilities.Runtime;
 using System;
 using System.Runtime.Serialization;
 

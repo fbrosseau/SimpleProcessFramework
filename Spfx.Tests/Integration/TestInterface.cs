@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Linq;
 using NUnit.Framework;
+using Spfx.Utilities.Runtime;
 
 namespace Spfx.Tests.Integration
 {
@@ -81,7 +82,7 @@ namespace Spfx.Tests.Integration
 
         public Task<Version> GetNetCoreVersion()
         {
-            return Task.FromResult(NetcoreHelper.CurrentProcessNetcoreVersion);
+            return Task.FromResult(NetcoreInfo.CurrentProcessNetcoreVersion);
         }
 
         public async Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)

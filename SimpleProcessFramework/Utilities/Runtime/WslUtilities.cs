@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net.Sockets;
 
-namespace Spfx.Utilities
+namespace Spfx.Utilities.Runtime
 {
     internal static class WslUtilities
     {
@@ -52,7 +52,7 @@ namespace Spfx.Utilities
 
             protected override bool CheckIsSupported(out string reason)
             {
-                if(!HostFeaturesHelper.IsWindows)
+                if (!HostFeaturesHelper.IsWindows)
                 {
                     reason = "Only supported on Windows hosts";
                     return false;

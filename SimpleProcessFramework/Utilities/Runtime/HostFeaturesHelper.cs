@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Spfx.Interfaces;
 
-namespace Spfx.Utilities
+namespace Spfx.Utilities.Runtime
 {
     public static class HostFeaturesHelper
     {
@@ -194,7 +194,7 @@ namespace Spfx.Utilities
                 return false;
             }
 
-            if(processKind == ProcessKind.Wsl && !config.EnableWsl)
+            if (processKind == ProcessKind.Wsl && !config.EnableWsl)
             {
                 error = "This current configuration does not support WSL";
                 return false;

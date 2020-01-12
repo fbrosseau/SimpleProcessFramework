@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Spfx.Utilities
+namespace Spfx.Utilities.Runtime
 {
     internal class NetcoreInfo
     {
@@ -108,7 +108,7 @@ namespace Spfx.Utilities
         {
             try
             {
-                if(!CheckIsSupported(out var reason))
+                if (!CheckIsSupported(out var reason))
                 {
                     NotSupportedReason = reason;
                     return false;
@@ -116,7 +116,7 @@ namespace Spfx.Utilities
 
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 NotSupportedReason = ex.ToString();
                 return false;
@@ -161,7 +161,7 @@ namespace Spfx.Utilities
             return choices.FirstOrDefault(runtime => runtime.StartsWith(requestedVersion, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static NetcoreInfo GetHelper(bool anyCpu) 
+        private static NetcoreInfo GetHelper(bool anyCpu)
             => anyCpu ? Default : X86;
         private static NetcoreInfo GetHelper(ProcessKind kind)
             => kind == ProcessKind.Wsl ? Wsl : GetHelper(!HostFeaturesHelper.IsWindows || !kind.Is32Bit());

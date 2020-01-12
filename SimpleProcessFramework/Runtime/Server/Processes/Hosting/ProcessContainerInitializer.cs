@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Interfaces;
 using Spfx.Diagnostics.Logging;
+using Spfx.Utilities.Runtime;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
