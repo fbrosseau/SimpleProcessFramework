@@ -149,8 +149,7 @@ namespace Spfx
 
         public static ProcessEndpointAddress Parse(string addr)
         {
-            var a = new ProcessEndpointAddress();
-            a.m_originalString = addr;
+            var a = new ProcessEndpointAddress {m_originalString = addr};
             a.EnsureParsed();
             return a;
         }

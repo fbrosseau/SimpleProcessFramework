@@ -50,7 +50,7 @@ namespace Spfx.Utilities.Threading
                 throw new ObjectDisposedException(GetType().FullName);
         }
 
-        protected virtual ValueTask OnTeardownAsync(CancellationToken ct)
+        protected virtual ValueTask OnTeardownAsync(CancellationToken ct = default)
         {
             return default;
         }

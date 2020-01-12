@@ -1,9 +1,8 @@
-﻿using Spfx.Reflection;
-using Spfx.Serialization.Serializers;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Spfx.Reflection;
 
-namespace Spfx.Serialization
+namespace Spfx.Serialization.Serializers
 {
     internal class ListSerializer
     {

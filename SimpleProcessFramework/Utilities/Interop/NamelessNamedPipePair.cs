@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
-using Spfx.Interfaces;
+﻿using Spfx.Interfaces;
 using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
 using System;
@@ -31,6 +30,7 @@ namespace Spfx.Utilities.Interop
             var fullname = @"\\.\pipe\" + pipename;
             var serverStream = CreateAsyncServerStream(pipename, localAccess);
             using var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
             SafeHandle remotePipe = null;
 
@@ -46,14 +46,14 @@ namespace Spfx.Utilities.Interop
                     }
                     catch
                     {
-                        await Task.Delay(TimeSpan.FromMilliseconds(50), cts.Token);
+                        await Task.Delay(TimeSpan.FromMilliseconds(50), ct);
                     }
                 }
             }
 
             try
             {
-                var serverConnect = serverStream.WaitForConnectionAsync(cts.Token);
+                var serverConnect = serverStream.WaitForConnectionAsync(ct);
                 var clientConnect = CreateClientHandle();
 
                 var combinedConnect = TaskEx.WhenAllOrRethrow(serverConnect, clientConnect);
@@ -100,7 +100,7 @@ namespace Spfx.Utilities.Interop
                 }
 
                 var ctor = typeof(NamedPipeServerStream).GetConstructor(new[] { typeof(string), typeof(PipeDirection), typeof(int), typeof(PipeTransmissionMode), typeof(PipeOptions), typeof(int), typeof(int), pipeSecurityType, typeof(HandleInheritability) });
-                return (NamedPipeServerStream)ctor.Invoke(new object[]
+                return (NamedPipeServerStream)ctor.Invoke(new[]
                 {
                     pipeName, dir, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 0, 0, pipeSecurity, HandleInheritability.None
                 });

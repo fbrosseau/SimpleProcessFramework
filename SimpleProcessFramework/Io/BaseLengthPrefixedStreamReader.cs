@@ -3,7 +3,6 @@ using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using static Spfx.Io.StreamExtensions;
 
 namespace Spfx.Io
 {

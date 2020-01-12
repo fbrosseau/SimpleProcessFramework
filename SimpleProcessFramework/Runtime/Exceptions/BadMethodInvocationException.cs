@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Spfx.Runtime.Exceptions
+﻿namespace Spfx.Runtime.Exceptions
 {
     public class BadMethodInvocationException : SerializableException
     {

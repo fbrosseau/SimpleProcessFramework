@@ -7,25 +7,23 @@ namespace Spfx.Runtime.Exceptions
     public class SerializableException : Exception
     {
         [DataMember]
-        private string m_message;
-
-        public override string Message => m_message;
+        public override string Message { get; }
 
         public SerializableException()
         {
-            m_message = base.Message;
+            Message = base.Message;
         }
 
         public SerializableException(string message)
             : base(message)
         {
-            m_message = base.Message;
+            Message = base.Message;
         }
 
         public SerializableException(string message, Exception innerEx)
             : base(message, innerEx)
         {
-            m_message = base.Message;
+            Message = base.Message;
         }
     }
 }

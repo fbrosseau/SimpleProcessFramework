@@ -76,7 +76,7 @@ namespace Spfx.Tests
         internal static void AssertThrows<TEx>(Action callback, Action<TEx> exceptionCallback = null)
             where TEx : Exception
         {
-            AssertThrows(callback, (Exception ex) =>
+            AssertThrows(callback, ex =>
             {
                 Assert.IsTrue(typeof(TEx).IsInstanceOfType(ex), $"Expected the exception to be of type {typeof(TEx).FullName}, not {ex.GetType().FullName}");
                 exceptionCallback?.Invoke((TEx)ex);

@@ -1,6 +1,4 @@
-﻿#if !UNIX_TESTS_BUILD_ONLY
-
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Spfx.Interfaces;
 using Spfx.Utilities.Runtime;
 
@@ -21,4 +19,3 @@ namespace Spfx.Tests.Integration
     }
 }
 
-#endif

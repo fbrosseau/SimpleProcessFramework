@@ -7,7 +7,7 @@ namespace Spfx.Utilities.Interop
 {
     internal class Win32ForeignProcessHandle : IDisposable
     {
-        private SafeHandle m_owningProcess;
+        private readonly SafeHandle m_owningProcess;
         public IntPtr Value => m_handle;
         private IntPtr m_handle;
 

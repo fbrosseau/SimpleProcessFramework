@@ -28,7 +28,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             IpcMessage,
 
             Teardown1,
-            Teardown2,
+            Teardown2
         }
 
         protected ILogger Logger { get; }
@@ -126,7 +126,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
                         using var stream = frame.AcquireData();
                         var len = stream.Length;
                         var msg = BinarySerializer.Deserialize<WrappedInterprocessMessage>(stream);
-                        Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({stream.Length} bytes)");
+                        Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({len} bytes)");
                         Owner.OnMessageReceived(msg);
                     }
                 }
@@ -181,7 +181,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             using var frame = await ReadPipe.GetNextFrame();
 
             if (frame.Code is null)
-                throw new SerializationException($"Expected a single frame code");
+                throw new SerializationException("Expected a single frame code");
 
             var actualCode = (InterprocessFrameType)frame.Code;
             if (actualCode != expectedCode)

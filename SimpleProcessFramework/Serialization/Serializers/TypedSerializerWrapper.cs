@@ -2,7 +2,7 @@
 {
     internal class TypedSerializerWrapper<T> : BaseTypeSerializer, ITypeSerializer<T>
     {
-        private ITypeSerializer m_baseSerializer;
+        private readonly ITypeSerializer m_baseSerializer;
 
         public TypedSerializerWrapper(ITypeSerializer typedSerializer)
         {

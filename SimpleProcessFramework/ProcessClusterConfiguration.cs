@@ -4,9 +4,7 @@ using Spfx.Utilities.Runtime;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.Serialization;
-using static Spfx.Interfaces.ProcessCreationInfo;
 
 namespace Spfx
 {
@@ -18,8 +16,7 @@ namespace Spfx
 
         static ProcessClusterConfiguration()
         {
-            Default = new ProcessClusterConfiguration();
-            Default.IsReadOnly = true;
+            Default = new ProcessClusterConfiguration {IsReadOnly = true};
         }
 
         public Type TypeResolverFactoryType { get; set; } = typeof(DefaultTypeResolverFactory);

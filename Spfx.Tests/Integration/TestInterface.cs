@@ -2,7 +2,6 @@
 using Spfx.Diagnostics.Logging;
 using Spfx.Reflection;
 using Spfx.Runtime.Server;
-using Spfx.Utilities;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -10,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Linq;
-using NUnit.Framework;
 using Spfx.Utilities.Runtime;
 
 namespace Spfx.Tests.Integration

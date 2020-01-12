@@ -18,7 +18,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
     {
         private IProcessInternal m_processCore;
         private ISubprocessConnector m_connector;
-        private List<Task> m_shutdownEvents = new List<Task>();
+        private readonly List<Task> m_shutdownEvents = new List<Task>();
         protected ProcessSpawnPunchPayload InputPayload { get; private set; }
         private IDisposable m_gcHandleToThis;
         private ILogger m_logger = NullLogger.Logger;
@@ -77,7 +77,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
             m_logger.Info?.Trace("InitializeConnector");
             m_connector = initializer.CreateConnector(this);
-            m_connector.InitializeAsync(ct).WithCancellation(ct).Wait();
+            m_connector.InitializeAsync(ct).WithCancellation(ct).Wait(ct);
 
             initializer.OnInitSucceeded();
 

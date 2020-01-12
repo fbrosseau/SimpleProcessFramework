@@ -8,9 +8,11 @@ using System.Runtime.CompilerServices;
 #else
 
 using System.Buffers;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
-namespace System.Net.Sockets
+namespace Spfx.Utilities.ApiGlue
 {
     internal class UnixDomainSocketEndPoint : EndPoint
     {

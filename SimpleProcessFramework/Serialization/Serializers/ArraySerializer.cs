@@ -49,9 +49,9 @@ namespace Spfx.Serialization.Serializers
 
         protected override void SerializeAll(SerializerSession bw, T[] arr)
         {
-            for (int i = 0; i < arr.Length; ++i)
+            foreach (var i in arr)
             {
-                DefaultBinarySerializer.SerializeExactType(bw, arr[i], TypeofElement);
+                DefaultBinarySerializer.SerializeExactType(bw, i, TypeofElement);
             }
         }
     }

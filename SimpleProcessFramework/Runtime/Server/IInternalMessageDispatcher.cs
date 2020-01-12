@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Spfx.Runtime.Messages;
+﻿using Spfx.Runtime.Messages;
 
 namespace Spfx.Runtime.Server
 {

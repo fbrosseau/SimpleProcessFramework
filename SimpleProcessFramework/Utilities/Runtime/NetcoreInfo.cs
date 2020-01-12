@@ -40,9 +40,9 @@ namespace Spfx.Utilities.Runtime
                 => new Lazy<T>(func, LazyThreadSafetyMode.PublicationOnly);
 
             m_dotnetExePath = Lazy(dotnetPath);
-            m_isInstalled = Lazy(() => CheckIsSupported());
+            m_isInstalled = Lazy(CheckIsSupported);
             m_dotnetExeVersion = Lazy(() => RunDotNetExe(WellKnownArguments.VersionCommand));
-            m_installedNetcoreRuntimes = Lazy(() => GetInstalledNetcoreRuntimesInternal());
+            m_installedNetcoreRuntimes = Lazy(GetInstalledNetcoreRuntimesInternal);
         }
 
         public string NetCoreHostPath => m_dotnetExePath.Value;
@@ -144,7 +144,17 @@ namespace Spfx.Utilities.Runtime
             }
         }
 
-        public static string GetBestNetcoreRuntime(string requestedVersion, ProcessKind processKind = ProcessKind.Netcore)
+        public static IReadOnlyList<string> GetSupportedRuntimes(ProcessKind processKind)
+        {
+            return GetHelper(processKind).InstalledVersions;
+        }
+
+        public static string GetBestNetcoreRuntime(NetcoreTargetFramework fw)
+        {
+            return GetBestNetcoreRuntime(fw.TargetRuntime, fw.ProcessKind);
+        }
+
+        public static string GetBestNetcoreRuntime(string requestedVersion, ProcessKind processKind)
         {
             if (!processKind.IsNetcore())
                 throw new ArgumentException(processKind + " is not a valid .Net Core process kind");

@@ -33,9 +33,9 @@ namespace Spfx.Serialization
         public sealed override ushort ReadUInt16() => ReadBlittable<ushort>();
         public sealed override uint ReadUInt32() => ReadBlittable<uint>();
         public sealed override int ReadInt32() => ReadBlittable<int>();
-        public sealed override unsafe long ReadInt64() => ReadBlittable<long>();
-        public sealed override unsafe ulong ReadUInt64() => ReadBlittable<ulong>();
-        public sealed override unsafe Guid ReadGuid() => ReadBlittable<Guid>();
+        public sealed override long ReadInt64() => ReadBlittable<long>();
+        public sealed override ulong ReadUInt64() => ReadBlittable<ulong>();
+        public sealed override Guid ReadGuid() => ReadBlittable<Guid>();
     }
 
     internal class SerializerBinaryReader : BinaryReader
@@ -143,8 +143,8 @@ namespace Spfx.Serialization
         public override ushort ReadUInt16() => ReadBlittable<ushort>();
         public override uint ReadUInt32() => ReadBlittable<uint>();
         public override int ReadInt32() => ReadBlittable<int>();
-        public override unsafe long ReadInt64() => ReadBlittable<long>();
-        public override unsafe ulong ReadUInt64() => ReadBlittable<ulong>();
-        public virtual unsafe Guid ReadGuid() => ReadBlittable<Guid>();
+        public override long ReadInt64() => ReadBlittable<long>();
+        public override ulong ReadUInt64() => ReadBlittable<ulong>();
+        public virtual Guid ReadGuid() => ReadBlittable<Guid>();
     }
 }

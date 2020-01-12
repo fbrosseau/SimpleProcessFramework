@@ -49,7 +49,7 @@ namespace Spfx.Tests.Integration
             {
                 EndpointId = epId,
                 ImplementationType = typeof(TestInterface),
-                EndpointType = typeof(ITestInterface),
+                EndpointType = typeof(ITestInterface)
             };
 
             Unwrap(cluster.ProcessBroker.CreateProcessAndEndpoint(procInfo, epInfo));

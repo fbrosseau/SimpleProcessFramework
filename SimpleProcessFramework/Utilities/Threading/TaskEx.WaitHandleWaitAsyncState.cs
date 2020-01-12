@@ -26,7 +26,7 @@ namespace Spfx.Utilities.Threading
             {
                 m_handle = h;
 
-                m_registration = ThreadPool.UnsafeRegisterWaitForSingleObject(h, (object s, bool timedOut) =>
+                m_registration = ThreadPool.UnsafeRegisterWaitForSingleObject(h, (s, timedOut) =>
                 {
                     var innerState = (WaitHandleWaitAsyncState)s;
                     innerState.OnCallback(timedOut);

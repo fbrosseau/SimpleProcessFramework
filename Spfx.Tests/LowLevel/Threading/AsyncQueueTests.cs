@@ -1,9 +1,7 @@
 ﻿using NUnit.Framework;
 using Spfx.Utilities.Threading;
 using FluentAssertions;
-using System;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using Spfx.Utilities;
 
 namespace Spfx.Tests.LowLevel.Threading
@@ -19,7 +17,7 @@ namespace Spfx.Tests.LowLevel.Threading
             SyncAsyncCallback
         }
 
-        private static QueueMode[] AllModes = new[] { QueueMode.Manual, QueueMode.AsyncCallback, QueueMode.SyncCallback, QueueMode.SyncAsyncCallback };
+        private static QueueMode[] AllModes = { QueueMode.Manual, QueueMode.AsyncCallback, QueueMode.SyncCallback, QueueMode.SyncAsyncCallback };
 
         [Test]
         [TestCaseSource(nameof(AllModes))]
@@ -141,7 +139,6 @@ namespace Spfx.Tests.LowLevel.Threading
 
             public bool DisposeIgnoredItems
             {
-                get => m_enqueuingQueue.DisposeIgnoredItems;
                 set
                 {
                     m_enqueuingQueue.DisposeIgnoredItems = value;

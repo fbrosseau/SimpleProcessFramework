@@ -31,28 +31,27 @@ namespace Spfx.Runtime.Client
 
         internal override async Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync()
         {
-            using (var disposeBag = new DisposeBag())
-            {
-                var client = SocketUtilities.CreateSocket(SocketType.Stream, ProtocolType.Tcp);
-                disposeBag.Add(client);
+            using var disposeBag = new DisposeBag();
 
-                await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination, cb, s), client.EndConnect, null);
+            var client = SocketUtilities.CreateSocket(SocketType.Stream, ProtocolType.Tcp);
+            disposeBag.Add(client);
 
-                var ns = disposeBag.Add(new NetworkStream(client));
+            await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination, cb, s), client.EndConnect, null);
 
-                var finalStream = disposeBag.Add(await CreateFinalStream(ns));
+            var ns = disposeBag.Add(new NetworkStream(client));
 
-                var timeout = Task.Delay(TimeSpan.FromSeconds(30));
-                var auth = Authenticate(finalStream);
+            var finalStream = disposeBag.Add(await CreateFinalStream(ns));
 
-                var winner = await Task.WhenAny(timeout, auth);
+            var timeout = Task.Delay(TimeSpan.FromSeconds(30));
+            var auth = Authenticate(finalStream);
 
-                if (ReferenceEquals(winner, timeout))
-                    throw new TimeoutException("Authentication timed out");
+            var winner = await Task.WhenAny(timeout, auth);
 
-                disposeBag.ReleaseAll();
-                return (finalStream, finalStream);
-            }
+            if (ReferenceEquals(winner, timeout))
+                throw new TimeoutException("Authentication timed out");
+
+            disposeBag.ReleaseAll();
+            return (finalStream, finalStream);
         }
 
         protected virtual Task<Stream> CreateFinalStream(Stream ns)

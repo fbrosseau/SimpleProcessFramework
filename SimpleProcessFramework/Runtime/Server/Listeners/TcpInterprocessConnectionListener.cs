@@ -61,20 +61,19 @@ namespace Spfx.Runtime.Server.Listeners
 
         private async Task HandleSocket(Socket s)
         {
-            using (var disposeBag = new DisposeBag())
-            {
-                var ns = disposeBag.Add(new NetworkStream(s, ownsSocket: true));
+            using var disposeBag = new DisposeBag();
 
-                var clientHandshakeTask = DoHandshake(ns);
-                if (!await clientHandshakeTask.WaitAsync(TimeSpan.FromSeconds(30)))
-                    return;
+            var ns = disposeBag.Add(new NetworkStream(s, ownsSocket: true));
 
-                var finalStream = await clientHandshakeTask;
+            var clientHandshakeTask = DoHandshake(ns);
+            if (!await clientHandshakeTask.WaitAsync(TimeSpan.FromSeconds(30)))
+                return;
 
-                var conn = new ServerInterprocessChannel(TypeResolver, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
-                RaiseConnectionReceived(conn);
-                disposeBag.ReleaseAll();
-            }
+            var finalStream = await clientHandshakeTask;
+
+            var conn = new ServerInterprocessChannel(TypeResolver, finalStream, s.LocalEndPoint.ToString(), s.RemoteEndPoint.ToString());
+            RaiseConnectionReceived(conn);
+            disposeBag.ReleaseAll();
         }
 
         private async Task<Stream> DoHandshake(NetworkStream rawStream)

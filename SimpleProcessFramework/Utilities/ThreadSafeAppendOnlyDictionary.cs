@@ -6,7 +6,7 @@ namespace Spfx.Utilities
     internal class ThreadSafeAppendOnlyDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
         private Dictionary<TKey, TValue> m_dict;
-        private object m_syncRoot = new object();
+        private readonly object m_syncRoot = new object();
         private readonly IEqualityComparer<TKey> m_comparer;
 
         public ThreadSafeAppendOnlyDictionary(IEqualityComparer<TKey> comparer = null)

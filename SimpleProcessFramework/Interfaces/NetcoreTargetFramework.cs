@@ -8,8 +8,8 @@ namespace Spfx.Interfaces
     [DataContract]
     public class NetcoreTargetFramework : TargetFramework, IEquatable<NetcoreTargetFramework>
     {
-        public static new NetcoreTargetFramework Default { get; } = (NetcoreTargetFramework)Create("3");
-        public static NetcoreTargetFramework Default32 { get; } = (NetcoreTargetFramework)Create(ProcessKind.Netcore32, Default.TargetRuntime);
+        public new static NetcoreTargetFramework Default { get; } = (NetcoreTargetFramework)Create("3");
+        public static NetcoreTargetFramework Default32 { get; } = Create(ProcessKind.Netcore32, Default.TargetRuntime);
 
         [DataMember]
         public string TargetRuntime { get; }

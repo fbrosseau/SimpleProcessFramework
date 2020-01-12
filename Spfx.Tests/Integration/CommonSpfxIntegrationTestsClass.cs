@@ -91,9 +91,9 @@ namespace Spfx.Tests.Integration
             if (requestedRuntime is NetcoreTargetFramework netcore && !string.IsNullOrWhiteSpace(netcore.TargetRuntime))
             {
                 targetNetcoreRuntime = netcore.TargetRuntime;
-                if (NetcoreInfo.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
+                if (NetcoreInfo.GetBestNetcoreRuntime(netcore) == null)
                     Assert.Fail($".net core runtime {requestedRuntime} is not supported by this host. The supported runtimes are: \r\n"
-                        + string.Join("\r\n", NetcoreInfo.Default.InstalledVersions.Select(r => "- " + r)));
+                        + string.Join("\r\n", NetcoreInfo.GetSupportedRuntimes(netcore.ProcessKind).Select(r => "- " + r)));
             }
 
             if (!requestedRuntime.IsSupportedByCurrentProcess(cluster.Configuration, out var details))

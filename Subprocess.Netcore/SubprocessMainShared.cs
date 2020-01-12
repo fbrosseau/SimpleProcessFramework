@@ -14,7 +14,7 @@ namespace Spfx.Subprocess
         {
             var args = Environment.GetCommandLineArgs();
 
-            if (args?.Length <= 1)
+            if (args.Length <= 1)
             {
                 Console.Error.WriteLine(
                     "This program cannot be executed directly. It is part of the SimpleProcessFramework (Spfx) version {0}.",

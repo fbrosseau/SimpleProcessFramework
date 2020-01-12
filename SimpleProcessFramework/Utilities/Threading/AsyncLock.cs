@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
@@ -114,7 +113,7 @@ namespace Spfx.Utilities.Threading
 
         private class LockSession : TaskCompletionSource<IDisposable>, IDisposable, IThreadPoolWorkItem
         {
-            protected AsyncLock m_asyncLock;
+            private AsyncLock m_asyncLock;
             private volatile bool m_completeSynchronously;
 
             public LockSession(AsyncLock asyncLock)

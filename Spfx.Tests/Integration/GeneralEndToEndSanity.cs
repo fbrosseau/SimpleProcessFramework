@@ -1,9 +1,7 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
-using Spfx.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Spfx.Tests.Integration
 {

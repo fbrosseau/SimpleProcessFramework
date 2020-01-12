@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -16,8 +15,8 @@ namespace Spfx.Runtime.Server.Processes
     internal class GenericManagedProcessTargetHandle : GenericRemoteTargetHandle
     {
         private volatile StringBuilder m_remoteProcessInitOutput = new StringBuilder();
-        private AsyncManualResetEvent m_outStreamClosed = new AsyncManualResetEvent();
-        private AsyncManualResetEvent m_errStreamClosed = new AsyncManualResetEvent();
+        private readonly AsyncManualResetEvent m_outStreamClosed = new AsyncManualResetEvent();
+        private readonly AsyncManualResetEvent m_errStreamClosed = new AsyncManualResetEvent();
 
         public GenericManagedProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)

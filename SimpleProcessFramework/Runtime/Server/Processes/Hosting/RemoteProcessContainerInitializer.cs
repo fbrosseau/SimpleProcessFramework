@@ -17,14 +17,13 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
         internal override ISubprocessConnector CreateConnector(ProcessContainer owner)
         {
-            using (var disposeBag = new DisposeBag())
-            {
-                var streamReader = disposeBag.Add(CreateReader());
-                var streamWriter = disposeBag.Add(CreateWriter());
-                var connector = disposeBag.Add(new SubprocessIpcConnector(owner, streamReader, streamWriter, TypeResolver));
-                disposeBag.ReleaseAll();
-                return connector;
-            }
+            using var disposeBag = new DisposeBag();
+
+            var streamReader = disposeBag.Add(CreateReader());
+            var streamWriter = disposeBag.Add(CreateWriter());
+            var connector = disposeBag.Add(new SubprocessIpcConnector(owner, streamReader, streamWriter, TypeResolver));
+            disposeBag.ReleaseAll();
+            return connector;
         }
     }
 }

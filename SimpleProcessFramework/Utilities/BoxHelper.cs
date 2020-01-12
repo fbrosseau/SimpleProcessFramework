@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Spfx.Utilities
 {

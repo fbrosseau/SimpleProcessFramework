@@ -33,10 +33,6 @@ namespace Spfx.Runtime.Messages
         [DataMember]
         public string TracingId { get; set; }
 
-        public WrappedInterprocessMessage()
-        {
-        }
-
         public static WrappedInterprocessMessage Wrap(IInterprocessMessage msg, IBinarySerializer serializer)
         {
             if (msg is WrappedInterprocessMessage alreadyWrapped)

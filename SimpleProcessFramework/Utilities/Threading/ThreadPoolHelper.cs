@@ -1,17 +1,15 @@
 ﻿using System.Threading;
 
-#if !NETCOREAPP3_0_PLUS
-namespace System.Threading
+namespace Spfx.Utilities.Threading
 {
+#if !NETCOREAPP3_0_PLUS
     internal interface IThreadPoolWorkItem
     {
         void Execute();
     }
-}
+
 #endif
 
-namespace Spfx.Utilities.Threading
-{
     internal static class ThreadPoolHelper
     {
         public static void QueueItem(IThreadPoolWorkItem item)

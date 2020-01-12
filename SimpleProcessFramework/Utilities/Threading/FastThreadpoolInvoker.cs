@@ -15,7 +15,7 @@ namespace Spfx.Utilities.Threading
     internal struct FastThreadpoolInvoker<TCallbackInvoker>
         where TCallbackInvoker : IThreadPoolWorkItem
     {
-        private IThreadPoolWorkItem m_realCallback;
+        private readonly IThreadPoolWorkItem m_realCallback;
 
         public FastThreadpoolInvoker(TCallbackInvoker invoker)
         {

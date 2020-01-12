@@ -1,4 +1,4 @@
-﻿namespace Spfx.Serialization
+﻿namespace Spfx.Serialization.Serializers
 {
     internal interface ITypeSerializer
     {

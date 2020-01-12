@@ -2,7 +2,6 @@
 using Spfx.Interfaces;
 using Spfx.Serialization;
 using System;
-using System.Threading;
 
 namespace Spfx.Tests.Integration
 {

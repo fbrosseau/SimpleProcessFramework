@@ -11,12 +11,11 @@ namespace Spfx.Utilities
 
         public static async Task InvokeCreateProcess(Action createProcessCallback)
         {
-            using (await s_asyncLock.LockAsync().ConfigureAwait(false))
+            using var lockSession = await s_asyncLock.LockAsync().ConfigureAwait(false);
+
+            lock (ProcessCreationLock)
             {
-                lock (ProcessCreationLock)
-                {
-                    createProcessCallback();
-                }
+                createProcessCallback();
             }
         }
     }

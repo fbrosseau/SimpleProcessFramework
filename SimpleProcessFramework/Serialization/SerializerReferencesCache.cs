@@ -5,7 +5,6 @@ using Spfx.Serialization.DataContracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace Spfx.Serialization
 {

@@ -99,7 +99,6 @@ namespace Spfx
     public class ProcessProxy
     {
         private readonly IClientConnectionFactory m_connectionFactory;
-        private readonly ITypeResolver m_typeResolver;
 
         public ProcessProxy()
             : this(true)
@@ -123,8 +122,8 @@ namespace Spfx
 
         public ProcessProxy(ITypeResolver resolver)
         {
-            m_typeResolver = resolver.CreateNewScope();
-            m_connectionFactory = m_typeResolver.CreateSingleton<IClientConnectionFactory>();
+            var typeResolver = resolver.CreateNewScope();
+            m_connectionFactory = typeResolver.CreateSingleton<IClientConnectionFactory>();
         }
 
         public T CreateInterface<T>(string address)

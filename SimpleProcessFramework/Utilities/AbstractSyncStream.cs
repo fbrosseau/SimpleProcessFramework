@@ -8,7 +8,7 @@ namespace Spfx.Utilities
 {
     /// <summary>
     /// Implements all possible overloads and redirects to the synchronous Span-based methods.
-    /// Also declares all the modern span-based things as virtual (even if they don't exist in the current targetframework)
+    /// Also declares all the modern span-based things as virtual (even if they don't exist in the current target framework)
     /// so that implementing classes can just override them without #IFs.
     /// </summary>
     internal abstract class AbstractSyncStream : Stream
@@ -140,7 +140,7 @@ namespace Spfx.Utilities
 #if NETCOREAPP2_1_PLUS
         public abstract override void CopyTo(Stream destination, int bufferSize);
 #else
-        public abstract new void CopyTo(Stream destination, int bufferSize);
+        public new abstract void CopyTo(Stream destination, int bufferSize);
 #endif
     }
 }

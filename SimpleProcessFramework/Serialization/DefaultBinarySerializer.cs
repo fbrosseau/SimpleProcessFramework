@@ -21,7 +21,7 @@ namespace Spfx.Serialization
         internal const int MagicHeader = unchecked((int)0xBEEF1234);
 
         private static Dictionary<Type, Type> s_typeSubstitutions;
-        private ILogger m_logger;
+        private readonly ILogger m_logger;
 
         public DefaultBinarySerializer(ITypeResolver resolver)
         {
@@ -150,8 +150,8 @@ namespace Spfx.Serialization
             {
                 var thisT = typeof(T);
                 var serializerInstance = new SimpleTypeSerializer<T>(
-                    (bw, o) => serializer(bw, (T)o),
-                    br => deserializer(br));
+                    serializer,
+                    deserializer);
 
                 AddSerializer(thisT, serializerInstance);
 
@@ -205,7 +205,7 @@ namespace Spfx.Serialization
             return new Version(session.Reader.ReadString());
         }
 
-        private static unsafe void WriteIPAddress(SerializerSession session, IPAddress val)
+        private static void WriteIPAddress(SerializerSession session, IPAddress val)
         {
             session.Writer.Write((byte)val.AddressFamily);
 
@@ -223,7 +223,7 @@ namespace Spfx.Serialization
         private static ReadOnlySpan<byte> s_ipv4To6LoopbackBytes => new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1 };
         private static readonly IPAddress s_ipv4To6 = new IPAddress(s_ipv4To6LoopbackBytes.ToArray());
 
-        private static unsafe IPAddress ReadIPAddress(DeserializerSession session)
+        private static IPAddress ReadIPAddress(DeserializerSession session)
         {
             var af = (AddressFamily)session.Reader.ReadByte();
             if (af == AddressFamily.InterNetwork)

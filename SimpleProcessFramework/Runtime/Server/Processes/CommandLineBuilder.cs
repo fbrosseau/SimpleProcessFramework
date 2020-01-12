@@ -8,7 +8,6 @@ using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
-using static Spfx.Interfaces.ProcessCreationInfo;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -18,15 +17,15 @@ namespace Spfx.Runtime.Server.Processes
         private readonly ProcessClusterConfiguration m_config;
         private readonly ProcessCreationInfo m_processCreationInfo;
         private bool m_needDotNetExe;
-        private List<string> m_dotNetExeArguments = new List<string>();
-        private ProcessKind m_processKind;
+        private readonly List<string> m_dotNetExeArguments = new List<string>();
+        private readonly ProcessKind m_processKind;
 
-        public bool ManuallyRedirectConsole { get; private set; }
+        public bool ManuallyRedirectConsole { get; }
         public string WorkingDirectory { get; private set; }
         public Dictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>();
         public List<string> CommandLineArguments { get; } = new List<string>();
         public string UserExecutableName { get; private set; }
-        public string PrimaryExecutableName { get; private set; }
+        public string PrimaryExecutableName { get; }
 
         public string AllFormattedArguments => ProcessUtilities.FormatCommandLine(CommandLineArguments);
 
@@ -73,12 +72,12 @@ namespace Spfx.Runtime.Server.Processes
 
             ManuallyRedirectConsole = m_processCreationInfo.ManuallyRedirectConsole;
 
-            void AddEnvVars(IEnumerable<StringKeyValuePair> vals)
+            void AddEnvVars(IEnumerable<StringKeyValuePair> values)
             {
-                if (vals is null)
+                if (values is null)
                     return;
 
-                foreach (var kvp in vals)
+                foreach (var kvp in values)
                 {
                     EnvironmentVariables[kvp.Key] = kvp.Value;
                 }
@@ -140,11 +139,11 @@ namespace Spfx.Runtime.Server.Processes
 
             bool TestFileExists(string file)
             {
-                var fileinfo = GetFileInCodebase(file);
-                if (!fileinfo.Exists)
+                var fileInfo = GetFileInCodebase(file);
+                if (!fileInfo.Exists)
                     return false;
 
-                UserExecutableName = fileinfo.FullName;
+                UserExecutableName = fileInfo.FullName;
 
                 // even under WSL.exe, the working directory must be the windows version of the path.
                 WorkingDirectory = Path.GetDirectoryName(UserExecutableName);

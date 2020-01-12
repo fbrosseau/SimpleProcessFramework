@@ -23,7 +23,6 @@ namespace Spfx.Runtime.Server
     internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IInternalMessageDispatcher
     {
         private readonly Dictionary<string, IProcessHandle> m_subprocesses = new Dictionary<string, IProcessHandle>(ProcessEndpointAddress.StringComparer);
-        private readonly ProcessCluster m_owner;
         private readonly ITypeResolver m_typeResolver;
         private readonly ProcessClusterConfiguration m_config;
         private readonly ILogger m_logger;
@@ -39,7 +38,6 @@ namespace Spfx.Runtime.Server
 
         public ProcessBroker(ProcessCluster owner)
         {
-            m_owner = owner;
             m_typeResolver = owner.TypeResolver;
             m_typeResolver.RegisterSingleton<IInternalMessageDispatcher>(this);
             m_config = m_typeResolver.GetSingleton<ProcessClusterConfiguration>();

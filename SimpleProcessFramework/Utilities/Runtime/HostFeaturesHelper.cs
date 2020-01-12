@@ -226,7 +226,7 @@ namespace Spfx.Utilities.Runtime
             var ver = FileVersionInfo.GetVersionInfo(typeof(HostFeaturesHelper).Assembly.Location).ProductVersion;
 
             sb.AppendLine("The SimpleProcessFramework (Spfx) Version " + ver);
-
+             
             sb.AppendLine("Host information---------");
             sb.AppendLine("OS Kind: " + LocalMachineOsKind);
             sb.AppendLine("Current process: " + LocalProcessKind);
@@ -250,7 +250,7 @@ namespace Spfx.Utilities.Runtime
                 }
                 else
                 {
-                    sb.AppendLine(name + " Not supported: " + h.NotSupportedReason);
+                    sb.AppendLine(name + " is not supported: " + h.NotSupportedReason);
                 }
             }
 

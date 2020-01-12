@@ -1,12 +1,18 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using Spfx.Utilities.ApiGlue;
 
 namespace Spfx.Utilities.Runtime
 {
     internal static class WslUtilities
     {
-        private static ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new ThreadSafeAppendOnlyDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new ThreadSafeAppendOnlyDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        internal static class WellKnownUtilities
+        {
+            public const string WslPathUtility = "wslpath";
+        }
 
         public static readonly string WslExeFullPath = Path.Combine(PathHelper.RealSystem32Folder, "wsl.exe");
 
@@ -28,7 +34,7 @@ namespace Spfx.Utilities.Runtime
         {
             bool isDir = fullName.EndsWith("\\");
 
-            var output = ExecuteWslExe($"wslpath {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}");
+            var output = ExecuteWslExe($"{WellKnownUtilities.WslPathUtility} {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}");
 
             output = output.Trim(' ', '\r', '\t', '\n');
 

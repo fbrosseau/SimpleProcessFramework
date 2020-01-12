@@ -1,5 +1,4 @@
-﻿using Spfx.Utilities;
-using System.Linq;
+﻿using System.Linq;
 using Spfx.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -18,15 +17,14 @@ namespace Spfx.Tests
         internal static NetcoreTargetFramework LatestNetcore = NetcoreTargetFramework.Create(ProcessKind.Netcore, "3");
         internal static NetcoreTargetFramework LatestNetcore32 = NetcoreTargetFramework.Create(ProcessKind.Netcore32, LatestNetcore.TargetRuntime);
 
-        internal static readonly NetcoreTargetFramework[] AllNetcore = new[]
-            {
+        internal static readonly NetcoreTargetFramework[] AllNetcore = {
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.1"),
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.2"),
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.0"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1"),
+            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1")
         };
 
-        internal static readonly TargetFramework[] Netfx_AllArchs = new[] { TargetFramework.Create(ProcessKind.Netfx), TargetFramework.Create(ProcessKind.Netfx32) };
+        internal static readonly TargetFramework[] Netfx_AllArchs = { TargetFramework.Create(ProcessKind.Netfx), TargetFramework.Create(ProcessKind.Netfx32) };
 
         internal static readonly NetcoreTargetFramework[] AllNetcore_AllArchs
             = !Test32Bit ? AllNetcore : AllNetcore.Concat(AllNetcore.Select(n => NetcoreTargetFramework.Create(ProcessKind.Netcore32, n.TargetRuntime))).ToArray();
@@ -37,8 +35,7 @@ namespace Spfx.Tests
         internal static readonly TargetFramework[] Simple_Netfx_And_Netcore
             = CleanupFrameworks(new[] { LatestNetcore, TargetFramework.Create(ProcessKind.Netfx) });
 
-        internal static readonly TargetFramework[] Netfx_And_NetcoreLatest_AllArchs = new[]
-        {
+        internal static readonly TargetFramework[] Netfx_And_NetcoreLatest_AllArchs = {
             TargetFramework.Create(ProcessKind.Netfx),
             TargetFramework.Create(ProcessKind.Netfx32),
             LatestNetcore,

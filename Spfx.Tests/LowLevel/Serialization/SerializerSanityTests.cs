@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using Spfx.Utilities;
 using System.Net;
 using Spfx.Reflection;
@@ -85,13 +84,13 @@ namespace Spfx.Tests.LowLevel.Serialization
                 FlagsEnum.A | FlagsEnum.C,
                 BigFlagsEnum.A | BigFlagsEnum.AF,
                 (ReflectedTypeInfo)typeof(string),
-                (ReflectedTypeInfo)typeof(FlagsEnum),
+                (ReflectedTypeInfo)typeof(FlagsEnum)
             }.Select(o => CreateTypedObject(o)).ToArray();
 
-            var valuetypes = values.Where(o => o.Type.IsValueType).ToArray();
-            var nullables = valuetypes
+            var valueTypes = values.Where(o => o.Type.IsValueType).ToArray();
+            var nullables = valueTypes
                 .Select(v => MakeNullable(v.Value, v.Type))
-                .Concat(valuetypes.Select(v => MakeNullable(null, v.Type)));
+                .Concat(valueTypes.Select(v => MakeNullable(null, v.Type)));
 
             values = values.Concat(nullables).ToArray();
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Spfx.Serialization.Serializers;
 
 namespace Spfx.Serialization.DataContracts
 {
@@ -22,15 +23,15 @@ namespace Spfx.Serialization.DataContracts
             }
             else
             {
-                var funcType = typeof(Func<,>).MakeGenericType(new[] { m_singleMember.TypeInfo.MemberType, typeof(object) });
+                var funcType = typeof(Func<,>).MakeGenericType(m_singleMember.TypeInfo.MemberType, typeof(object));
                 var realFactory = Delegate.CreateDelegate(funcType, factory);
-                m_factory = (Func<object, object>)s_genericFactoryFactory.MakeGenericMethod(m_singleMember.TypeInfo.MemberType).Invoke(null, new[] { realFactory });
+                m_factory = (Func<object, object>)s_genericFactoryFactory.MakeGenericMethod(m_singleMember.TypeInfo.MemberType).Invoke(null, new object[] { realFactory });
             }
         }
 
         private static Func<object, object> CreateTypedFactoryProxy<TRealArg>(Func<TRealArg, object> realFactory)
         {
-            return (object o) => realFactory((TRealArg)o);
+            return o => realFactory((TRealArg)o);
         }
 
         internal static bool TryCreate(Type actualType, List<ReflectedDataMember> members, out ITypeSerializer s)
@@ -51,7 +52,7 @@ namespace Spfx.Serialization.DataContracts
         {
             private object m_graph;
             private bool m_graphInitialized;
-            private SingleMemberDataContractSerializer m_serializer;
+            private readonly SingleMemberDataContractSerializer m_serializer;
 
             public SingleMemberContractHandler(SingleMemberDataContractSerializer serializer) 
             {

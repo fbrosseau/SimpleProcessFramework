@@ -1,8 +1,8 @@
-﻿using Spfx.Utilities.Runtime;
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Spfx.Utilities.Runtime;
 
 namespace Spfx.Utilities
 {

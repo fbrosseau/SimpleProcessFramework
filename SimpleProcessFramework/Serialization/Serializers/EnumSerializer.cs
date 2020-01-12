@@ -2,12 +2,9 @@
 using Spfx.Utilities.ApiGlue;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 
 namespace Spfx.Serialization.Serializers
 {
@@ -37,7 +34,7 @@ namespace Spfx.Serialization.Serializers
                 if(vals.Length <= 5)
                 {
                     vals = vals
-                        .Select(v => EnumToNumber(v))
+                        .Select(EnumToNumber)
                         .ToArray()
                         .GenerateCombinations()
                         .Select(comb => NumberToEnum(comb.Aggregate((a, b) => a | b)))

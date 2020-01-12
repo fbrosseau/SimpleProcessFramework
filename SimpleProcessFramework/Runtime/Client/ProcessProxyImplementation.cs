@@ -1,5 +1,4 @@
-﻿using Spfx.Utilities;
-using Spfx.Reflection;
+﻿using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using System;
 using System.Collections.Generic;
@@ -13,12 +12,21 @@ namespace Spfx.Runtime.Client
     internal sealed class RemoteCallCompletion<T> : TaskCompletionSource<T>
     {
         public long Id { get; }
-        private static long s_nextId;
 
         public RemoteCallCompletion()
             : base(TaskCreationOptions.RunContinuationsAsynchronously)
         {
-            Id = Interlocked.Increment(ref s_nextId);
+            Id = RemoteCallCompletion.GetNextCallId();
+        }
+    }
+
+    internal static class RemoteCallCompletion
+    {
+        private static long s_nextId;
+
+        public static long GetNextCallId()
+        {
+            return Interlocked.Increment(ref s_nextId);
         }
     }
 
