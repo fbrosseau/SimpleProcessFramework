@@ -26,16 +26,16 @@ pool:
 steps:
 - pwsh: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
   displayName: 'Netcore 2.1 x86'
-  arguments: -Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86
+  arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 - pwsh: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
   displayName: 'Netcore 2.2 x86'
-  arguments: -Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86
+  arguments: '-Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 - pwsh: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
   displayName: 'Netcore 3.0 x86'
-  arguments: -Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86
+  arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 - pwsh: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
   displayName: 'Netcore 3.1 x86'
-  arguments: -Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86
+  arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 
 - pwsh:
   displayName: Set SPFX_DOTNET_EXE_PATH32
