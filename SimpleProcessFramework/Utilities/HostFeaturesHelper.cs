@@ -234,7 +234,7 @@ namespace Spfx.Utilities
             sb.AppendLine("Netcore32 Path: " + NetcoreHelper.GetNetCoreHostPath(false));
             if (IsNetCore32Supported)
             {
-                sb.AppendLine("Netcore runtimes--");
+                sb.AppendLine("Netcore32 runtimes--");
                 foreach (var runtime in NetcoreHelper.GetInstalledNetcoreRuntimes(false))
                 {
                     sb.AppendLine("- " + runtime);
