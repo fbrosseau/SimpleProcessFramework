@@ -121,7 +121,8 @@ steps:
   displayName: 'Describe Hosts for tests'
   inputs:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
-    arguments: '-Assembly "$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)/Spfx.dll"'
+    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)'
+    arguments: '-Assembly "./Spfx.dll"'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run tests (netcore)'
