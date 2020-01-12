@@ -14,7 +14,7 @@ namespace Spfx.Tests.LowLevel.Serialization
     [TestFixture, Parallelizable(ParallelScope.All)]
     public class BasicSerializerSanityTests : CommonTestClass
     {
-        [Test, TestCaseSource(nameof(GenerateSampleObjects)), Timeout(DefaultTestTimeout)]
+        [Test, TestCaseSource(nameof(GenerateSampleObjects))]
         public void BasicSerializerSanityTests_Simple(Type t, object value)
         {
             var serializer = new DefaultBinarySerializer(DefaultTestResolver);

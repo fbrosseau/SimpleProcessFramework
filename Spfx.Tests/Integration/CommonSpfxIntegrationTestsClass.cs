@@ -27,9 +27,9 @@ namespace Spfx.Tests.Integration
 
             try
             {
-                NetcoreHelper.GetInstalledNetcoreRuntimes();
-                if (HostFeaturesHelper.Is32BitSupported)
-                    NetcoreHelper.GetInstalledNetcoreRuntimes(false);
+                _ = NetcoreHelper.Default.InstalledVersions;
+                if (NetcoreHelper.X86.IsSupported)
+                    _ = NetcoreHelper.X86.InstalledVersions;
             }
             catch
             {
@@ -92,7 +92,7 @@ namespace Spfx.Tests.Integration
                 targetNetcoreRuntime = netcore.TargetRuntime;
                 if (NetcoreHelper.GetBestNetcoreRuntime(netcore.TargetRuntime) == null)
                     Assert.Fail($".net core runtime {requestedRuntime} is not supported by this host. The supported runtimes are: \r\n"
-                        + string.Join("\r\n", NetcoreHelper.GetInstalledNetcoreRuntimes().Select(r => "- " + r)));
+                        + string.Join("\r\n", NetcoreHelper.Default.InstalledVersions.Select(r => "- " + r)));
             }
 
             if (!requestedRuntime.IsSupportedByCurrentProcess(cluster.Configuration, out var details))

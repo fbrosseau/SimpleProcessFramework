@@ -116,12 +116,12 @@ namespace Spfx.Utilities
             }
         }
 
-        internal static Task<string> ExecAndGetConsoleOutput(string commandLine, TimeSpan timeout)
+        internal static Task<string> ExecAndGetConsoleOutput(string commandLine, TimeSpan timeout, bool trimSpacesAndNewLines = true)
         {
-            return ExecAndGetConsoleOutput(null, commandLine, timeout);
+            return ExecAndGetConsoleOutput(null, commandLine, timeout, trimSpacesAndNewLines);
         }
 
-        internal static async Task<string> ExecAndGetConsoleOutput(string executable, string commandLine, TimeSpan timeout)
+        internal static async Task<string> ExecAndGetConsoleOutput(string executable, string commandLine, TimeSpan timeout, bool trimSpacesAndNewLines = true)
         {
             var procInfo = new ProcessStartInfo
             {
@@ -168,6 +168,9 @@ namespace Spfx.Utilities
 
             if (!await completionEvent.WaitAsync(timeout).ConfigureAwait(false))
                 throw new TimeoutException();
+
+            if (trimSpacesAndNewLines)
+                output.TrimSpacesAndNewLines();
 
             return output.ToString();
         }

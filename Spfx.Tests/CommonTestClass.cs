@@ -13,6 +13,7 @@ using System.IO;
 
 namespace Spfx.Tests
 {
+    [Timeout(DefaultTestTimeout)]
     public abstract class CommonTestClass
     {
         public static ITypeResolver DefaultTestResolver { get; } = DefaultTypeResolverFactory.CreateRootTypeResolver<TestTypeResolverFactory>();

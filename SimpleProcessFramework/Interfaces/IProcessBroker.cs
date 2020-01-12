@@ -2,6 +2,7 @@
 using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -40,7 +41,7 @@ namespace Spfx.Interfaces
                 OSDescription = RuntimeInformation.OSDescription,
                 OSKind = HostFeaturesHelper.LocalMachineOsKind,
                 FrameworkDescription = RuntimeInformation.FrameworkDescription,
-                AvailableNetcoreRuntimes = NetcoreHelper.GetInstalledNetcoreRuntimes()
+                AvailableNetcoreRuntimes = NetcoreHelper.Default.InstalledVersions.ToArray()
             };
 
             return s_current;

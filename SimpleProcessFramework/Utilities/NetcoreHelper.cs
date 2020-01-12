@@ -1,5 +1,6 @@
 ﻿using Spfx.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,64 +9,74 @@ using System.Threading;
 
 namespace Spfx.Utilities
 {
-    internal static class NetcoreHelper
+    internal class NetcoreHelper
     {
+        private static readonly Regex s_runtimeDescriptionRegex = new Regex(@"\s*Microsoft\.NETCore\.App\s+(?<fullName>(?<numbers>[0-9.]+)[a-z0-9.-]*)\s*\[.*?\]", RegexOptions.IgnoreCase);
+        private static readonly Regex s_runtimeVersionRegex = new Regex(@"^(?<ver>[0-9.]+)[a-z0-9.-]*$", RegexOptions.IgnoreCase);
+        private static readonly Lazy<Version> s_processNetcoreVersion = new Lazy<Version>(GetCurrentNetcoreVersion);
+
+        public static Version CurrentProcessNetcoreVersion => s_processNetcoreVersion.Value;
+        public static string NetcoreFrameworkVersion { get; internal set; }
+
         public static class WellKnownArguments
         {
             public const string FrameworkVersion = "--fx-version";
             public const string ListRuntimesCommand = "--list-runtimes";
+            public const string VersionCommand = "--version";
         }
 
-        private static readonly Regex s_runtimeDescriptionRegex = new Regex(@"\s*Microsoft\.NETCore\.App\s+(?<fullName>(?<numbers>[0-9.]+)[a-z0-9.-]*)\s*\[.*?\]", RegexOptions.IgnoreCase);
-        private static readonly Regex s_runtimeVersionRegex = new Regex(@"^(?<ver>[0-9.]+)[a-z0-9.-]*$", RegexOptions.IgnoreCase);
-        private static readonly Lazy<Version> s_netcoreVersion = new Lazy<Version>(GetCurrentNetcoreVersion);
+        public static NetcoreHelper Default { get; } = new NetcoreHelper(() => GetDefaultDotNetExePath(true));
+        public static NetcoreHelper X86 { get; } = new NetcoreHelper(() => GetDefaultDotNetExePath(false));
+        public static NetcoreHelper Wsl => WslUtilities.NetcoreHelper;
 
-        private static readonly Lazy<string[]> s_installedNetcoreRuntimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(true), LazyThreadSafetyMode.PublicationOnly);
-        private static readonly Lazy<string[]> s_installedNetcore32Runtimes = new Lazy<string[]>(() => GetInstalledNetcoreRuntimesInternal(false), LazyThreadSafetyMode.PublicationOnly);
+        private readonly Lazy<string[]> m_installedNetcoreRuntimes;
+        private readonly Lazy<string> m_dotnetExePath;
+        private readonly Lazy<string> m_dotnetExeVersion;
+        private readonly Lazy<bool> m_isInstalled;
 
-        private static readonly Lazy<string> s_dotnetExePath = new Lazy<string>(() => GetNetCoreHostPathInternal(true), LazyThreadSafetyMode.PublicationOnly);
-        private static readonly Lazy<string> s_dotnetExe32Path = new Lazy<string>(() => GetNetCoreHostPathInternal(false), LazyThreadSafetyMode.PublicationOnly);
+        protected NetcoreHelper(Func<string> dotnetPath)
+        {
+            static Lazy<T> Lazy<T>(Func<T> func)
+                => new Lazy<T>(func, LazyThreadSafetyMode.PublicationOnly);
 
-        public static Version NetcoreVersion => s_netcoreVersion.Value;
+            m_dotnetExePath = Lazy(dotnetPath);
+            m_isInstalled = Lazy(() => CheckIsSupported());
+            m_dotnetExeVersion = Lazy(() => RunDotNetExe(WellKnownArguments.VersionCommand));
+            m_installedNetcoreRuntimes = Lazy(() => GetInstalledNetcoreRuntimesInternal());
+        }
 
-        public static string NetcoreFrameworkVersion { get; internal set; }
+        public string NetCoreHostPath => m_dotnetExePath.Value;
+        public IReadOnlyList<string> InstalledVersions => m_installedNetcoreRuntimes.Value;
+        public string DotNetExeVersion => m_dotnetExeVersion.Value;
+        public bool IsSupported => m_isInstalled.Value;
+        public string NotSupportedReason { get; private set; }
 
         internal static bool NetCoreExists(bool anyCpu)
         {
-            try
-            {
-                return (anyCpu && !HostFeaturesHelper.IsWindows) || new FileInfo(GetNetCoreHostPath(anyCpu)).Exists;
-            }
-            catch
-            {
-                return false;
-            }
+            return GetHelper(anyCpu).IsSupported;
         }
 
-        internal static bool IsNetcoreAtLeastVersion(int major, int minor = -1)
+        internal static bool IsCurrentProcessAtLeastNetcoreVersion(int major, int minor = -1)
         {
             if (!HostFeaturesHelper.LocalProcessKind.IsNetcore())
                 return false;
-
-            return NetcoreVersion.Major >= major && NetcoreVersion.Minor >= minor;
+            return CurrentProcessNetcoreVersion.Major >= major && CurrentProcessNetcoreVersion.Minor >= minor;
         }
 
-        public static string[] GetInstalledNetcoreRuntimes(bool anyCpu = true)
+        private string[] GetInstalledNetcoreRuntimesInternal()
         {
-            if (anyCpu)
-                return (string[])s_installedNetcoreRuntimes.Value.Clone();
-            return (string[])s_installedNetcore32Runtimes.Value.Clone();
-        }
-
-        private static string[] GetInstalledNetcoreRuntimesInternal(bool anyCpu)
-        {
-            var versions = RunDotNetExe(anyCpu, WellKnownArguments.ListRuntimesCommand);
+            var versions = RunDotNetExe(WellKnownArguments.ListRuntimesCommand);
             return ParseNetcoreRuntimes(versions);
         }
 
         internal static string RunDotNetExe(bool anyCpu, string command)
         {
-            return ProcessUtilities.ExecAndGetConsoleOutput(GetNetCoreHostPath(anyCpu), command, TimeSpan.FromSeconds(30)).Result;
+            return GetHelper(anyCpu).RunDotNetExe(command);
+        }
+
+        internal virtual string RunDotNetExe(string command)
+        {
+            return ProcessUtilities.ExecAndGetConsoleOutput(NetCoreHostPath, command, TimeSpan.FromSeconds(30)).Result;
         }
 
         internal static string[] ParseNetcoreRuntimes(string listRuntimesProgramOutput)
@@ -93,32 +104,74 @@ namespace Spfx.Utilities
             return ParseNetcoreVersion(m.Groups["ver"].Value);
         }
 
+        private bool CheckIsSupported()
+        {
+            try
+            {
+                if(!CheckIsSupported(out var reason))
+                {
+                    NotSupportedReason = reason;
+                    return false;
+                }
+
+                return true;
+            }
+            catch(Exception ex)
+            {
+                NotSupportedReason = ex.ToString();
+                return false;
+            }
+        }
+
+        protected virtual bool CheckIsSupported(out string reason)
+        {
+            reason = null;
+
+            if (!HostFeaturesHelper.IsWindows)
+                return true;
+
+            try
+            {
+                reason = "Invalid dotnet path";
+                var path = NetCoreHostPath;
+                var fi = new FileInfo(path);
+                reason = "'dotnet' does not exist: " + path;
+                return fi.Exists;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static string GetBestNetcoreRuntime(string requestedVersion, ProcessKind processKind = ProcessKind.Netcore)
         {
             if (!processKind.IsNetcore())
                 throw new ArgumentException(processKind + " is not a valid .Net Core process kind");
 
-            bool anyCpu = !processKind.Is32Bit() || !Environment.Is64BitOperatingSystem;
-            bool wsl = processKind == ProcessKind.Wsl;
+            return GetHelper(processKind).GetBestNetcoreRuntime(requestedVersion);
+        }
 
+        public string GetBestNetcoreRuntime(string requestedVersion)
+        {
             if (requestedVersion is null)
                 requestedVersion = "";
 
-            var choices = wsl ?
-                WslUtilities.GetInstalledNetcoreRuntimesInWsl()
-                : GetInstalledNetcoreRuntimesInternal(anyCpu);
-
+            var choices = InstalledVersions;
             return choices.FirstOrDefault(runtime => runtime.StartsWith(requestedVersion, StringComparison.OrdinalIgnoreCase));
         }
 
+        private static NetcoreHelper GetHelper(bool anyCpu) 
+            => anyCpu ? Default : X86;
+        private static NetcoreHelper GetHelper(ProcessKind kind)
+            => kind == ProcessKind.Wsl ? Wsl : GetHelper(!HostFeaturesHelper.IsWindows || !kind.Is32Bit());
+
         public static string GetNetCoreHostPath(bool anyCpu)
         {
-            if (anyCpu)
-                return s_dotnetExePath.Value;
-            return s_dotnetExe32Path.Value;
+            return GetHelper(anyCpu).NetCoreHostPath;
         }
 
-        private static string GetNetCoreHostPathInternal(bool anyCpu)
+        private static string GetDefaultDotNetExePath(bool anyCpu)
         {
             var variable = anyCpu ? "SPFX_DOTNET_EXE_PATH" : "SPFX_DOTNET_EXE_PATH32";
             var env = Environment.GetEnvironmentVariable(variable);

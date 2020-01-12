@@ -63,7 +63,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void Test_ProxyIntercept_NoArgs_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface1>();
@@ -87,7 +87,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void Test_ProxyIntercept_1ArgLong_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface3>();
@@ -114,7 +114,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void Test_ProxyIntercept_1ArgRefInLong_VoidReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface4>();
@@ -141,7 +141,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             Assert.AreEqual(expectedAddress, actualAddress);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void Test_ProxyIntercept_NoArgs_IntReturn_Success()
         {
             var rawInterface = ProcessProxyFactory.CreateImplementation<ITestInterface2>();

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Text;
 
 namespace Spfx.Utilities
 {
@@ -73,6 +74,25 @@ namespace Spfx.Utilities
                     icol.Add(i);
                 }
             }
+        }
+
+        private static readonly char[] s_spacesAndNewLines = " \t\v\r\n".ToCharArray();
+        public static void TrimSpacesAndNewLines(this StringBuilder sb)
+        {
+            sb.Trim(s_spacesAndNewLines);
+        }
+
+        public static void Trim(this StringBuilder sb, char[] charsToTrim)
+        {
+            int startTrim = 0;
+            while (sb.Length > 0 && charsToTrim.Contains(sb[startTrim]))
+                ++startTrim;
+
+            if (startTrim > 0)
+                sb.Remove(0, startTrim);
+
+            while (sb.Length > 0 && charsToTrim.Contains(sb[sb.Length - 1]))
+                --sb.Length;
         }
     }
 }

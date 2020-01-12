@@ -8,7 +8,7 @@ namespace Spfx.Tests.LowLevel.Threading
     [TestFixture, Parallelizable]
     public class UtilitiesTest : CommonTestClass
     {
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         public void TaskEx_ThreadSwitchTest()
         {
             const string name = "Name12039501935";

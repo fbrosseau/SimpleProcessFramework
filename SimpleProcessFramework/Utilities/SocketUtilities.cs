@@ -21,7 +21,7 @@ namespace Spfx.Utilities
         internal static Socket CreateSocket(AddressFamily af, SocketType sockType, ProtocolType protocol)
         {
             // Starting netcore3, the sockets are fiNaLLLlYyyY created with WSA_FLAG_NO_HANDLE_INHERIT
-            if (NetcoreHelper.IsNetcoreAtLeastVersion(3) || !HostFeaturesHelper.IsWindows)
+            if (NetcoreHelper.IsCurrentProcessAtLeastNetcoreVersion(3) || !HostFeaturesHelper.IsWindows)
                 return new Socket(af, sockType, protocol);
 
             lock (ProcessCreationUtilities.ProcessCreationLock)
@@ -35,7 +35,7 @@ namespace Spfx.Utilities
         internal static Socket CreateSocket(SocketType sockType, ProtocolType protocol)
         {
             // Starting netcore3, the sockets are fiNaLLLlYyyY created with WSA_FLAG_NO_HANDLE_INHERIT
-            if (NetcoreHelper.IsNetcoreAtLeastVersion(3) || !HostFeaturesHelper.IsWindows)
+            if (NetcoreHelper.IsCurrentProcessAtLeastNetcoreVersion(3) || !HostFeaturesHelper.IsWindows)
                 return new Socket(sockType, protocol);
 
             lock (ProcessCreationUtilities.ProcessCreationLock)

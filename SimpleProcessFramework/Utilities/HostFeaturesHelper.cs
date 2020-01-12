@@ -236,27 +236,24 @@ namespace Spfx.Utilities
             sb.AppendLine("32-bit Supported: " + Is32BitSupported);
             sb.AppendLine("Wsl Supported: " + IsWslSupported);
 
-            sb.AppendLine("Netcore Supported: " + IsNetCoreSupported);
-            sb.AppendLine("Netcore Path: " + NetcoreHelper.GetNetCoreHostPath(true));
-            if (IsNetCoreSupported)
+            void WriteNetcore(string name, NetcoreHelper h)
             {
-                sb.AppendLine("Netcore runtimes--");
-                foreach (var runtime in NetcoreHelper.GetInstalledNetcoreRuntimes())
+                sb.AppendLine(name + " Supported: " + h.IsSupported);
+                sb.AppendLine(name + " Path: " + h.NetCoreHostPath);
+                if (h.IsSupported)
                 {
-                    sb.AppendLine("- " + runtime);
+                    sb.AppendLine(name + " dotnet version: " + h.DotNetExeVersion);
+                    sb.AppendLine(name + " dotnet runtimes--");
+                    foreach (var runtime in h.InstalledVersions)
+                    {
+                        sb.AppendLine("- " + runtime);
+                    }
                 }
             }
 
-            sb.AppendLine("Netcore32 Supported: " + IsNetCore32Supported);
-            sb.AppendLine("Netcore32 Path: " + NetcoreHelper.GetNetCoreHostPath(false));
-            if (IsNetCore32Supported)
-            {
-                sb.AppendLine("Netcore32 runtimes--");
-                foreach (var runtime in NetcoreHelper.GetInstalledNetcoreRuntimes(false))
-                {
-                    sb.AppendLine("- " + runtime);
-                }
-            }
+            WriteNetcore("Netcore", NetcoreHelper.Default);
+            WriteNetcore("Netcore-32", NetcoreHelper.X86);
+            WriteNetcore("Netcore-wsl", NetcoreHelper.Wsl);
         }
     }
 }

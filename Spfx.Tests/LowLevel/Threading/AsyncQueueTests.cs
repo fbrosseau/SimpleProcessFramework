@@ -21,7 +21,7 @@ namespace Spfx.Tests.LowLevel.Threading
 
         private static QueueMode[] AllModes = new[] { QueueMode.Manual, QueueMode.AsyncCallback, QueueMode.SyncCallback, QueueMode.SyncAsyncCallback };
 
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         [TestCaseSource(nameof(AllModes))]
         public async Task AsyncQueue_Manual_Basic(QueueMode mode)
         {
@@ -37,7 +37,7 @@ namespace Spfx.Tests.LowLevel.Threading
             q.IsDisposed.Should().BeTrue();
         }
 
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         [TestCaseSource(nameof(AllModes))]
         public async Task AsyncQueue_RemainingItemIsDisposed(QueueMode mode)
         {
@@ -67,7 +67,7 @@ namespace Spfx.Tests.LowLevel.Threading
             objectNotDisposed2.IsDisposed.Should().BeFalse();
         }
 
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         [TestCaseSource(nameof(AllModes))]
         public async Task AsyncQueue_Manual_Disposed(QueueMode mode)
         {

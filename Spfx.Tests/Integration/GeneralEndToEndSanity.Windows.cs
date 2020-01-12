@@ -13,7 +13,7 @@ namespace Spfx.Tests.Integration
     public partial class GeneralEndToEndSanity
     {
 #if NETFRAMEWORK
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [Category("NetfxHost-Only"), Category("Netfx-Only"), Category("Windows-Only")]
         public void AppDomainCallbackToOtherProcess()
         {

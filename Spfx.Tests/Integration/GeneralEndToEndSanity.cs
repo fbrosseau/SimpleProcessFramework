@@ -16,32 +16,32 @@ namespace Spfx.Tests.Integration
         {
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(AllGenericSupportedFrameworks))]
         public void BasicDefaultSubprocess(TargetFramework fw)
             => CreateAndDestroySuccessfulSubprocess(p => p.TargetFramework = fw);
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void BasicTestInMasterProcess()
         {
             using var cluster = CreateTestCluster();
             CreateAndValidateTestInterface(cluster, cluster.MasterProcess.UniqueAddress);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(AllNetcore_AllArchs))]
         public void BasicNetcore_SpecificRuntime(TargetFramework fw) => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = fw; });
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(Simple_Netfx_And_Netcore))]
         public void BasicEnvironmentVariableSubprocess(TargetFramework fw)
         {

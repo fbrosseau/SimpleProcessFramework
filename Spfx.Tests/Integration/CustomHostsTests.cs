@@ -28,14 +28,14 @@ namespace Spfx.Tests.Integration
                 yield return new object[] { fw, $"{TestCustomHostExe.ExecutableName}.exe" };
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable(ParallelScope.Children)*/]
+        [Test/*, Parallelizable(ParallelScope.Children)*/]
         [TestCaseSource(nameof(GetAllValidPreExistingFileCombinations))]
         public void CustomNameSubprocess_ValidPreExistingFile(TargetFramework targetFramework, string customProcessName)
         {
             CustomNameSubprocessTest(targetFramework, customProcessName, validateCustomEntryPoint: true);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
         public void CustomNameSubprocess_NewFileAllowed(TargetFramework targetFramework)
         {
@@ -58,7 +58,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
         public void CustomNameSubprocessTestDenied(TargetFramework targetFramework)
         {

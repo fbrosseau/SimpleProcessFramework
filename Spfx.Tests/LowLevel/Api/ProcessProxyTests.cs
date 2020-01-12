@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace Spfx.Tests.LowLevel
+namespace Spfx.Tests.LowLevel.Api
 {
     [TestFixture, Parallelizable]
     public class ProcessProxyTests : CommonTestClass

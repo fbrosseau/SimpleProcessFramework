@@ -31,7 +31,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         [Description("Ensures that remote serialization exceptions are noticed by the test")]
         public void DetectUnhandledExceptionOnSubprocessSerialize()
         {

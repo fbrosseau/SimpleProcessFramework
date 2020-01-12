@@ -9,7 +9,7 @@ namespace Spfx.Tests.LowLevel.Threading
     [TestFixture, Parallelizable(ParallelScope.All)]
     public class AsyncLockTests : CommonThreadingTestClass
     {
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         public void AsyncLock_Basic()
         {
             var theLock = new AsyncLock();
@@ -23,7 +23,7 @@ namespace Spfx.Tests.LowLevel.Threading
             theLock.IsDisposed.Should().BeTrue();
         }
 
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         public void AsyncLock_Disposed()
         {
             var theLock = new AsyncLock();
@@ -35,7 +35,7 @@ namespace Spfx.Tests.LowLevel.Threading
             AssertThrows<ObjectDisposedException>(() => theLock.LockAsync().AsTask().GetResultOrRethrow());
         }
 
-        [Test, Timeout(DefaultTestTimeout)]
+        [Test]
         public async Task AsyncLock_Concurrent()
         {
             using var theLock = new AsyncLock();

@@ -19,9 +19,9 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ConcurrentCreateProcess_Throw() => ConcurrentCreateProcess(ProcessCreationOptions.ThrowIfExists);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ConcurrentCreateProcess_NoThrow() => ConcurrentCreateProcess(ProcessCreationOptions.ContinueIfExists);
 
         private void ConcurrentCreateProcess(ProcessCreationOptions mustCreateNewProcess)
@@ -61,7 +61,7 @@ namespace Spfx.Tests.Integration
                 Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void DuplicateProcesses_ThrowsExpectedException()
         {
             using var cluster = CreateTestCluster();
@@ -82,7 +82,7 @@ namespace Spfx.Tests.Integration
             });
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void DuplicateEndpoints_ThrowsExpectedException()
         {
             using var cluster = CreateTestCluster();
@@ -113,9 +113,9 @@ namespace Spfx.Tests.Integration
                 });
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ConcurrentCreateProcessAndEndpoint_Throw() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ThrowIfExists);
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ConcurrentCreateProcessAndEndpoint_NoThrow() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ContinueIfExists);
 
         public void ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions mustCreateNewProcess)

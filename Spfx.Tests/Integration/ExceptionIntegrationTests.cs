@@ -15,7 +15,7 @@ namespace Spfx.Tests.Integration
         {
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ThrowCustomException_NotSerializable()
         {
             using var cluster = CreateTestCluster();
@@ -25,7 +25,7 @@ namespace Spfx.Tests.Integration
             ExpectException(svc.TestInterface.GetDummyValue(typeof(CustomException_NotMarshalled), exceptionText: text), typeof(RemoteException), expectedText: text, expectedStackFrame: TestInterface.ThrowingMethodName);
         }
 
-        [Test, Timeout(DefaultTestTimeout)/*, Parallelizable*/]
+        [Test/*, Parallelizable*/]
         public void ThrowCustomException_Serializable()
         {
             using var cluster = CreateTestCluster();
