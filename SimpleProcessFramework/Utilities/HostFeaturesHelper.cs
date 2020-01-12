@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using Spfx.Interfaces;
 
 namespace Spfx.Utilities
@@ -15,8 +17,8 @@ namespace Spfx.Utilities
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
         public static bool Is32BitSupported => IsWindows;
 
-        public static bool IsNetCoreSupported { get; } = !IsWindows || NetcoreHelper.NetCoreExists(true);
-        public static bool IsNetCore32Supported { get; } = IsWindows && NetcoreHelper.NetCoreExists(false);
+        public static bool IsNetCoreSupported => !IsWindows || NetcoreHelper.NetCoreExists(true);
+        public static bool IsNetCore32Supported => IsWindows && NetcoreHelper.NetCoreExists(false);
 
         public static bool IsAppDomainSupported => LocalProcessKind.IsNetfxProcess();
 
@@ -198,6 +200,28 @@ namespace Spfx.Utilities
             }
 
             return true;
+        }
+
+        public static string DescribeHost()
+        {
+            var ver = FileVersionInfo.GetVersionInfo(typeof(HostFeaturesHelper).Assembly.Location).ProductVersion;
+             
+            var sb = new StringBuilder();
+
+            sb.AppendLine("The SimpleProcessFramework (Spfx) Version " + ver);
+
+            sb.AppendLine("Host information---------");
+            sb.AppendLine("OS Kind: " + LocalMachineOsKind);
+            sb.AppendLine("Current process: " + LocalProcessKind);
+            sb.AppendLine("Runtime: " + CurrentProcessRuntimeDescription);
+            sb.AppendLine("Is Debug: " + IsDebugBuild);
+            sb.AppendLine("NetFX Supported: " + IsNetFxSupported);
+            sb.AppendLine("32-bit Supported: " + Is32BitSupported);
+            sb.AppendLine("Wsl Supported: " + IsWslSupported);
+            sb.AppendLine("Netcore Supported: " + IsNetCoreSupported);
+            sb.AppendLine("Netcore32 Supported: " + IsNetCore32Supported);
+
+            return sb.ToString();
         }
     }
 }

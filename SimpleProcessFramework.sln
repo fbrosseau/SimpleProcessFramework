@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Utilities", "Build Ut
 	ProjectSection(SolutionItems) = preProject
 		azure-pipelines.yml = azure-pipelines.yml
 		nuspec\BuildNuget.bat = nuspec\BuildNuget.bat
+		DescribeSpfxHost.ps1 = DescribeSpfxHost.ps1
 		Directory.Build.props = Directory.Build.props
 		ManualInstallDotnet.ps1 = ManualInstallDotnet.ps1
 		nuget.config = nuget.config
