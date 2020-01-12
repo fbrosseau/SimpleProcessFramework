@@ -105,20 +105,20 @@ steps:
 - script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH32;]"$(Agent.ToolsDirectory)/dotnet32/dotnet"'
   displayName: Set SPFX_DOTNET_EXE_PATH32
 
-##----------------------------------------------------------------------------------------------------
-## Tests
-##----------------------------------------------------------------------------------------------------
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Run tests (netcore)'
-#  continueOnError: true
-#  inputs:
-#    command: test
-#    projects: 'Spfx.Tests'
-#    buildConfiguration: '$(buildConfiguration)'
-#    testRunTitle: '$(buildConfiguration) $(netcoreName)'
-#    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore
-#
+#----------------------------------------------------------------------------------------------------
+# Tests
+#----------------------------------------------------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netcore)'
+  continueOnError: true
+  inputs:
+    command: test
+    projects: 'Spfx.Tests'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore
+
 #- task: DotNetCoreCLI@2
 #  displayName: 'Run tests (netfx)'
 #  continueOnError: true
