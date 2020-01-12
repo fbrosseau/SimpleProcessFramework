@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Spfx.Utilities
 {
-    internal class NetcoreHelper
+    internal class NetcoreInfo
     {
         private static readonly Regex s_runtimeDescriptionRegex = new Regex(@"\s*Microsoft\.NETCore\.App\s+(?<fullName>(?<numbers>[0-9.]+)[a-z0-9.-]*)\s*\[.*?\]", RegexOptions.IgnoreCase);
         private static readonly Regex s_runtimeVersionRegex = new Regex(@"^(?<ver>[0-9.]+)[a-z0-9.-]*$", RegexOptions.IgnoreCase);
@@ -25,16 +25,16 @@ namespace Spfx.Utilities
             public const string VersionCommand = "--version";
         }
 
-        public static NetcoreHelper Default { get; } = new NetcoreHelper(() => GetDefaultDotNetExePath(true));
-        public static NetcoreHelper X86 { get; } = new NetcoreHelper(() => GetDefaultDotNetExePath(false));
-        public static NetcoreHelper Wsl => WslUtilities.NetcoreHelper;
+        public static NetcoreInfo Default { get; } = new NetcoreInfo(() => GetDefaultDotNetExePath(true));
+        public static NetcoreInfo X86 { get; } = new NetcoreInfo(() => GetDefaultDotNetExePath(false));
+        public static NetcoreInfo Wsl => WslUtilities.NetcoreHelper;
 
         private readonly Lazy<string[]> m_installedNetcoreRuntimes;
         private readonly Lazy<string> m_dotnetExePath;
         private readonly Lazy<string> m_dotnetExeVersion;
         private readonly Lazy<bool> m_isInstalled;
 
-        protected NetcoreHelper(Func<string> dotnetPath)
+        protected NetcoreInfo(Func<string> dotnetPath)
         {
             static Lazy<T> Lazy<T>(Func<T> func)
                 => new Lazy<T>(func, LazyThreadSafetyMode.PublicationOnly);
@@ -161,9 +161,9 @@ namespace Spfx.Utilities
             return choices.FirstOrDefault(runtime => runtime.StartsWith(requestedVersion, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static NetcoreHelper GetHelper(bool anyCpu) 
+        private static NetcoreInfo GetHelper(bool anyCpu) 
             => anyCpu ? Default : X86;
-        private static NetcoreHelper GetHelper(ProcessKind kind)
+        private static NetcoreInfo GetHelper(ProcessKind kind)
             => kind == ProcessKind.Wsl ? Wsl : GetHelper(!HostFeaturesHelper.IsWindows || !kind.Is32Bit());
 
         public static string GetNetCoreHostPath(bool anyCpu)

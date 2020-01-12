@@ -18,8 +18,8 @@ namespace Spfx.Utilities
         public static bool IsWslSupported => WslUtilities.IsWslSupported;
         public static bool Is32BitSupported => IsWindows;
 
-        public static bool IsNetCoreSupported => !IsWindows || NetcoreHelper.NetCoreExists(true);
-        public static bool IsNetCore32Supported => IsWindows && NetcoreHelper.NetCoreExists(false);
+        public static bool IsNetCoreSupported => !IsWindows || NetcoreInfo.NetCoreExists(true);
+        public static bool IsNetCore32Supported => IsWindows && NetcoreInfo.NetCoreExists(false);
 
         public static bool IsAppDomainSupported => LocalProcessKind.IsNetfxProcess();
 
@@ -236,7 +236,7 @@ namespace Spfx.Utilities
             sb.AppendLine("32-bit Supported: " + Is32BitSupported);
             sb.AppendLine("Wsl Supported: " + IsWslSupported);
 
-            void WriteNetcore(string name, NetcoreHelper h)
+            void WriteNetcore(string name, NetcoreInfo h)
             {
                 sb.AppendLine(name + " Supported: " + h.IsSupported);
                 sb.AppendLine(name + " Path: " + h.NetCoreHostPath);
@@ -251,9 +251,9 @@ namespace Spfx.Utilities
                 }
             }
 
-            WriteNetcore("Netcore", NetcoreHelper.Default);
-            WriteNetcore("Netcore-32", NetcoreHelper.X86);
-            WriteNetcore("Netcore-wsl", NetcoreHelper.Wsl);
+            WriteNetcore("Netcore", NetcoreInfo.Default);
+            WriteNetcore("Netcore-32", NetcoreInfo.X86);
+            WriteNetcore("Netcore-wsl", NetcoreInfo.Wsl);
         }
     }
 }

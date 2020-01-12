@@ -25,8 +25,8 @@ namespace Spfx.Runtime.Server.Processes
                 case ProcessKind.Netcore:
                 case ProcessKind.Netcore32:
                 case ProcessKind.Wsl:
-                    var runtime = NetcoreHelper.GetBestNetcoreRuntime("2", processKind);
-                    relativeCodebase = "../" + NetcoreHelper.GetDefaultNetcoreBinSubfolderName(runtime);
+                    var runtime = NetcoreInfo.GetBestNetcoreRuntime("2", processKind);
+                    relativeCodebase = "../" + NetcoreInfo.GetDefaultNetcoreBinSubfolderName(runtime);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(processKind));

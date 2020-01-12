@@ -43,7 +43,7 @@ namespace Spfx.Interfaces
             if (string.IsNullOrWhiteSpace(runtime))
                 runtime = config.DefaultNetcoreRuntime ?? "";
 
-            var selectedVersion = NetcoreHelper.GetBestNetcoreRuntime(runtime, ProcessKind);
+            var selectedVersion = NetcoreInfo.GetBestNetcoreRuntime(runtime, ProcessKind);
             if (!string.IsNullOrWhiteSpace(selectedVersion))
                 return true;
 

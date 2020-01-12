@@ -39,7 +39,7 @@ namespace Spfx.Runtime.Server.Processes
 
             if (!string.IsNullOrWhiteSpace(processCreationInfo.RuntimeVersionOverride))
             {
-                m_dotNetExeArguments.Add(NetcoreHelper.WellKnownArguments.FrameworkVersion);
+                m_dotNetExeArguments.Add(NetcoreInfo.WellKnownArguments.FrameworkVersion);
                 m_dotNetExeArguments.Add(processCreationInfo.RuntimeVersionOverride);
             }
 
@@ -51,7 +51,7 @@ namespace Spfx.Runtime.Server.Processes
             {
                 var dotnetExe = m_processKind == ProcessKind.Wsl 
                     ? m_config.DefaultWslNetcoreHost
-                    : NetcoreHelper.GetNetCoreHostPath(!processCreationInfo.TargetFramework.ProcessKind.Is32Bit());
+                    : NetcoreInfo.GetNetCoreHostPath(!processCreationInfo.TargetFramework.ProcessKind.Is32Bit());
                 PrimaryExecutableName = dotnetExe;
                 CommandLineArguments.AddRange(m_dotNetExeArguments);
                 CommandLineArguments.Add(UserExecutableName);

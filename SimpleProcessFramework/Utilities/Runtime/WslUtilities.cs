@@ -12,8 +12,7 @@ namespace Spfx.Utilities
 
         public static bool IsWslSupported => NetcoreHelper.IsSupported;
 
-        private static Lazy<NetcoreHelper> s_netcoreHelper = new Lazy<NetcoreHelper>(() => new WslNetcoreHelper());
-        public static NetcoreHelper NetcoreHelper => s_netcoreHelper.Value;
+        public static NetcoreInfo NetcoreHelper { get; } = new WslNetcoreInfo();
 
         internal static string GetCachedLinuxPath(string windowsName)
         {
@@ -44,9 +43,9 @@ namespace Spfx.Utilities
             return ProcessUtilities.ExecAndGetConsoleOutput(WslExeFullPath, linuxCommand, TimeSpan.FromSeconds(30)).Result;
         }
 
-        private class WslNetcoreHelper : NetcoreHelper
+        private class WslNetcoreInfo : NetcoreInfo
         {
-            public WslNetcoreHelper()
+            public WslNetcoreInfo()
                 : base(() => "dotnet")
             {
             }

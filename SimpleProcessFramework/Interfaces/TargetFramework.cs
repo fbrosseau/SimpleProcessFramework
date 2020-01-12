@@ -68,7 +68,7 @@ namespace Spfx.Interfaces
             if (!kind.IsNetcore())
                 return Create(kind);
 
-            return NetcoreTargetFramework.Create(kind, NetcoreHelper.NetcoreFrameworkVersion);
+            return NetcoreTargetFramework.Create(kind, NetcoreInfo.NetcoreFrameworkVersion);
         }
 
         public static bool operator ==(TargetFramework a, TargetFramework b) => Equals(a, b);

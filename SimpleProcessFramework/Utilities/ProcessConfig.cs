@@ -22,8 +22,8 @@ namespace Spfx.Utilities
             }
             else if (fw.ProcessKind.IsNetcore())
             {
-                var runtime = NetcoreHelper.GetBestNetcoreRuntime((fw as NetcoreTargetFramework)?.TargetRuntime, fw.ProcessKind);
-                relativeFolder = "../" + NetcoreHelper.GetDefaultNetcoreBinSubfolderName(runtime);
+                var runtime = NetcoreInfo.GetBestNetcoreRuntime((fw as NetcoreTargetFramework)?.TargetRuntime, fw.ProcessKind);
+                relativeFolder = "../" + NetcoreInfo.GetDefaultNetcoreBinSubfolderName(runtime);
             }
             else
             {
