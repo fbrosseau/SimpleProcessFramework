@@ -219,7 +219,11 @@ namespace Spfx.Utilities
             sb.AppendLine("32-bit Supported: " + Is32BitSupported);
             sb.AppendLine("Wsl Supported: " + IsWslSupported);
             sb.AppendLine("Netcore Supported: " + IsNetCoreSupported);
+            if (IsNetCoreSupported)
+                sb.AppendLine("Netcore Path: " + NetcoreHelper.GetNetCoreHostPath(true));
             sb.AppendLine("Netcore32 Supported: " + IsNetCore32Supported);
+            if (IsNetCore32Supported)
+                sb.AppendLine("Netcore32 Path: " + NetcoreHelper.GetNetCoreHostPath(false));
 
             return sb.ToString();
         }
