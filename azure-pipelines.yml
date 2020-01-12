@@ -81,30 +81,30 @@ steps:
 # Manually install netcore x86 (runtime only)
 #----------------------------------------------------------------------------------------------------
 
-#- task: PowerShell@2
-#  displayName: 'Netcore 2.1 x86'
-#  inputs:
-#    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-#    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-#- task: PowerShell@2
-#  displayName: 'Netcore 2.2 x86'
-#  inputs:
-#    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-#    arguments: '-Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-#- task: PowerShell@2
-#  displayName: 'Netcore 3.0 x86'
-#  inputs:
-#    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-#    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-#- task: PowerShell@2
-#  displayName: 'Netcore 3.1 x86'
-#  inputs:
-#    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-#    arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-#
-#- script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH32;]"$(Agent.ToolsDirectory)/dotnet32/dotnet"'
-#  displayName: Set SPFX_DOTNET_EXE_PATH32
-#
+- task: PowerShell@2
+  displayName: 'Netcore 2.1 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 2.2 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 3.0 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 3.1 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+
+- script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH32;]"$(Agent.ToolsDirectory)/dotnet32/dotnet"'
+  displayName: Set SPFX_DOTNET_EXE_PATH32
+
 ##----------------------------------------------------------------------------------------------------
 ## Tests
 ##----------------------------------------------------------------------------------------------------
