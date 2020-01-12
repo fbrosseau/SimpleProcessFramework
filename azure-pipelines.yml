@@ -24,93 +24,125 @@ pool:
   vmImage: $(imageName)
 
 steps:
+
+#----------------------------------------------------------------------------------------------------
+# Manually install netcore x86
+#----------------------------------------------------------------------------------------------------
+
 - task: PowerShell@2
   displayName: 'Netcore 2.1 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
     arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 2.2 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 3.0 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+- task: PowerShell@2
+  displayName: 'Netcore 3.1 x86'
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
+    arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 
 - script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH32;]"$(Agent.ToolsDirectory)/dotnet32/dotnet"'
   displayName: Set SPFX_DOTNET_EXE_PATH32
 
-- script: 'echo %SPFX_DOTNET_EXE_PATH32%'
-  displayName: Test
+#----------------------------------------------------------------------------------------------------
+# Install tools & netcore x64
+#----------------------------------------------------------------------------------------------------
 
-#steps:
-#- task: NuGetToolInstaller@0
-#
-#- task: UseDotNet@2
-#  displayName: 'Install .net core 2.1'
-#  inputs:
-#    packageType: sdk
-#    version: 2.1.x
-#    installationPath: $(Agent.ToolsDirectory)/dotnet
-#
-#- task: UseDotNet@2
-#  displayName: 'Install .net core 2.2'
-#  inputs:
-#    packageType: sdk
-#    version: 2.2.x
-#    installationPath: $(Agent.ToolsDirectory)/dotnet
-#
-#- task: UseDotNet@2
-#  displayName: 'Install .net core 3.0'
-#  inputs:
-#    packageType: sdk
-#    version: 3.0.x
-#    installationPath: $(Agent.ToolsDirectory)/dotnet
-#
-#- task: UseDotNet@2
-#  displayName: 'Install .net core 3.1'
-#  inputs:
-#    packageType: sdk
-#    version: 3.1.x
-#    installationPath: $(Agent.ToolsDirectory)/dotnet
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Main Build without tests'
-#  inputs:
-#    command: build
-#    projects: 'SimpleProcessFramework.sln'
-#    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Full Build'
-#  inputs:
-#    command: build
-#    projects: 'SimpleProcessFramework.sln'
-#    arguments: '-c $(buildConfiguration) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Run tests (netcore)'
-#  continueOnError: true
-#  inputs:
-#    command: test
-#    projects: 'Spfx.Tests'
-#    buildConfiguration: '$(buildConfiguration)'
-#    testRunTitle: '$(buildConfiguration) $(netcoreName)'
-#    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
-#
-#- task: DotNetCoreCLI@2
-#  displayName: 'Run tests (netfx)'
-#  continueOnError: true
-#  condition: eq(variables['buildNetfx'], 'true')
-#  inputs:
-#    command: test
-#    projects: 'SimpleProcessFramework.sln'
-#    buildConfiguration: '$(buildConfiguration)'
-#    testRunTitle: '$(buildConfiguration) $(netfxName)'
-#    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
-#
-#- task: NuGetAuthenticate@0
-#  inputs:
-#    nuGetServiceConnections: 'Github-Packages'
-#
-#- task: NuGetCommand@2
-#  displayName: 'Nuget Push'
-#  inputs:
-#    command: 'push'
-#    packagesToPush: '$(Build.Repository.LocalPath)\nuspec\*.nupkg'
-#    nuGetFeedType: 'external'
-#    publishFeedCredentials: 'Github-Packages'
-#    verbosityPush: 'Detailed'
+- task: NuGetToolInstaller@0
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 2.1'
+  inputs:
+    packageType: sdk
+    version: 2.1.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 2.2'
+  inputs:
+    packageType: sdk
+    version: 2.2.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 3.0'
+  inputs:
+    packageType: sdk
+    version: 3.0.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Install .net core 3.1'
+  inputs:
+    packageType: sdk
+    version: 3.1.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+#----------------------------------------------------------------------------------------------------
+# Build
+#----------------------------------------------------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Main Build without tests'
+  inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Full Build'
+  inputs:
+    command: build
+    projects: 'SimpleProcessFramework.sln'
+    arguments: '-c $(buildConfiguration) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
+
+#----------------------------------------------------------------------------------------------------
+# Tests
+#----------------------------------------------------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netcore)'
+  continueOnError: true
+  inputs:
+    command: test
+    projects: 'Spfx.Tests'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netcoreName)'
+    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netfx)'
+  continueOnError: true
+  condition: eq(variables['buildNetfx'], 'true')
+  inputs:
+    command: test
+    projects: 'SimpleProcessFramework.sln'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(netfxName)'
+    arguments: '-c $(buildConfiguration) -f $(netfxName) -v $(verbosity) --no-build --no-restore
+
+#----------------------------------------------------------------------------------------------------
+# Nuget publish
+#----------------------------------------------------------------------------------------------------
+
+- task: NuGetAuthenticate@0
+  inputs:
+    nuGetServiceConnections: 'Github-Packages'
+
+- task: NuGetCommand@2
+  displayName: 'Nuget Push'
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.Repository.LocalPath)\nuspec\*.nupkg'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'Github-Packages'
+    verbosityPush: 'Detailed'
