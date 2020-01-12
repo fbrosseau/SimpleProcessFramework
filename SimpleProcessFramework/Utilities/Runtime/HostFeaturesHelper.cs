@@ -249,6 +249,10 @@ namespace Spfx.Utilities.Runtime
                         sb.AppendLine("- " + runtime);
                     }
                 }
+                else
+                {
+                    sb.AppendLine(name + " Not supported: " + h.NotSupportedReason);
+                }
             }
 
             WriteNetcore("Netcore", NetcoreInfo.Default);
