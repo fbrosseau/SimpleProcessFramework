@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Spfx.Interfaces;
@@ -204,9 +205,25 @@ namespace Spfx.Utilities
 
         public static string DescribeHost()
         {
-            var ver = FileVersionInfo.GetVersionInfo(typeof(HostFeaturesHelper).Assembly.Location).ProductVersion;
-
             var sb = new StringBuilder();
+
+            try
+            {
+                DescribeHostImpl(sb);
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine("DescribeHost failed!");
+                sb.AppendFormat("{0}", ex);
+            }
+
+            return sb.ToString();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void DescribeHostImpl(StringBuilder sb)
+        {
+            var ver = FileVersionInfo.GetVersionInfo(typeof(HostFeaturesHelper).Assembly.Location).ProductVersion;
 
             sb.AppendLine("The SimpleProcessFramework (Spfx) Version " + ver);
 
@@ -219,17 +236,17 @@ namespace Spfx.Utilities
             sb.AppendLine("32-bit Supported: " + Is32BitSupported);
             sb.AppendLine("Wsl Supported: " + IsWslSupported);
 
-            sb.AppendLine("Netcore Supported: " + IsNetCoreSupported);            
+            sb.AppendLine("Netcore Supported: " + IsNetCoreSupported);
             sb.AppendLine("Netcore Path: " + NetcoreHelper.GetNetCoreHostPath(true));
-            if(IsNetCoreSupported)
+            if (IsNetCoreSupported)
             {
                 sb.AppendLine("Netcore runtimes--");
-                foreach(var runtime in NetcoreHelper.GetInstalledNetcoreRuntimes())
+                foreach (var runtime in NetcoreHelper.GetInstalledNetcoreRuntimes())
                 {
                     sb.AppendLine("- " + runtime);
                 }
-            }             
-            
+            }
+
             sb.AppendLine("Netcore32 Supported: " + IsNetCore32Supported);
             sb.AppendLine("Netcore32 Path: " + NetcoreHelper.GetNetCoreHostPath(false));
             if (IsNetCore32Supported)
@@ -240,8 +257,6 @@ namespace Spfx.Utilities
                     sb.AppendLine("- " + runtime);
                 }
             }
-
-            return sb.ToString();
         }
     }
 }
