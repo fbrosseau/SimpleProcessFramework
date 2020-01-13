@@ -6,7 +6,8 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   verbosity: 'normal'
-  netcoreName: 'netcoreapp2.1'
+  minNetcoreVer: 'netcoreapp2.1'
+  maxNetcoreVer: 'netcoreapp3.1'
   netstandardName: 'netstandard2.0'
   netfxName: 'net48'
   windowsImage: 'windows-2019'
@@ -39,13 +40,6 @@ steps:
   inputs:
     packageType: sdk
     version: 2.1.x
-    installationPath: $(Agent.ToolsDirectory)/dotnet
-
-- task: UseDotNet@2
-  displayName: 'Install .net core 2.2'
-  inputs:
-    packageType: sdk
-    version: 2.2.x
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
 - task: UseDotNet@2
@@ -92,11 +86,6 @@ steps:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
     arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 - task: PowerShell@2
-  displayName: 'Netcore 2.2 x86'
-  inputs:
-    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 2.2 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-- task: PowerShell@2
   displayName: 'Netcore 3.0 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
@@ -123,16 +112,26 @@ steps:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
     workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)'
     arguments: '-Assembly "./Spfx.dll"'
-
+    
 - task: DotNetCoreCLI@2
-  displayName: 'Run tests (netcore)'
+  displayName: 'Run tests $(minNetcoreVer)'
   continueOnError: true
   inputs:
     command: test
     projects: 'Spfx.Tests'
     buildConfiguration: '$(buildConfiguration)'
-    testRunTitle: '$(buildConfiguration) $(netcoreName)'
-    arguments: '-c $(buildConfiguration) -f $(netcoreName) -v $(verbosity) --no-build --no-restore'
+    testRunTitle: '$(buildConfiguration) $(minNetcoreVer)'
+    arguments: '-c $(buildConfiguration) -f $(minNetcoreVer) -v $(verbosity) --no-build --no-restore'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests $(maxNetcoreVer)'
+  continueOnError: true
+  inputs:
+    command: test
+    projects: 'Spfx.Tests'
+    buildConfiguration: '$(buildConfiguration)'
+    testRunTitle: '$(buildConfiguration) $(maxNetcoreVer)'
+    arguments: '-c $(buildConfiguration) -f $(maxNetcoreVer) -v $(verbosity) --no-build --no-restore'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run tests (netfx)'

@@ -33,20 +33,6 @@
     <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.deps.json" target="tools/netcoreapp2.1" />
     <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.runtimeconfig.json" target="tools/netcoreapp2.1" />
 
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.dll" target="lib/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.pdb" target="lib/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.dll" target="lib/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.pdb" target="lib/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.deps.json" target="lib/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.runtimeconfig.json" target="lib/netcoreapp2.2" />
-
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.dll" target="tools/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.pdb" target="tools/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.dll" target="tools/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.pdb" target="tools/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.deps.json" target="tools/netcoreapp2.2" />
-    <file src="../bin/$configuration$/netcoreapp2.2/Spfx.Process.Netcore.runtimeconfig.json" target="tools/netcoreapp2.2" />
-
     <file src="../bin/$configuration$/netcoreapp3.0/Spfx.dll" target="lib/netcoreapp3.0" />
     <file src="../bin/$configuration$/netcoreapp3.0/Spfx.pdb" target="lib/netcoreapp3.0" />
     <file src="../bin/$configuration$/netcoreapp3.0/Spfx.Process.Netcore.dll" target="lib/netcoreapp3.0" />

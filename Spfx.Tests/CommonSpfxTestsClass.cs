@@ -19,7 +19,6 @@ namespace Spfx.Tests
 
         internal static readonly NetcoreTargetFramework[] AllNetcore = {
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.1"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.2"),
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.0"),
             NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1")
         };

@@ -10,5 +10,5 @@ Write-Host "Describing $Assembly...";
 #Add-Type -Path $Assembly
 [Reflection.Assembly]::LoadFile($Assembly);
 
-$txt = [Spfx.Utilities.HostFeaturesHelper]::DescribeHost();
+$txt = [Spfx.Utilities.Runtime.HostFeaturesHelper]::DescribeHost();
 Write-Host $txt
