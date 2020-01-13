@@ -67,7 +67,12 @@ steps:
     projects: 'SimpleProcessFramework.sln'
     arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 
-
+- task: DotNetCoreCLI@2
+  displayName: 'Publish Spfx.dll netstandard'
+  inputs:
+    command: publish
+    projects: 'SimpleProcessFramework'
+    arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --no-build --no-restore'
 
 - task: DotNetCoreCLI@2
   displayName: 'Full Build'
@@ -110,7 +115,7 @@ steps:
   displayName: 'Describe Hosts for tests'
   inputs:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
-    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)'
+    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)/publish'
     arguments: '-Assembly "./Spfx.dll"'
     
 - task: DotNetCoreCLI@2
