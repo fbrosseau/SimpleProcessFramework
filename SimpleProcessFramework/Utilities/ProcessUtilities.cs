@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Utilities
@@ -150,7 +151,7 @@ namespace Spfx.Utilities
                 {
                     if (e.Data is null)
                     {
-                        if (++nullsReceivedCount == 2)
+                        if (Interlocked.Increment(ref nullsReceivedCount) == 2)
                             completionEvent.Set();
                     }
                     else
