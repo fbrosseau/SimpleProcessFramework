@@ -25,7 +25,7 @@ if($DownloadScript) {
         -OutFile "$CliPath/dotnet-install.ps1"
 
     $End = (Get-Date).Millisecond;
-    Write-Host "Downloaded in $($End - Start)ms";
+    Write-Host "Downloaded in $($End - $Start)ms";
 }
 
 Write-Host "Installing the CLI requested version ($Version) ..."
