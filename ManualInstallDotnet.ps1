@@ -6,7 +6,7 @@ param(
 [Parameter(Mandatory=$True)]
 [String]$Arch,
 [Parameter(Mandatory=$False)]
-[switch]$DownloadScript = $true
+[switch]$NoDownloadScript = $false
 )
 
 $ErrorActionPreference="Stop"
@@ -16,7 +16,7 @@ if(!(Test-Path -Path $CliPath)) {
     New-Item -Type "directory" -Path $CliPath 
 }
 
-if($DownloadScript) {
+if(!($NoDownloadScript)) {
     $Start = (Get-Date).Millisecond;
     Write-Host "Downloading the CLI installer...";
 

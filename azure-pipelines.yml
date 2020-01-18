@@ -74,6 +74,7 @@ steps:
     command: publish
     publishWebProjects: false
     zipAfterPublish: false
+    modifyOutputPath: false
     projects: 'SimpleProcessFramework'
     arguments: '-f $(frameworkToDescribe) -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
 
@@ -92,17 +93,17 @@ steps:
   displayName: 'Netcore 2.1 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86 -DownloadScript'
+    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
 - task: PowerShell@2
   displayName: 'Netcore 3.0 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86 -NoDownloadScript'
 - task: PowerShell@2
   displayName: 'Netcore 3.1 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+    arguments: '-Version 3.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86 -NoDownloadScript'
 
 - script: 'echo "##vso[task.setvariable variable=SPFX_DOTNET_EXE_PATH;]$(Agent.ToolsDirectory)/dotnet/dotnet$(dotnetExeExtension)'
   displayName: Set SPFX_DOTNET_EXE_PATH
