@@ -76,7 +76,7 @@ steps:
     zipAfterPublish: false
     modifyOutputPath: false
     projects: 'SimpleProcessFramework'
-    arguments: '-f $(frameworkToDescribe) -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
+    arguments: '-f $(frameworkToDescribe) -c $(buildConfiguration) -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
 
 - task: DotNetCoreCLI@2
   displayName: 'Full Build'
