@@ -4,7 +4,9 @@ param(
 [Parameter(Mandatory=$True)]
 [String]$CliPath,
 [Parameter(Mandatory=$True)]
-[String]$Arch
+[String]$Arch,
+[Parameter(Mandatory=$False)]
+[switch]$DownloadScript = $true
 )
 
 $ErrorActionPreference="Stop"
@@ -14,11 +16,17 @@ if(!(Test-Path -Path $CliPath)) {
     New-Item -Type "directory" -Path $CliPath 
 }
 
-Write-Host "Downloading the CLI installer..."
+if($DownloadScript) {
+    $Start = (Get-Date).Millisecond;
+    Write-Host "Downloading the CLI installer...";
 
-Invoke-WebRequest `
-    -Uri "https://dot.net/v1/dotnet-install.ps1" `
-    -OutFile "$CliPath/dotnet-install.ps1"
+    Invoke-WebRequest `
+        -Uri "https://dot.net/v1/dotnet-install.ps1" `
+        -OutFile "$CliPath/dotnet-install.ps1"
+
+    $End = (Get-Date).Millisecond;
+    Write-Host "Downloaded in $($End - Start)ms";
+}
 
 Write-Host "Installing the CLI requested version ($Version) ..."
 

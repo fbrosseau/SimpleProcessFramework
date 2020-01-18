@@ -8,7 +8,8 @@ variables:
   verbosity: 'normal'
   minNetcoreVer: 'netcoreapp2.1'
   maxNetcoreVer: 'netcoreapp3.1'
-  netstandardName: 'netstandard2.0'
+  netstandardName: 'netstandard2.1'
+  frameworkToDescribe: 'netstandard2.1'
   netfxName: 'net48'
   windowsImage: 'windows-2019'
 
@@ -68,13 +69,13 @@ steps:
     arguments: '-c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Publish Spfx.dll netstandard'
+  displayName: 'Publish Spfx.dll $(frameworkToDescribe)'
   inputs:
     command: publish
     publishWebProjects: false
     zipAfterPublish: false
     projects: 'SimpleProcessFramework'
-    arguments: '-f netstandard2.1 -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
+    arguments: '-f $(frameworkToDescribe) -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
 
 - task: DotNetCoreCLI@2
   displayName: 'Full Build'
@@ -91,7 +92,7 @@ steps:
   displayName: 'Netcore 2.1 x86'
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
+    arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86 -DownloadScript'
 - task: PowerShell@2
   displayName: 'Netcore 3.0 x86'
   inputs:
@@ -117,7 +118,7 @@ steps:
   displayName: 'Describe Hosts for tests'
   inputs:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
-    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(netstandardName)/publish'
+    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(frameworkToDescribe)/publish'
     arguments: '-Assembly "./Spfx.dll"'
     
 - task: DotNetCoreCLI@2
