@@ -119,7 +119,7 @@ steps:
   displayName: 'Describe Hosts for tests'
   inputs:
     filePath: '$(Build.SourcesDirectory)/DescribeSpfxHost.ps1'
-    workingDirectory: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(frameworkToDescribe)/publish'
+    workingDirectory: '$(Build.SourcesDirectory)/SimpleProcessFramework/bin/$(buildConfiguration)/$(frameworkToDescribe)/publish'
     arguments: '-Assembly "./Spfx.dll"'
     
 - task: DotNetCoreCLI@2
