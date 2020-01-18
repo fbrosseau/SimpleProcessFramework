@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
@@ -70,24 +71,20 @@ namespace Spfx.Runtime.Server.Processes
 
                 if (builder.ManuallyRedirectConsole)
                 {
-                    DataReceivedEventHandler GetLogHandler(bool isOut)
+                    var outputListenerFactory = TypeResolver.CreateSingleton<IStandardOutputListenerFactory>();
+
+                    DataReceivedEventHandler CreateLogHandler(bool isOut)
                     {
-                        TextWriter w;
-                        if (isOut || Config.PrintErrorInRegularOutput)
-                            w = Console.Out;
-                        else
-                            w = Console.Error;
-
-                        var name = isOut ? "Out" : "Err";
-                        var fmt = process.Id + ">{0}";
-
+                        var listener = outputListenerFactory.Create(process, isOut);
                         return (sender, e) =>
                         {
                             if (e.Data is null)
                             {
+                                var name = isOut ? "Out" : "Err";
                                 var evt = isOut ? m_outStreamClosed : m_errStreamClosed;
                                 evt.Set();
                                 Logger.Debug?.Trace($"The [{name}] console has closed");
+                                listener.Dispose();
                                 return;
                             }
 
@@ -100,12 +97,12 @@ namespace Spfx.Runtime.Server.Processes
                                 }
                             }
 
-                            w.WriteLine(fmt, e.Data);
+                            listener.OutputReceived(e.Data);
                         };
                     }
 
-                    process.OutputDataReceived += GetLogHandler(true);
-                    process.ErrorDataReceived += GetLogHandler(false);
+                    process.OutputDataReceived += CreateLogHandler(true);
+                    process.ErrorDataReceived += CreateLogHandler(false);
 
                     process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
