@@ -46,13 +46,13 @@ namespace Spfx.Utilities
             return (byte)b;
         }
 
-#if NETCOREAPP2_1_PLUS
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
         public abstract override int Read(Span<byte> buffer);
 #else
         public abstract int Read(Span<byte> buffer);
 #endif
 
-#if NETCOREAPP2_1_PLUS
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
 #else
         public virtual ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
@@ -96,7 +96,7 @@ namespace Spfx.Utilities
             return Task.CompletedTask;
         }
 
-#if NETCOREAPP2_1_PLUS
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
 #else
         public ValueTask WriteAsync(Memory<byte> buffer, CancellationToken ct = default)
@@ -108,7 +108,7 @@ namespace Spfx.Utilities
             return default;
         }
 
-#if NETCOREAPP2_1_PLUS
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
         public abstract override void Write(ReadOnlySpan<byte> buffer);
 #else
         public abstract void Write(ReadOnlySpan<byte> buffer);
@@ -137,7 +137,7 @@ namespace Spfx.Utilities
             return new ValueTask<int>(task);
         }
 
-#if NETCOREAPP2_1_PLUS
+#if NETCOREAPP || NETSTANDARD2_1_PLUS
         public abstract override void CopyTo(Stream destination, int bufferSize);
 #else
         public new abstract void CopyTo(Stream destination, int bufferSize);

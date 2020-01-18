@@ -78,7 +78,7 @@ namespace Spfx.Reflection
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsReferenceOrContainsReferences<T>()
         {
-#if NETCOREAPP3_0_PLUS
+#if NETSTANDARD2_1_PLUS
             return RuntimeHelpers.IsReferenceOrContainsReferences<T>();
 #else
             return IsBlittable<T>();

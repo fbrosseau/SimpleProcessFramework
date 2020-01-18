@@ -19,7 +19,7 @@ namespace Spfx.Utilities.Threading
     }
 
     public class AsyncDestroyable : Disposable, IAsyncDestroyable
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+#if NETSTANDARD2_1_PLUS
         , IAsyncDisposable
 #endif
     {

@@ -80,13 +80,13 @@ namespace Spfx.Serialization
             return unchecked((int)((v >> 1) ^ (-(v & 1))));
         }
 
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
         public override int Read(Span<byte> buffer)
 #else
         public virtual int Read(Span<byte> buffer)
 #endif
         {
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
             return BaseStream.Read(buffer);
 #else
             var buf = ArrayPool<byte>.Shared.Rent(buffer.Length);

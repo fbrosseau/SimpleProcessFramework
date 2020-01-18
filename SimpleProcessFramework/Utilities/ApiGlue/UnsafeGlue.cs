@@ -7,7 +7,7 @@ namespace Spfx.Utilities.ApiGlue
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static TOut As<TIn, TOut>(TIn val)
         {
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+#if NETSTANDARD2_1_PLUS
             return Unsafe.As<TIn, TOut>(ref val);
 #else
             return (TOut)(object)val;
@@ -15,15 +15,15 @@ namespace Spfx.Utilities.ApiGlue
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+#if NETSTANDARD2_1_PLUS
         internal static TOut UnmanagedAs<TIn, TOut>(TIn val)
 #else
         internal static unsafe TOut UnmanagedAs<TIn, TOut>(TIn val)
 #endif
-        where TIn : unmanaged
+            where TIn : unmanaged
             where TOut : unmanaged
         {
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+#if NETSTANDARD2_1_PLUS
             return Unsafe.As<TIn, TOut>(ref val);
 #else
             return *(TOut*)&val;
@@ -34,7 +34,7 @@ namespace Spfx.Utilities.ApiGlue
         internal static T As<T>(object o)
             where T : class
         {
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
+#if NETSTANDARD2_1_PLUS
             return Unsafe.As<T>(o);
 #else
             return (T)o;

@@ -209,7 +209,7 @@ namespace Spfx.Serialization
         {
             session.Writer.Write((byte)val.AddressFamily);
 
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
             Span<byte> buf = stackalloc byte[16];
             val.TryWriteBytes(buf, out var count);
             session.Writer.Write(buf.Slice(0, count));
@@ -245,7 +245,7 @@ namespace Spfx.Serialization
             if (af != AddressFamily.InterNetworkV6)
                 ThrowBadSerializationException("The endpoint must be IPv4 or IPv6");
 
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
             Span<byte> span = stackalloc byte[16];
             session.Reader.ReadAll(span);
 #else
@@ -266,7 +266,7 @@ namespace Spfx.Serialization
                     break;
             }
 
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
             return new IPAddress(span);
 #else
             return new IPAddress(bytes);

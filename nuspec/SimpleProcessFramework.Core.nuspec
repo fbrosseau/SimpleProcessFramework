@@ -18,7 +18,9 @@
     <file src="SimpleProcessFramework.targets" target="build" />
     <file src="../bin/$configuration$/netstandard2.0/Spfx.dll" target="lib/netstandard2.0" />
     <file src="../bin/$configuration$/netstandard2.0/Spfx.pdb" target="lib/netstandard2.0" />
-
+    <file src="../bin/$configuration$/netstandard2.1/Spfx.dll" target="lib/netstandard2.1" />
+    <file src="../bin/$configuration$/netstandard2.1/Spfx.pdb" target="lib/netstandard2.1" />
+    
     <file src="../bin/$configuration$/netcoreapp2.1/Spfx.dll" target="lib/netcoreapp2.1" />
     <file src="../bin/$configuration$/netcoreapp2.1/Spfx.pdb" target="lib/netcoreapp2.1" />
     <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.dll" target="lib/netcoreapp2.1" />

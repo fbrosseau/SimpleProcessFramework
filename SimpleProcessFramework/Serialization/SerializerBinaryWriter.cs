@@ -80,13 +80,13 @@ namespace Spfx.Serialization
             Write(new Span<byte>(bytes, sizeof(T)));
         }
 
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
         public override void Write(ReadOnlySpan<byte> bytes)
 #else
         public virtual void Write(ReadOnlySpan<byte> bytes)
 #endif
         {
-#if NETSTANDARD2_1_PLUS || NETCOREAPP2_1_PLUS
+#if NETSTANDARD2_1_PLUS || NETCOREAPP
             OutStream.Write(bytes);
 #else
             if (bytes.Length == 0)

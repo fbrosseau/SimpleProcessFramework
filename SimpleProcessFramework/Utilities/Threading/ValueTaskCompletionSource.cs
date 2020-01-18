@@ -5,7 +5,7 @@ using System.Threading.Tasks.Sources;
 namespace Spfx.Utilities.Threading
 {
 #if !TODO
-#if !NETCOREAPP3_0_PLUS && !NETSTANDARD2_1_PLUS
+#if !NETSTANDARD2_1_PLUS
     internal class ValueTaskCompletionSource<TResult> : TaskCompletionSource<TResult>
     {
            public ValueTask<TResult> ValueTaskOfT => new ValueTask<TResult>(Task);

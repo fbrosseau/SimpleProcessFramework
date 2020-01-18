@@ -11,8 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SimpleProcessFramework" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='true'" />
-    <PackageReference Include="SimpleProcessFramework.Core" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='false'" />
+    <PackageReference Include="$(SpfxNugetName)" Version="$(SpfxNugetVersion)" />
   </ItemGroup>
 
   <Target Name="DeleteExe" AfterTargets="AfterBuild" >

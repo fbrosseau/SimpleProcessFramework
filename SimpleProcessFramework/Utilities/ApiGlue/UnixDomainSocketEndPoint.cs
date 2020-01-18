@@ -1,4 +1,4 @@
-﻿#if NETCOREAPP2_1_PLUS || NETSTANDARD2_1_PLUS
+﻿#if NETCOREAPP || NETSTANDARD2_1_PLUS
 
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -8,11 +8,9 @@ using System.Runtime.CompilerServices;
 #else
 
 using System.Buffers;
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
-namespace Spfx.Utilities.ApiGlue
+namespace System.Net.Sockets
 {
     internal class UnixDomainSocketEndPoint : EndPoint
     {

@@ -6,7 +6,7 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>555</MinorVersion>
+    <MinorVersion>565</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
@@ -37,10 +37,6 @@
     <DefineConstants>$(DefineConstants);WINDOWS_BUILD</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(SpfxBuildNet48)'==''">
-    <SpfxBuildNet48>false</SpfxBuildNet48>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(NetCore3Versions)'==''">
     <NetCore3Versions>netcoreapp3.1;netcoreapp3.0</NetCore3Versions>
   </PropertyGroup>
@@ -57,26 +53,29 @@
     <AllNetCoreVersions>$(NetCore3PlusVersions);$(NetCore2Versions)</AllNetCoreVersions>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
-    <DefineConstants>$(DefineConstants);NETCOREAPP2_1_PLUS</DefineConstants>
+  <PropertyGroup Condition="'$(AllNetStandardVersions)'==''">
+    <AllNetStandardVersions>netstandard2.0;netstandard2.1</AllNetStandardVersions>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(NetCore3PlusVersions.Contains($(TargetFramework)))">
-    <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS;NETSTANDARD2_1_PLUS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
     <DefineConstants>$(DefineConstants);NETCOREAPP3_1_PLUS</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard2.')) AND '$(TargetFramework)'!='netstandard2.0'">
     <DefineConstants>$(DefineConstants);NETSTANDARD2_1_PLUS</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(SpfxBuildNet48)'=='true'">
-    <SfpxAllTargetPlatforms>net48;$(AllNetCoreVersions)</SfpxAllTargetPlatforms>
+  <PropertyGroup>
+    <SpfxAllTargetFrameworks>$(AllNetCoreVersions)</SpfxAllTargetFrameworks>  
+    <SpfxNugetName>SimpleProcessFramework.Core</SpfxNugetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(SpfxBuildNet48)'=='false'">
-    <SfpxAllTargetPlatforms>$(AllNetCoreVersions)</SfpxAllTargetPlatforms>
+
+  <PropertyGroup Condition="'$(SpfxBuildNet48)'=='true'">
+    <SpfxAllTargetFrameworks>net48;$(SpfxAllTargetFrameworks)</SpfxAllTargetFrameworks>
+    <SpfxNugetName>SimpleProcessFramework</SpfxNugetName>
   </PropertyGroup>
 </Project>

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>$(SfpxAllTargetPlatforms)</TargetFrameworks>
+    <TargetFrameworks>$(SpfxAllTargetFrameworks)</TargetFrameworks>
     <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
     <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
     <PlatformTarget>x86</PlatformTarget>
@@ -13,8 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SimpleProcessFramework" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='true'" />
-    <PackageReference Include="SimpleProcessFramework.Core" Version="$(SpfxNugetVersion)" Condition="'$(SpfxBuildNet48)'=='false'" />
+    <PackageReference Include="$(SpfxNugetName)" Version="$(SpfxNugetVersion)" />
   </ItemGroup>
 
 </Project>

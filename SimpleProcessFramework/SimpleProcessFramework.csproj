@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;$(AllNetCoreVersions)</TargetFrameworks>
+    <TargetFrameworks>$(SpfxAllTargetFrameworks);$(AllNetStandardVersions)</TargetFrameworks>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(SolutionDir)bin/$(Configuration)/</OutputPath>
     <AssemblyName>Spfx</AssemblyName>

@@ -111,17 +111,19 @@ namespace Spfx.Utilities.Threading
             base.OnDispose();
         }
 
-        private class LockSession : TaskCompletionSource<IDisposable>, IDisposable, IThreadPoolWorkItem
+        private class LockSession : TaskCompletionSource<IDisposable>, IDisposable
         {
             private AsyncLock m_asyncLock;
             private volatile bool m_completeSynchronously;
+            private readonly ThreadPoolInvoker<LockSessionInvoker> m_threadpoolInvoker;
 
             public LockSession(AsyncLock asyncLock)
             {
                 m_asyncLock = asyncLock;
+                m_threadpoolInvoker = ThreadPoolInvoker.Create(new LockSessionInvoker { Parent = this });
             }
 
-            void IThreadPoolWorkItem.Execute()
+            private void FinalCallback()
             {
                 if (!m_completeSynchronously)
                     TrySetCanceled();
@@ -145,7 +147,7 @@ namespace Spfx.Utilities.Threading
             private void RequeueThis(bool completedSuccessfully)
             {
                 m_completeSynchronously = completedSuccessfully;
-                ThreadPoolHelper.QueueItem(this);
+                m_threadpoolInvoker.UnsafeInvoke();
             }
 
             void IDisposable.Dispose()
@@ -154,6 +156,12 @@ namespace Spfx.Utilities.Threading
                 // from this instance! 
                 var lockInstance = m_asyncLock != null ? Interlocked.Exchange(ref m_asyncLock, null) : null;
                 lockInstance?.ExitLock(this);
+            }
+
+            private struct LockSessionInvoker : IThreadPoolWorkItem
+            {
+                public LockSession Parent;
+                public void Execute() => Parent.FinalCallback();
             }
         }
 
@@ -164,10 +172,18 @@ namespace Spfx.Utilities.Threading
 
             private Action<object> m_continuationToInvoke;
             private object m_continuationToInvokeState;
+            private readonly ThreadPoolInvoker<LockSessionInvoker> m_threadpoolInvoker;
+
+            private struct LockSessionInvoker : IThreadPoolWorkItem
+            {
+                public FreeLockSession Parent;
+                public void Execute() => Parent.InvokeCallback();
+            }
 
             public FreeLockSession(AsyncLock asyncLock)
             {
                 m_asyncLock = asyncLock;
+                m_threadpoolInvoker = ThreadPoolInvoker.Create(new LockSessionInvoker { Parent = this });
             }
 
             internal ValueTask<IDisposable> CreateNextValueTask(AsyncLock asyncLock)
@@ -228,22 +244,7 @@ namespace Spfx.Utilities.Threading
                     }
                 }
 
-                if ((flags & ValueTaskSourceOnCompletedFlags.FlowExecutionContext) != 0)
-                {
-#if NETCOREAPP2_1_PLUS || NETSTANDANDARD2_1_PLUS
-                    ThreadPool.QueueUserWorkItem(continuation, state, preferLocal: true);
-#else
-                    ThreadPool.QueueUserWorkItem(s => ((FreeLockSession)s).InvokeCallback(), this);
-#endif
-                }
-                else
-                {
-#if NETCOREAPP3_0_PLUS || NETSTANDARD2_1_PLUS
-                    ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: true);
-#else
-                    ThreadPool.UnsafeQueueUserWorkItem(s => ((FreeLockSession)s).InvokeCallback(), this);
-#endif
-                }
+                m_threadpoolInvoker.InvokeValueTaskCompletion(flags);
             }
 
             private void CheckToken(short token)

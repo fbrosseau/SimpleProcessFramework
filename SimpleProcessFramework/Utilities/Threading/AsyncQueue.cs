@@ -31,7 +31,7 @@ namespace Spfx.Utilities.Threading
 
         private TaskCompletionSource<VoidType> m_iteratorCompletionTask;
         private Action m_iteratorExecutionCompletedHandler;
-        private FastThreadpoolInvoker<AsyncQueueRescheduleItem> m_iteratorThreadpoolInvoker;
+        private ThreadPoolInvoker<AsyncQueueRescheduleItem> m_iteratorThreadpoolInvoker;
         private Action<T> m_iteratorActionCallback;
         private Func<T, Task> m_iteratorTaskCallback;
         private Func<T, ValueTask> m_iteratorValueTaskCallback;
@@ -100,7 +100,7 @@ namespace Spfx.Utilities.Threading
 
         private void RescheduleIterator()
         {
-            m_iteratorThreadpoolInvoker.Invoke();
+            m_iteratorThreadpoolInvoker.UnsafeInvoke();
         }
 
         private void RunIterator()
@@ -387,7 +387,7 @@ namespace Spfx.Utilities.Threading
             m_iteratorCompletionTask = new TaskCompletionSource<VoidType>(TaskCreationOptions.RunContinuationsAsynchronously);
             m_isIteratorMode = true;
             m_iteratorExecutionCompletedHandler = OnIteratorCallbackCompleted;
-            m_iteratorThreadpoolInvoker = FastThreadpoolInvoker.Create(new AsyncQueueRescheduleItem { Parent = this });
+            m_iteratorThreadpoolInvoker = ThreadPoolInvoker.Create(new AsyncQueueRescheduleItem { Parent = this });
 
             bool launchIterator = false;
             lock (m_queue)
