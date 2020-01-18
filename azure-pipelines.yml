@@ -70,8 +70,9 @@ steps:
 - task: DotNetCoreCLI@2
   displayName: 'Publish Spfx.dll netstandard'
   inputs:
-    publishWebProjects: false
     command: publish
+    publishWebProjects: false
+    zipAfterPublish: false
     projects: 'SimpleProcessFramework'
     arguments: '-f netstandard2.1 -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)' --self-contained false
 
