@@ -1,4 +1,5 @@
 ﻿using Spfx.Runtime.Server.Processes.Hosting;
+using Spfx.Subprocess;
 using Spfx.Utilities.Runtime;
 using System;
 using System.IO;
@@ -9,15 +10,12 @@ namespace Spfx.Runtime.Server.Processes
     // Found by reflection!
     public class __EntryPoint
     {
-        public static readonly int DescribeHostReturnCode = -23456;
-        public static readonly string DescribeHostCmdLineArg = "--spfx-describe";
-
         public static void Run()
         {
-            if (Environment.GetCommandLineArgs().Contains(DescribeHostCmdLineArg))
+            if (Environment.GetCommandLineArgs().Contains(SubprocessMainShared.DescribeCmdLineArg))
             {
                 Console.Write(HostFeaturesHelper.DescribeHost());
-                Environment.Exit(DescribeHostReturnCode);
+                Environment.Exit(SubprocessMainShared.DescribeExitCode);
             }
 
             Run(Console.In, isStandaloneProcess: true);

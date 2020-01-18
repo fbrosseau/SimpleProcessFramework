@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Subprocess.Netcore\SubprocessMainShared.cs" Link="Runtime\Server\Processes\SubprocessMainShared.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Properties/spfx.snk" />
   </ItemGroup>
 

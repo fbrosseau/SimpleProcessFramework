@@ -10,10 +10,10 @@ namespace Spfx.Subprocess
     {
         public static readonly bool VerboseLogs;
         public static readonly string DebugCmdLineArg = "--spfx-debug";
-        public static readonly string DescribeHostCmdLineArg = "--spfx-describe";
+        public static readonly string DescribeCmdLineArg = "--spfx-describe";
 
-        public static readonly int BadCommandLineArgReturnCode = -12345;
-        public static readonly int DescribeHostReturnCode = -23456;
+        public static readonly int BadCommandLineArgExitCode = -12345;
+        public static readonly int DescribeExitCode = 0;
 
         static SubprocessMainShared()
         {
@@ -25,7 +25,7 @@ namespace Spfx.Subprocess
                     "This program cannot be executed directly. It is part of the SimpleProcessFramework (Spfx) version {0}.",
                     FileVersionInfo.GetVersionInfo(typeof(SubprocessMainShared).Assembly.Location).ProductVersion);
 
-                Environment.Exit(BadCommandLineArgReturnCode);
+                Environment.Exit(BadCommandLineArgExitCode);
             }
 
             for (int i = 1; i < args.Length; ++i)
