@@ -242,11 +242,9 @@ namespace Spfx.Utilities.Runtime
                 if (h.IsSupported)
                 {
                     sb.AppendLine(name + " dotnet version: " + h.DotNetExeVersion);
-                    sb.AppendLine(name + " dotnet runtimes--");
-                    foreach (var runtime in h.InstalledVersions)
-                    {
-                        sb.AppendLine("- " + runtime);
-                    }
+                    sb.AppendFormat("{0} dotnet runtimes: ({1}) ", name, h.InstalledVersions.Count);
+                    sb.AppendJoin(',', h.InstalledVersions);
+                    sb.AppendLine();
                 }
                 else
                 {

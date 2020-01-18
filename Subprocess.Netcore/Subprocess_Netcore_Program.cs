@@ -25,12 +25,7 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
                 AssemblyLoadContext.Default.Resolving += OnResolvingAssembly;
 
                 var asm = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName("Spfx"));
-                if (asm is null)
-                    throw new FileNotFoundException("Could not load SimpleProcessFramework");
-                var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint", throwOnError: true);
-                if (entryPointType is null)
-                    throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
-                entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);
+                SubprocessMainShared.InvokeRun(asm);
                 Log("Clean exit");
             }
             catch (Exception ex)
