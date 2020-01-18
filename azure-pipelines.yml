@@ -74,7 +74,7 @@ steps:
     publishWebProjects: false
     zipAfterPublish: false
     projects: 'SimpleProcessFramework'
-    arguments: '-f netstandard2.1 -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber)' --self-contained false
+    arguments: '-f netstandard2.1 -c $(buildConfiguration)_NoTests -v $(verbosity) /p:OfficialBuildNumber=$(Build.BuildNumber) --self-contained false'
 
 - task: DotNetCoreCLI@2
   displayName: 'Full Build'
