@@ -28,11 +28,11 @@ namespace Spfx.Tests
         public const int DefaultTestTimeout = 30000;
 #endif
 
-        private static readonly ILogger s_logger = DefaultTypeResolverFactory.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass));
+        private static readonly Lazy<ILogger> s_logger = new Lazy<ILogger>(() => DefaultTypeResolverFactory.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass)));
 
         protected static void Log(string msg)
         {
-            s_logger.Info?.Trace(msg);
+            s_logger.Value.Info?.Trace(msg);
         }
 
         public enum ThrowAction
@@ -96,7 +96,7 @@ namespace Spfx.Tests
             }
 
             Assert.IsNotNull(caughtEx, "The callback did not throw");
-            s_logger.Debug?.Trace("Caught " + caughtEx.GetType().FullName);
+            Log("Caught " + caughtEx.GetType().FullName);
             exceptionCallback?.Invoke(caughtEx);
         }
 

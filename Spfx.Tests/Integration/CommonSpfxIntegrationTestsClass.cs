@@ -9,6 +9,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Spfx.Diagnostics.Logging;
+using System.IO;
+using FluentAssertions;
 
 namespace Spfx.Tests.Integration
 {
@@ -50,7 +53,12 @@ namespace Spfx.Tests.Integration
 
             customConfig?.Invoke(config);
 
+            TestConsoleProvider.Setup();
+
             var cluster = new ProcessCluster(config);
+
+            // make sure we instantiate it now
+            cluster.TypeResolver.CreateSingleton<IConsoleProvider>().Should().BeOfType<TestConsoleProvider>();
 
             /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
               {
