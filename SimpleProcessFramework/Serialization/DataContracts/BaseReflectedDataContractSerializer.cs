@@ -7,9 +7,15 @@ using System.Runtime.Serialization;
 
 namespace Spfx.Serialization.DataContracts
 {
+    internal interface ISimpleMemberInfo
+    {
+        public string Name { get; }
+        public Type Type { get; }
+    }
+
     internal interface IComplexObjectSerializer : ITypeSerializer
     {
-        IReadOnlyList<(string Name, Type Type)> GetSerializedMembers();
+        IReadOnlyList<ISimpleMemberInfo> GetSerializedMembers();
     }
 
     internal abstract class BaseReflectedDataContractSerializer : BaseTypeSerializer, IComplexObjectSerializer
@@ -22,9 +28,10 @@ namespace Spfx.Serialization.DataContracts
             public bool IsValueType;
         }
 
-        internal class ReflectedDataMember
+        internal class ReflectedDataMember : ISimpleMemberInfo
         {
-            public string Name;
+            public string Name { get; set; }
+            public Type Type { get; set; }
             public MemberInfo MemberInfo;
             public Func<object, object> GetAccessor;
             public Action<object, object> SetAccessor;
@@ -37,7 +44,7 @@ namespace Spfx.Serialization.DataContracts
         }
 
         internal ReflectedDataMember[] Members { get; }
-        IReadOnlyList<(string Name, Type Type)> IComplexObjectSerializer.GetSerializedMembers() => Members.Select(m => (m.Name, m.TypeInfo.MemberType)).ToArray();
+        IReadOnlyList<ISimpleMemberInfo> IComplexObjectSerializer.GetSerializedMembers() => Members;
 
         protected readonly Type ReflectedType;
         protected readonly bool IsSerializedByRef;
@@ -63,20 +70,19 @@ namespace Spfx.Serialization.DataContracts
                 var member = new ReflectedDataMember
                 {
                     Name = memberInfo.Name,
-                    MemberInfo = memberInfo
+                    MemberInfo = memberInfo,
                 };
 
-                Type memberType;
                 if (memberInfo is FieldInfo fi)
                 {
-                    memberType = fi.FieldType;
+                    member.Type = fi.FieldType;
                     member.GetAccessor = o => fi.GetValue(o);
                     member.SetAccessor = (o, v) => fi.SetValue(o, v);
                 }
                 else
                 {
                     var pi = (PropertyInfo)memberInfo;
-                    memberType = pi.PropertyType;
+                    member.Type = pi.PropertyType;
 
                     var declaringType = pi.DeclaringType;
 
@@ -105,7 +111,7 @@ namespace Spfx.Serialization.DataContracts
                     }
                 }
 
-                member.TypeInfo = GetTypeInfo(memberType);
+                member.TypeInfo = GetTypeInfo(member.Type);
 
                 members.Add(member);
             }

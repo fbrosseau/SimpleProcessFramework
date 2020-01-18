@@ -25,12 +25,11 @@ namespace Spfx.Tests.Integration
         {
             Out = TestContext.Out;
             Err = TestContext.Error;
-            t_current = this;
         }
 
         internal static void Setup()
         {
-            new TestConsoleProvider();
+            t_current = new TestConsoleProvider();
         }
     }
 }
