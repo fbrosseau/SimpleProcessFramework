@@ -105,7 +105,7 @@ steps:
 # Tests
 #----------------------------------------------------------------------------------------------------
 
-- script: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(frameworkToDescribe)/Subprocess.Netcore --spfx-describe'
+- script: '$(Build.SourcesDirectory)/bin/$(buildConfiguration)/$(frameworkToDescribe)/Spfx.Process.Netcore --spfx-describe'
   displayName: 'Describe Hosts for tests'
     
 - task: DotNetCoreCLI@2

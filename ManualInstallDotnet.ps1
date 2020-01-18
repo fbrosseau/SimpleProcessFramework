@@ -17,15 +17,15 @@ if(!(Test-Path -Path $CliPath)) {
 }
 
 if(!($NoDownloadScript)) {
-    $Start = (Get-Date).Millisecond;
+    $Start = Get-Date;
     Write-Host "Downloading the CLI installer...";
 
     Invoke-WebRequest `
         -Uri "https://dot.net/v1/dotnet-install.ps1" `
         -OutFile "$CliPath/dotnet-install.ps1"
 
-    $End = (Get-Date).Millisecond;
-    Write-Host "Downloaded in $($End - $Start)ms";
+    $End = Get-Date;
+    Write-Host "Downloaded in $($End - $Start)";
 }
 
 Write-Host "Installing the CLI requested version ($Version) ..."
