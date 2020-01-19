@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -9,8 +10,11 @@ namespace Spfx.Subprocess
     internal class SubprocessMainShared
     {
         public static readonly bool VerboseLogs;
-        public static readonly string DebugCmdLineArg = "--spfx-debug";
-        public static readonly string DescribeCmdLineArg = "--spfx-describe";
+        public const string CmdLinePrefix = "--spfx-";
+        public static readonly string DebugCmdLineArg = CmdLinePrefix + "debug";
+        public static readonly string DescribeCmdLineArg = CmdLinePrefix + "describe";
+
+        public static string[] GetAllKnownCommandLineArgs() => new[] { DebugCmdLineArg, DescribeCmdLineArg };
 
         public static readonly int BadCommandLineArgExitCode = -12345;
         public static readonly int DescribeExitCode = 0;
@@ -28,10 +32,19 @@ namespace Spfx.Subprocess
                 Environment.Exit(BadCommandLineArgExitCode);
             }
 
+            var possibleArgs = GetAllKnownCommandLineArgs();
+
             for (int i = 1; i < args.Length; ++i)
             {
                 if (args[i] == DebugCmdLineArg)
+                {
                     VerboseLogs = true;
+                }
+                else if (args[i].StartsWith(CmdLinePrefix) && !possibleArgs.Contains(args[i]))
+                {
+                    Console.Error.WriteLine("Unknown commandline parameter " + args[i]);
+                    Environment.Exit(BadCommandLineArgExitCode);
+                }
             }
         }
 

@@ -175,5 +175,10 @@ namespace Spfx.Utilities
 
             return output.ToString();
         }
+
+        internal static void PrepareExitCode(this Process proc)
+        {
+            _ = proc.SafeHandle;
+        }
     }
 }

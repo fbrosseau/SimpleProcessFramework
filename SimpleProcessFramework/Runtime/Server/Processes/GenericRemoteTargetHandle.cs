@@ -31,8 +31,8 @@ namespace Spfx.Runtime.Server.Processes
         internal static GenericRemoteTargetHandle Create(ProcessClusterConfiguration config, ProcessCreationInfo info, ITypeResolver typeResolver)
         {
             if (HostFeaturesHelper.IsWindows && !config.UseGenericProcessSpawnOnWindows)
-                return new GenericManagedProcessTargetHandle(info, typeResolver);
-            return new GenericManagedProcessTargetHandle(info, typeResolver);
+                return new WindowsProcessTargetHandle(info, typeResolver);
+            return new ManagedProcessTargetHandle(info, typeResolver);
         }
 
         protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct)

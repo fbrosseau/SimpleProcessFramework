@@ -59,7 +59,7 @@ namespace Spfx.Tests.Integration
 
         [Test/*, Parallelizable*/]
         [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
-        public void CustomNameSubprocessTestDenied(TargetFramework targetFramework)
+        public void CustomNameSubprocess_CustomHostDenied(TargetFramework targetFramework)
         {
             string customProcessName = GetNewCustomHostName();
             AssertThrows(() =>
