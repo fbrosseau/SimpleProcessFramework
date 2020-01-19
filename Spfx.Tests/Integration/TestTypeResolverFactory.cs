@@ -11,7 +11,6 @@ namespace Spfx.Tests.Integration
             var typeResolver = base.CreateRootResolver();
             typeResolver.RegisterFactory<IUnhandledExceptionsHandler>(r => new TestUnhandledExceptionsHandler(r));
             typeResolver.RegisterFactory<ILoggerFactory>(r => new DefaultLoggerFactory(r));
-            typeResolver.RegisterFactory<IConsoleProvider>(r => TestConsoleProvider.Current);
             return typeResolver;
         }
     }

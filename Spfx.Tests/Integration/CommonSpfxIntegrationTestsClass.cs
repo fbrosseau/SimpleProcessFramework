@@ -48,25 +48,14 @@ namespace Spfx.Tests.Integration
                 EnableAppDomains = true,
                 EnableWsl = true,
                 Enable32Bit = true,
-                TypeResolverFactoryType = typeof(TestTypeResolverFactory)
+                TypeResolverFactoryType = typeof(TestTypeResolverFactory),
+                ConsoleProvider = new TestConsoleProvider()
             };
 
             customConfig?.Invoke(config);
 
-            TestConsoleProvider.Setup();
-
             var cluster = new ProcessCluster(config);
 
-            // make sure we instantiate it now
-            cluster.TypeResolver.CreateSingleton<IConsoleProvider>().Should().BeOfType<TestConsoleProvider>();
-
-            /*  Unwrap(cluster.MasterProcess.InitializeEndpointAsync.LocalEndpointBroker.CreateEndpoint(new EndpointCreationRequest
-              {
-                  EndpointId = "TestLogListener",
-                  EndpointType = typeof(ITestLogListener),
-                  ImplementationType = typeof(TestLogListener)
-              }));
-              */
             if ((m_options & SanityTestOptions.Tcp) != 0)
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 

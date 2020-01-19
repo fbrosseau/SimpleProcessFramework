@@ -1,4 +1,5 @@
-﻿using Spfx.Interfaces;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Utilities.Runtime;
 using System;
@@ -20,6 +21,30 @@ namespace Spfx
         }
 
         public Type TypeResolverFactoryType { get; set; } = typeof(DefaultTypeResolverFactory);
+        public IConsoleProvider ConsoleProvider { get; set; } = DefaultConsoleProvider.Instance;
+
+        /// <summary>
+        /// <para>
+        /// The pattern that will be used to write console output received from the subprocesses.
+        /// It is supported to include format arguments, such as {%TIME%:g} to use the 'g' format.
+        /// </para>
+        /// <para>
+        /// Example:<br/>
+        /// {%PID%}>{%MSG%}<br/>
+        /// Would output: <br/>
+        /// 12345>Hello World<br/>
+        /// </para>
+        /// <para>
+        /// Supported keywords:
+        /// </para>
+        /// <list type="bullet">
+        /// <item><description>%MSG%: The received text line</description></item>
+        /// <item><description>%PID%: The subprocess' PID</description></item>
+        /// <item><description>%TIME%: The current local DateTime</description></item>
+        /// <item><description>%UTCTIME%: The current utc DateTime</description></item>
+        /// </list>
+        /// </summary>
+        public string ConsoleRedirectionOutputFormat { get; set; } = "{%PID%}>{%MSG%}";
 
         public bool UseGenericProcessSpawnOnWindows { get; set; } = true;
         public bool EnableNetcore { get; set; } = true;
