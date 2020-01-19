@@ -41,6 +41,22 @@ namespace Spfx.Serialization.DataContracts
             {
                 return $"{Name} -> {TypeInfo.MemberType.Name}";
             }
+
+            internal void SerializeMember(SerializerSession session, object graph)
+            {
+                var value = GetAccessor(graph);
+                if (TypeInfo.IsDefaultValueForType(value))
+                    return;
+
+                session.WriteReference(Name);
+
+                using var sizeScope = session.CreatePositionDeltaScope();
+
+                if (TypeInfo.IsValueType)
+                    DefaultBinarySerializer.SerializeExactType(session, value, TypeInfo.MemberType);
+                else
+                    DefaultBinarySerializer.Serialize(session, value, TypeInfo.MemberType);
+            }
         }
 
         internal ReflectedDataMember[] Members { get; }
@@ -194,31 +210,14 @@ namespace Spfx.Serialization.DataContracts
             }
         }
 
-        public override void WriteObject(SerializerSession bw, object graph)
+        public override void WriteObject(SerializerSession session, object graph)
         {
-            var baseLocation = bw.Stream.Position;
-            bw.Stream.Position += 4;
+            using var graphScope = session.CreatePositionDeltaScope();
 
             foreach (var mem in Members)
             {
-                var value = mem.GetAccessor(graph);
-                if (mem.TypeInfo.IsDefaultValueForType(value))
-                    continue;
-
-                bw.WriteReference(mem.Name);
-
-                var locationBeforeMember = bw.Stream.Position;
-                bw.Stream.Position += 4;
-
-                if (mem.TypeInfo.IsValueType)
-                    DefaultBinarySerializer.SerializeExactType(bw, value, mem.TypeInfo.MemberType);
-                else
-                    DefaultBinarySerializer.Serialize(bw, value, mem.TypeInfo.MemberType);
-
-                bw.WritePositionDelta(locationBeforeMember);
+                mem.SerializeMember(session, graph);
             }
-
-            bw.WritePositionDelta(baseLocation);
         }
 
         protected interface IDataContractDeserializationHandler

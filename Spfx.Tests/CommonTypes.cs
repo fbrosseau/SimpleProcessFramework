@@ -2,6 +2,7 @@
 using Spfx.Runtime.Exceptions;
 using Spfx.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 public class DisposableObject : Disposable
@@ -23,8 +24,42 @@ public class TestContract : IEquatable<TestContract>
 
     public override string ToString()
     {
-        return Value?.ToString() ?? "<null>";
+        return GetType().Name + ":" + Value?.ToString() ?? "<null>";
     }
+}
+
+[DataContract]
+public class GenericTestContract<T> : IEquatable<GenericTestContract<T>>
+{
+    [DataMember]
+    public T Value { get; set; }
+
+    public override int GetHashCode() => EqualityComparer<T>.Default.GetHashCode(Value);
+    public override bool Equals(object obj) => Equals(obj as GenericTestContract<T>);
+    public bool Equals(GenericTestContract<T> other)
+    {
+        return other?.GetType() == GetType() && EqualityComparer<T>.Default.Equals(Value, other.Value);
+    }
+
+    public override string ToString()
+    {
+        return GetType().Name + ":" + Value?.ToString() ?? "<null>";
+    }
+}
+
+[DataContract]
+public class InheritedContract : GenericTestContract<int>
+{
+    [DataMember]
+    public int Value2 { get; set; }
+
+    public override bool Equals(object obj)
+    {
+        return base.Equals(obj)
+            && ((InheritedContract)obj).Value2 == Value2;
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
 }
 
 public enum ByteEnum : byte { A = 5, B, C }

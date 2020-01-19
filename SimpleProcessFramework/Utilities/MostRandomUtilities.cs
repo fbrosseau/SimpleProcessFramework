@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Reflection;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -62,6 +63,37 @@ namespace Spfx.Utilities
             }
 
             return "<" + t.Name + ">";
+        }
+
+        internal static bool ArraysEqual<T>(T[] a, T[] b)
+        {
+            if (a is null)
+                return b is null;
+            if (b is null)
+                return false;
+            if (a.Length != b.Length)
+                return false;
+
+            for(int i = 0; i < a.Length; ++i)
+            {
+                if (!EqualityComparer<T>.Default.Equals(a[i], b[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        internal static int HashArray<T>(T[] values)
+        {
+            if (values is null)
+                return -1;
+
+            int hash = 0;
+            for(int i = 0; i < values.Length;++i)
+            {
+                hash ^= EqualityComparer<T>.Default.GetHashCode(values[i]) + i;
+            }
+            return hash;
         }
     }
 }

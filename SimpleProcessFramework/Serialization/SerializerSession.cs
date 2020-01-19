@@ -11,7 +11,7 @@ namespace Spfx.Serialization
         public bool CanAddReferences => !m_localReferences.IsFrozen;
 
         private readonly SerializerReferencesCache m_localReferences = new SerializerReferencesCache(SerializerReferencesCache.HardcodedReferences);
-        private long m_originalBaseLocation;
+        private PositionDeltaScope m_sizeScope;
 
         public SerializerSession(Stream ms)
         {
@@ -28,20 +28,15 @@ namespace Spfx.Serialization
         internal void BeginSerialization()
         {
             Writer.Write(DefaultBinarySerializer.MagicHeader);
-
-            m_originalBaseLocation = Stream.Position;
-            Stream.Position += 4;
+            m_sizeScope = CreatePositionDeltaScope();
         }
 
         internal void FinishSerialization()
         {
-            WritePositionDelta(m_originalBaseLocation);
+            m_sizeScope.Dispose();
 
-            var newPosition = Stream.Position;
-            Stream.Position += 4;
-
+            using var refsDelta = CreatePositionDeltaScope();
             m_localReferences.WriteAllReferences(this);
-            WritePositionDelta(newPosition);
         }
 
         internal void WriteReference(object obj)
@@ -56,6 +51,31 @@ namespace Spfx.Serialization
 
             WriteMetadata(DataKind.Ref);
             Writer.WriteEncodedInt32(index);
+        }
+
+        public struct PositionDeltaScope : IDisposable
+        {
+            private readonly SerializerSession m_serializerSession;
+            private readonly long m_locationBeforeMember;
+
+            public PositionDeltaScope(SerializerSession serializerSession)
+            {
+                m_serializerSession = serializerSession;
+
+                var stream = m_serializerSession.Stream;
+                m_locationBeforeMember = stream.Position;
+                stream.Position += 4;
+            }
+
+            public void Dispose()
+            {
+                m_serializerSession.WritePositionDelta(m_locationBeforeMember);
+            }
+        }
+
+        internal PositionDeltaScope CreatePositionDeltaScope()
+        {
+            return new PositionDeltaScope(this);
         }
 
         internal void WriteMetadata(DataKind marker)
