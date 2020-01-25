@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable;
 
 namespace Spfx.Utilities.Threading
 {
@@ -35,7 +35,7 @@ namespace Spfx.Utilities.Threading
         private Action<T> m_iteratorActionCallback;
         private Func<T, Task> m_iteratorTaskCallback;
         private Func<T, ValueTask> m_iteratorValueTaskCallback;
-        private ConfiguredValueTaskAwaiter m_currentIteratorCallbackCompletion;
+        private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter m_currentIteratorCallbackCompletion;
 
         public bool IsAddingCompleted { get; private set; }
         public bool IsDisposed { get; private set; }
@@ -132,9 +132,8 @@ namespace Spfx.Utilities.Threading
 
                     if (!completion.IsCompleted)
                     {
-                        var awaiter = completion.ConfigureAwait(false).GetAwaiter();
-                        m_currentIteratorCallbackCompletion = awaiter;
-                        awaiter.UnsafeOnCompleted(m_iteratorExecutionCompletedHandler);
+                        m_currentIteratorCallbackCompletion = completion.ConfigureAwait(false).GetAwaiter();
+                        m_currentIteratorCallbackCompletion.UnsafeOnCompleted(m_iteratorExecutionCompletedHandler);
                         return;
                     }
 
@@ -168,15 +167,14 @@ namespace Spfx.Utilities.Threading
             try
             {
                 compl.GetResult();
+                if (ContinueDequeue())
+                    RescheduleIterator();
             }
             catch (Exception ex)
             {
                 OnIteratorFaulted(ex);
                 return;
             }
-
-            if (ContinueDequeue())
-                RescheduleIterator();
         }
 
         private bool ContinueDequeue()
@@ -379,19 +377,20 @@ namespace Spfx.Utilities.Threading
         private void CheckIfIterating(bool beginIterating)
         {
             if (m_isIteratorMode)
-                throw new InvalidOperationException("This instance is already in a ForEach iteration");
+                ThrowAlreadyIterating();
 
             if (!beginIterating)
                 return;
 
             m_iteratorCompletionTask = new TaskCompletionSource<VoidType>(TaskCreationOptions.RunContinuationsAsynchronously);
-            m_isIteratorMode = true;
             m_iteratorExecutionCompletedHandler = OnIteratorCallbackCompleted;
             m_iteratorThreadpoolInvoker = ThreadPoolInvoker.Create(new AsyncQueueRescheduleItem { Parent = this });
 
             bool launchIterator = false;
             lock (m_queue)
             {
+                m_isIteratorMode = true;
+
                 if (m_queue.Count > 0)
                 {
                     launchIterator = true;
@@ -401,6 +400,11 @@ namespace Spfx.Utilities.Threading
 
             if (launchIterator)
                 RescheduleIterator();
+        }
+
+        private void ThrowAlreadyIterating()
+        {
+            throw new InvalidOperationException("This instance is already in a ForEach iteration");
         }
 
         private struct AsyncQueueRescheduleItem : IThreadPoolWorkItem
