@@ -12,7 +12,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         {
         }
 
-        internal override IEnumerable<Task> GetShutdownEvents() 
-            => Enumerable.Empty<Task>();
+        internal override IEnumerable<SubprocessShutdownEvent> GetHostShutdownEvents() 
+            => Enumerable.Empty<SubprocessShutdownEvent>();
     }
 }

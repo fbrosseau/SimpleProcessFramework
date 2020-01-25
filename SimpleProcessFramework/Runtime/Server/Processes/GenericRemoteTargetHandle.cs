@@ -7,6 +7,7 @@ using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Subprocess;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
@@ -97,9 +98,19 @@ namespace Spfx.Runtime.Server.Processes
 
         protected abstract Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct);
 
+        protected void OnProcessLost(int exitCodeNumber)
+        {
+            var exitCode = (SubprocessMainShared.SubprocessExitCodes)exitCodeNumber;
+            if (!Enum.IsDefined(typeof(SubprocessMainShared.SubprocessExitCodes), exitCode))
+                exitCode = SubprocessMainShared.SubprocessExitCodes.Unknown;
+
+            var msg = $"The process has exited with code {exitCode} ({exitCodeNumber})";
+            OnProcessLost(msg, new SubprocessLostException(msg) { ExitCode = exitCode, ExitCodeNumber = exitCodeNumber });
+        }
+
         protected void OnProcessLost(string reason, Exception ex = null)
         {
-            ex = new SubprocessLostException(reason, ex);
+            ex = ex is SubprocessLostException ? ex : new SubprocessLostException(reason, ex);
             ReportFatalException(ex);
 
             Logger.Info?.Trace(ex, "The process was lost: " + reason);

@@ -180,5 +180,17 @@ namespace Spfx.Utilities
         {
             _ = proc.SafeHandle;
         }
+
+        internal static int SafeGetExitCode(this Process proc, int defaultValue = -1)
+        {
+            try
+            {
+                return proc.ExitCode;
+            }
+            catch
+            {
+                return defaultValue;
+            }
+        }
     }
 }

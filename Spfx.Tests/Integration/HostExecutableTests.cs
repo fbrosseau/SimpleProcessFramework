@@ -17,7 +17,7 @@ namespace Spfx.Tests.Integration
             var builder = new CommandLineBuilder(DefaultTestResolver, ProcessClusterConfiguration.Default, new ProcessCreationInfo
             {
                 TargetFramework = fw,
-                ExtraCommandLineArguments = new[] { SubprocessMainShared.CmdLinePrefix }
+                ExtraCommandLineArguments = new[] { SubprocessMainShared.CommandLineArgs.CmdLinePrefix }
             });
 
             var processStartInfo = builder.CreateProcessStartupInfo();
@@ -25,7 +25,7 @@ namespace Spfx.Tests.Integration
             proc.PrepareExitCode();
 
             proc.WaitForExit(5000).Should().BeTrue();
-            proc.ExitCode.Should().Be(SubprocessMainShared.BadCommandLineArgExitCode);
+            proc.ExitCode.Should().Be((int)SubprocessMainShared.SubprocessExitCodes.BadCommandLine);
         }
     }
 }

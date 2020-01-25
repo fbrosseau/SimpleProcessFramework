@@ -77,8 +77,8 @@ namespace Spfx.Runtime.Server.Processes
                 return new FakeSubprocessConnector(m_parentHandle);
             }
 
-            internal override IEnumerable<Task> GetShutdownEvents()
-                => Enumerable.Empty<Task>();
+            internal override IEnumerable<SubprocessShutdownEvent> GetHostShutdownEvents()
+                => Enumerable.Empty<SubprocessShutdownEvent>();
         }
 
         private class FakeSubprocessConnector : ISubprocessConnector

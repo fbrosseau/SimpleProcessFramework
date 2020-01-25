@@ -1,8 +1,12 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Spfx.Utilities
 {
@@ -29,6 +33,41 @@ namespace Spfx.Utilities
             typeof(IPAddress),
             typeof(EndPoint)
         };
+
+        private static Regex s_netfxExceptionTidyRegex;
+        private static MatchEvaluator s_netfxExceptionTidyRegexMatchEvaluator;
+
+        internal static object ExceptionToTidyString(Exception ex)
+        {
+            if (ex is null)
+                return null;
+
+            var original = ex.ToString();
+            if (!HostFeaturesHelper.LocalProcessKind.IsNetfx())
+                return original;
+
+            if(s_netfxExceptionTidyRegex is null)
+            {
+                s_netfxExceptionTidyRegexMatchEvaluator = m =>
+                {
+                    var g = m.Groups["asyncMethod"];
+                    if (!g.Success)
+                        return "";
+                    return g.Value + "(...)";
+                };
+
+                s_netfxExceptionTidyRegex = new Regex(@"
+(
+    \s*---.*?---\s*\n
+    .*?ExceptionDispatchInfo\.Throw\(\)\s*\n
+    (.*?HandleNonSuccessAndDebuggerNotification.*\n)?
+) | (
+    \.<(?<asyncMethod>.*?)>d__\d+\.MoveNext\(\)
+)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace);
+            }
+
+            return s_netfxExceptionTidyRegex.Replace(original, s_netfxExceptionTidyRegexMatchEvaluator);
+        }
 
         internal static string FormatObjectToTinyString(object result, int suggestedMaxCharacters = 32)
         {

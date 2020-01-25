@@ -8,6 +8,7 @@ using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
+using Spfx.Subprocess;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
@@ -140,16 +141,8 @@ namespace Spfx.Runtime.Server.Processes
 
         private void HandleProcessExit(Process process)
         {
-            int exitCode = -1;
-            try
-            {
-                exitCode = process.ExitCode;
-            }
-            catch
-            {
-            }
-
-            OnProcessLost("The process has exited with code " + exitCode);
+            var exitCode = process.SafeGetExitCode(defaultValue: (int)SubprocessMainShared.SubprocessExitCodes.Unknown);           
+            OnProcessLost(exitCode);
         }
 
         private void OnProcessExited(object sender, EventArgs e)

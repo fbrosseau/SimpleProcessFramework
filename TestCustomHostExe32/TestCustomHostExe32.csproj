@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,7 @@
     <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
     <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
     <PlatformTarget>x86</PlatformTarget>
+    <AssemblyName>Spfx.TestCustomHostExe32</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

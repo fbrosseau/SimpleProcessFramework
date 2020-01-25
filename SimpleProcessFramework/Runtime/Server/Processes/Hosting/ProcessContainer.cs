@@ -11,6 +11,8 @@ using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Reflection;
 using Spfx.Diagnostics.Logging;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
@@ -18,7 +20,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
     {
         private IProcessInternal m_processCore;
         private ISubprocessConnector m_connector;
-        private readonly List<Task> m_shutdownEvents = new List<Task>();
+        private readonly List<SubprocessShutdownEvent> m_shutdownEvents = new List<SubprocessShutdownEvent>();
         protected ProcessSpawnPunchPayload InputPayload { get; private set; }
         private IDisposable m_gcHandleToThis;
         private ILogger m_logger = NullLogger.Logger;
@@ -72,8 +74,8 @@ namespace Spfx.Runtime.Server.Processes.Hosting
 
             m_processCore = new ProcessCore(InputPayload.HostAuthority, InputPayload.ProcessUniqueId, TypeResolver);
 
-            m_shutdownEvents.AddRange(initializer.GetShutdownEvents());
-            m_shutdownEvents.Add(m_processCore.TerminateEvent);
+            m_shutdownEvents.AddRange(initializer.GetHostShutdownEvents());
+            m_shutdownEvents.Add(new SubprocessShutdownEvent(m_processCore.TerminateEvent, "Process Terminate"));
 
             m_logger.Info?.Trace("InitializeConnector");
             m_connector = initializer.CreateConnector(this);
@@ -89,9 +91,19 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             return ProcessContainerInitializer.Create(InputPayload, TypeResolver);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Run()
         {
-            Task.WaitAny(m_shutdownEvents.ToArray());
+            WaitForExit();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DebuggerStepThrough]
+        private void WaitForExit()
+        {
+            var tasks = m_shutdownEvents.Select(e => e.WaitTask).ToArray();
+            int res = Task.WaitAny(tasks);
+            m_logger.Info?.Trace("Exiting: " + m_shutdownEvents[res].Description);
         }
 
         void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)

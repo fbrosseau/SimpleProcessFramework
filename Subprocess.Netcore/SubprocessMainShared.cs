@@ -9,18 +9,85 @@ namespace Spfx.Subprocess
 {
     internal class SubprocessMainShared
     {
-        public static readonly bool VerboseLogs;
-        public const string CmdLinePrefix = "--spfx-";
-        public static readonly string DebugCmdLineArg = CmdLinePrefix + "debug";
-        public static readonly string DescribeCmdLineArg = CmdLinePrefix + "describe";
+        public static class CommandLineArgs
+        {
+            public const string CmdLinePrefix = "--spfx-";
+            public static readonly string DebugCmdLineArg = CmdLinePrefix + "debug";
+            public static readonly string DescribeCmdLineArg = CmdLinePrefix + "describe";
 
-        public static string[] GetAllKnownCommandLineArgs() => new[] { DebugCmdLineArg, DescribeCmdLineArg };
+            public static string[] GetAllKnownCommandLineArgs() => new[] { DebugCmdLineArg, DescribeCmdLineArg };
+        }
 
-        public static readonly int BadCommandLineArgExitCode = -12345;
-        public static readonly int DescribeExitCode = 0;
+        public static class AppContextSwitches
+        {
+            private const string Prefix = "Switch.Spfx.";
+            public const string VerboseHostLogs = Prefix + "VerboseHostLogs";
+            public const string FatalExceptionCallback = Prefix + "FatalExceptionCallback";
+        }
+
+        public static Action<Exception> FatalExceptionCallback
+        {
+            get => (Action<Exception>)GetAppContextValue(AppContextSwitches.FatalExceptionCallback);
+            set => SetAppContextValue(AppContextSwitches.FatalExceptionCallback, value);
+        }
+
+        private static object s_verboseLogs;
+        private static readonly object s_false = false;
+        public static bool VerboseHostLogs
+        {
+            get => (bool)GetAppContextValueCached(AppContextSwitches.VerboseHostLogs, ref s_verboseLogs, defaultValue: s_false);
+            set => SetAppContextValueCached(AppContextSwitches.VerboseHostLogs, value, ref s_verboseLogs);
+        }
+
+        public enum SubprocessExitCodes
+        {
+            Unknown = -1,
+            Success = 0,
+            BadCommandLine = -99999,
+            HostProcessLost,
+            Crash
+        }
+
+        internal static void HandleFatalException(Exception ex)
+        {
+            FatalExceptionCallback?.Invoke(ex);
+
+            try
+            {
+                Console.Error.WriteLine($"FATAL EXCEPTION -------{Environment.NewLine}{ex}");
+            }
+            catch
+            {
+                //oh well 
+            }
+
+            FinalExitProcess(SubprocessExitCodes.Crash);
+        }
+
+        internal static void FinalExitProcess(SubprocessExitCodes code)
+        {
+            Log($"Exiting with code {code}({(int)code})");
+            Environment.Exit((int)code);
+        }
+
+        internal static bool FilterFatalException(Exception ex)
+        {
+            try
+            {
+                HandleFatalException(ex);
+            }
+            catch
+            {
+                // can't throw!
+            }
+
+            return true;
+        }
 
         static SubprocessMainShared()
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             var args = Environment.GetCommandLineArgs();
 
             if (args.Length <= 1)
@@ -29,39 +96,91 @@ namespace Spfx.Subprocess
                     "This program cannot be executed directly. It is part of the SimpleProcessFramework (Spfx) version {0}.",
                     FileVersionInfo.GetVersionInfo(typeof(SubprocessMainShared).Assembly.Location).ProductVersion);
 
-                Environment.Exit(BadCommandLineArgExitCode);
+                FinalExitProcess(SubprocessExitCodes.BadCommandLine);
             }
 
-            var possibleArgs = GetAllKnownCommandLineArgs();
+            var possibleArgs = CommandLineArgs.GetAllKnownCommandLineArgs();
 
             for (int i = 1; i < args.Length; ++i)
             {
-                if (args[i] == DebugCmdLineArg)
+                if (args[i] == CommandLineArgs.DebugCmdLineArg)
                 {
-                    VerboseLogs = true;
+                    VerboseHostLogs = true;
+                    AppContext.SetSwitch(AppContextSwitches.VerboseHostLogs, true);
                 }
-                else if (args[i].StartsWith(CmdLinePrefix) && !possibleArgs.Contains(args[i]))
+                else if (args[i].StartsWith(CommandLineArgs.CmdLinePrefix) && !possibleArgs.Contains(args[i]))
                 {
                     Console.Error.WriteLine("Unknown commandline parameter " + args[i]);
-                    Environment.Exit(BadCommandLineArgExitCode);
+                    FinalExitProcess(SubprocessExitCodes.BadCommandLine);
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void InvokeRun(Assembly asm)
-        {
-            if (asm is null)
-                throw new FileNotFoundException("Could not load SimpleProcessFramework");
-            var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint", throwOnError: true);
-            if (entryPointType is null)
-                throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
-            entryPointType.InvokeMember("Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public, null, null, null);
         }
 
         public static void Initialize()
         {
             // for cctor
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ExecuteRun()
+        {
+            var entrypoint = GetEntryPoint();
+            Log("Executing entry point");
+            entrypoint();
+            Log("Exited cleanly");
+            FinalExitProcess(SubprocessExitCodes.Success);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Action GetEntryPoint()
+        {
+            var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Spfx");
+            if (asm is null)
+                throw new FileNotFoundException("Could not load SimpleProcessFramework");
+            var entryPointType = asm.GetType("Spfx.Runtime.Server.Processes.__EntryPoint", throwOnError: true);
+            if (entryPointType is null)
+                throw new FileNotFoundException("Could not load SimpleProcessFramework(2)");
+
+            var m = entryPointType.GetMethod("__Run", BindingFlags.Static | BindingFlags.InvokeMethod | BindingFlags.Public);
+            return (Action)Delegate.CreateDelegate(typeof(Action), m);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Log(string msg)
+        {
+            if (!VerboseHostLogs)
+                return;
+
+            Console.WriteLine(msg);
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            HandleFatalException(e.ExceptionObject as Exception);
+        }
+
+        internal static object GetAppContextValue(string key, object defaultValue = null)
+        {
+            return AppDomain.CurrentDomain.GetData(key)
+                ?? defaultValue;
+        }
+
+        internal static void SetAppContextValue(string key, object value)
+        {
+            AppDomain.CurrentDomain.SetData(key, value);
+        }
+
+        internal static object GetAppContextValueCached(string key, ref object cache, object defaultValue = null)
+        {
+            if (cache is null)
+                cache = GetAppContextValue(key, defaultValue);
+            return cache;
+        }
+
+        internal static void SetAppContextValueCached(string key, object value, ref object cache)
+        {
+            cache = value;
+            SetAppContextValue(key, value);
         }
     }
 }

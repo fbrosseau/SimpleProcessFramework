@@ -150,7 +150,7 @@ namespace Spfx.Tests.Integration
             if (expectedProcessKind.IsNetcore())
             {
                 var ver = Unwrap(iface.GetNetCoreVersion());
-                expectDotNetExe |= ver.Major < 3 || expectedProcessName?.StartsWith(TestCustomHostExe.StandaloneDllName) == true;
+                expectDotNetExe |= ver.Major < 3 || SharedTestcustomHostUtilities.IsCustomHostAssembly(expectedProcessName, includeDll: true, includeExe: false);
 
                 if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
                 {

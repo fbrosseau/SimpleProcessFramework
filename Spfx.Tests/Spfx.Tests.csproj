@@ -27,9 +27,4 @@
   <ItemGroup>
     <None Include="../SimpleProcessFramework/Properties/spfx.snk" Link="Properties\spfx.snk" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\TestCustomHostExe\TestCustomHostExe.csproj" />
-  </ItemGroup>
-
 </Project>

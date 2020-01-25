@@ -13,28 +13,28 @@ namespace Spfx.Tests.Integration
         private static IEnumerable<object[]> GetAllValidPreExistingFileCombinations()
         {
             foreach (var fw in Netfx_AllArchs)
-                yield return new object[] { fw, TestCustomHostExe.ExecutableName };
+                yield return new object[] { fw, SharedTestcustomHostUtilities.ExecutableName };
 
             foreach (var fw in AllNetcore_AllArchs)
             {
-                yield return new object[] { fw, TestCustomHostExe.ExecutableName };
-                yield return new object[] { fw, TestCustomHostExe.StandaloneDllName };
-                yield return new object[] { fw, $"{TestCustomHostExe.ExecutableName}.dll" };
-                yield return new object[] { fw, $"{TestCustomHostExe.StandaloneDllName}.dll" };
+                yield return new object[] { fw, SharedTestcustomHostUtilities.ExecutableName };
+                yield return new object[] { fw, SharedTestcustomHostUtilities.StandaloneDllName };
+                yield return new object[] { fw, $"{SharedTestcustomHostUtilities.ExecutableName}.dll" };
+                yield return new object[] { fw, $"{SharedTestcustomHostUtilities.StandaloneDllName}.dll" };
             }
 
             foreach (var fw in Netfx_And_Netcore3Plus_AllArchs)
-                yield return new object[] { fw, $"{TestCustomHostExe.ExecutableName}.exe" };
+                yield return new object[] { fw, $"{SharedTestcustomHostUtilities.ExecutableName}.exe" };
         }
 
-        [Test/*, Parallelizable(ParallelScope.Children)*/]
+        [Test, Parallelizable(ParallelScope.Children)]
         [TestCaseSource(nameof(GetAllValidPreExistingFileCombinations))]
         public void CustomNameSubprocess_ValidPreExistingFile(TargetFramework targetFramework, string customProcessName)
         {
             CustomNameSubprocessTest(targetFramework, customProcessName, validateCustomEntryPoint: true);
         }
 
-        [Test/*, Parallelizable*/]
+        [Test, Parallelizable(ParallelScope.Children)]
         [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
         public void CustomNameSubprocess_NewFileAllowed(TargetFramework targetFramework)
         {
@@ -49,7 +49,7 @@ namespace Spfx.Tests.Integration
             CleanupFile();
             try
             {
-                CustomNameSubprocessTest(targetFramework, customProcessName, allowCreate: true);
+                CustomNameSubprocessTest(targetFramework, customProcessName, allowCreate: true, validateCustomEntryPoint: false);
             }
             finally
             {
@@ -57,7 +57,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        [Test/*, Parallelizable*/]
+        [Test, Parallelizable(ParallelScope.Children)]
         [TestCaseSource(nameof(Netfx_And_Netcore3Plus_AllArchs))]
         public void CustomNameSubprocess_CustomHostDenied(TargetFramework targetFramework)
         {

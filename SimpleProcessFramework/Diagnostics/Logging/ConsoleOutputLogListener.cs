@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Utilities;
 using System;
 using System.IO;
 
@@ -20,7 +21,7 @@ namespace Spfx.Diagnostics.Logging
             if (ex is null)
                 m_out.WriteLine($"{now:T}|{name} [{level}]: {message}");
             else
-                m_out.WriteLine($"{now:T}|{name} [{level}]: {message}\r\n{ex}");
+                m_out.WriteLine($"{now:T}|{name} [{level}]: {message}\r\n{MostRandomUtilities.ExceptionToTidyString(ex)}");
         }
 
         public LogTraceLevel GetEnabledLevels(ILogger l) => LogTraceLevel.All;

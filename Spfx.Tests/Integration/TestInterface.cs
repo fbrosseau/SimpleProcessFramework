@@ -127,14 +127,7 @@ namespace Spfx.Tests.Integration
 
         public Task ValidateCustomProcessEntryPoint()
         {
-            var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.StartsWith("TestCustomHost"));
-            if (asm is null)
-                throw new InvalidOperationException("Could not find TestCustomHostExe in the loaded assemblies");
-
-            var entryPoint = asm.GetType(nameof(TestCustomHostExe));
-            if (!(bool)entryPoint.GetProperty(nameof(TestCustomHostExe.WasMainCalled)).GetValue(null))
-                throw new InvalidOperationException("WasMainCalled was not called");
-
+            SharedTestcustomHostUtilities.ValidateProcessEntryPoint();
             return Task.CompletedTask;
         }
     }

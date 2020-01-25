@@ -5,6 +5,7 @@
     <TargetFrameworks>$(SpfxAllTargetFrameworks)</TargetFrameworks>
     <OutputPath>../bin_Tests/$(Configuration)</OutputPath>
     <ApplicationIcon>../Resources/Gear2.ico</ApplicationIcon>
+    <AssemblyName>Spfx.TestCustomHostExe</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Io;
 using System.Net.Sockets;
+using System.Linq;
 using System;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
@@ -31,11 +32,6 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         internal override ILengthPrefixedStreamWriter CreateWriter()
         {
             return new AsyncLengthPrefixedStreamWriter(m_stream);
-        }
-
-        internal override IEnumerable<Task> GetShutdownEvents()
-        {
-            yield break;
         }
 
         protected override void OnDispose()

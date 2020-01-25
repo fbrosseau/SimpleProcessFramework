@@ -7,6 +7,7 @@ using System.IO.Pipes;
 using Spfx.Utilities.Interop;
 using Microsoft.Win32.SafeHandles;
 using System;
+using System.Linq;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
@@ -30,13 +31,13 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             return new AsyncLengthPrefixedStreamWriter(m_pipe);
         }
 
-        internal override IEnumerable<Task> GetShutdownEvents()
+        internal override IEnumerable<SubprocessShutdownEvent> GetHostShutdownEvents()
         {
             if (string.IsNullOrWhiteSpace(Payload.ShutdownEvent))
-                return Array.Empty<Task>();
+                throw new InvalidOperationException("Expected a valid ShutdownEvent");
 
             var h = SafeHandleUtilities.CreateWaitHandleFromString(Payload.ShutdownEvent);
-            return new[] { h.WaitAsync() };
+            return new[] { new SubprocessShutdownEvent(h.WaitAsync(), "Host shutdown") };
         }
     }
 }

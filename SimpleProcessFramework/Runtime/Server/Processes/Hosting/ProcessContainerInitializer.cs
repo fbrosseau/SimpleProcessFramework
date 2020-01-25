@@ -6,6 +6,7 @@ using Spfx.Reflection;
 using Spfx.Interfaces;
 using Spfx.Diagnostics.Logging;
 using Spfx.Utilities.Runtime;
+using System.Linq;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
@@ -38,7 +39,8 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             Logger = typeResolver.GetLogger(GetType());
         }
 
-        internal abstract IEnumerable<Task> GetShutdownEvents();
+        internal virtual IEnumerable<SubprocessShutdownEvent> GetHostShutdownEvents()
+            => Enumerable.Empty<SubprocessShutdownEvent>();
 
         internal virtual void OnInitSucceeded()
         {
