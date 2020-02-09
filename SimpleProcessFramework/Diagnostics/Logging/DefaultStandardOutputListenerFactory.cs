@@ -1,7 +1,9 @@
 ﻿using Spfx.Reflection;
+using Spfx.Runtime.Server.Processes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -28,12 +30,20 @@ namespace Spfx.Diagnostics.Logging
         protected virtual TextWriter OutputWriter => m_consoleProvider.Out;
         protected virtual TextWriter ErrorWriter => RedirectErrorToStdOut ? OutputWriter : m_consoleProvider.Err;
 
+        protected delegate FormatCallback ValueProviderCallback(Process targetProcess, object friendlyProcessId, string formatArgument);
+        protected delegate FormatCallback SimpleValueProviderCallback(string formatArgument);
+        protected delegate string FormatCallback(string msg);
+
         private class PatternValueProvider
         {
             public string Pattern { get; }
             public ValueProviderCallback ValueProvider { get; }
 
-            public delegate Func<string,string> ValueProviderCallback(Process targetProcess, string formatArgument);
+            public PatternValueProvider(string pattern, SimpleValueProviderCallback valueProvider)
+                : this(pattern, (p, id, fmt) => valueProvider(fmt))
+            {
+            }
+            
             public PatternValueProvider(string pattern, ValueProviderCallback valueProvider)
             {
                 Pattern = pattern;
@@ -43,26 +53,28 @@ namespace Spfx.Diagnostics.Logging
 
         private static readonly PatternValueProvider[] ValueProviders = new[]
         {
-            new PatternValueProvider("%MSG%", (proc,fmtArg)=>msg=>msg),
-            new PatternValueProvider("%TIME%", (proc,fmtArg)=>msg=>DateTime.Now.ToString(fmtArg)),
-            new PatternValueProvider("%UTCTIME%", (proc,fmtArg)=>msg=>DateTime.UtcNow.ToString(fmtArg)),
-            new PatternValueProvider("%PID%", (proc,fmtArg)=>
+            new PatternValueProvider("%MSG%", fmtArg=>msg=>msg),
+            new PatternValueProvider("%TIME%", fmtArg=>msg=>DateTime.Now.ToString(fmtArg)),
+            new PatternValueProvider("%UTCTIME%", fmtArg=>msg=>DateTime.UtcNow.ToString(fmtArg)),
+            new PatternValueProvider("%PID%", (proc,procId,fmtArg)=>
             {
-                var pid = proc.Id.ToString(fmtArg);
+                if(procId is null)
+                    procId = proc.Id.ToString(fmtArg, CultureInfo.CurrentCulture);
+                var pid = procId.ToString();
                 return msg=>pid;
-            }),
+            })
         };
 
-        public virtual IStandardOutputListener Create(Process proc, bool isOut)
+        public virtual IStandardOutputListener Create(Process proc, StandardConsoleStream stream, object friendlyProcessId = null)
         {
             TextWriter w;
-            if (isOut)
+            if (stream == StandardConsoleStream.Out)
                 w = OutputWriter;
             else
                 w = ErrorWriter;
 
             var finalFormat = m_rawFormat;
-            var valueCallbacks = new List<Func<string, string>>();
+            var valueCallbacks = new List<FormatCallback>();
 
             int nextIndex = 0;
             foreach (var provider in ValueProviders)
@@ -73,7 +85,7 @@ namespace Spfx.Diagnostics.Logging
                     if (string.IsNullOrWhiteSpace(arg))
                         arg = null;
 
-                    valueCallbacks.Add(provider.ValueProvider(proc, arg));
+                    valueCallbacks.Add(provider.ValueProvider(proc, friendlyProcessId, arg));
 
                     return "{" + nextIndex++ + "}";
                 });
