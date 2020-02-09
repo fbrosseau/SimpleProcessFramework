@@ -30,7 +30,7 @@ namespace Spfx.Io
             {
                 await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf, 0, 4), ct).ConfigureAwait(false);
 
-                int size = BinaryPrimitives.ReadInt32LittleEndian(new Span<byte>(buf, 0, 4));
+                int size = BinaryPrimitives.ReadInt32LittleEndian(buf);
                 if (size > maximumSize)
                     throw new SerializationException("Received a message larger than the maximum allowed size");
                 if (size <= 0)
@@ -105,7 +105,7 @@ namespace Spfx.Io
             {
                 stream.ReadAllBytes(new ArraySegment<byte>(buf, 0, 4));
 
-                int size = BinaryPrimitives.ReadInt32LittleEndian(new Span<byte>(buf, 0, 4));
+                int size = BinaryPrimitives.ReadInt32LittleEndian(buf);
                 if (size > maximumSize)
                     throw new SerializationException("Received a message larger than the maximum allowed size");
                 if (size <= 0)

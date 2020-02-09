@@ -41,7 +41,7 @@ namespace Spfx.Io
                         if (frame.IsCodeFrame)
                         {
                             int code = frame.Code;
-                            BinaryPrimitives.WriteInt32LittleEndian(new Span<byte>(tempBuffer), code);
+                            BinaryPrimitives.WriteInt32LittleEndian(tempBuffer, code);
                             m_stream.Write(tempBuffer, 0, 4);
                         }
                         else
