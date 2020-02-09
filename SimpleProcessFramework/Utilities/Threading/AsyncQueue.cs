@@ -116,18 +116,19 @@ namespace Spfx.Utilities.Threading
                         item = m_queue.Dequeue();
                     }
 
-                    var completion = new ValueTask();
+                    ValueTask completion;
                     if (m_iteratorActionCallback != null)
                     {
                         m_iteratorActionCallback(item);
+                        completion = default;
                     }
-                    else if (m_iteratorTaskCallback != null)
+                    else if (m_iteratorValueTaskCallback != null)
                     {
-                        completion = new ValueTask(m_iteratorTaskCallback(item));
+                        completion = m_iteratorValueTaskCallback(item);
                     }
                     else
                     {
-                        completion = m_iteratorValueTaskCallback(item);
+                        completion = new ValueTask(m_iteratorTaskCallback(item));
                     }
 
                     if (!completion.IsCompleted)
@@ -233,7 +234,7 @@ namespace Spfx.Utilities.Threading
 
         public bool TryDequeue(out T item)
         {
-            CheckIfIterating(false);
+            EnsureNotIterating();
 
             lock (m_queue)
             {
@@ -250,28 +251,17 @@ namespace Spfx.Utilities.Threading
 
         public Task ForEachAsync(Action<T> action)
         {
-            CheckIfIterating(beginIterating: true);
-            m_iteratorActionCallback = action;
-            return ForEachAsyncImpl();
+            return BeginIterating(action);
         }
 
-        public Task ForEachAsync(Func<T, Task> asyncAction)
+        public Task ForEachAsync(Func<T, Task> action)
         {
-            CheckIfIterating(beginIterating: true);
-            m_iteratorTaskCallback = asyncAction;
-            return ForEachAsyncImpl();
+            return BeginIterating(action);
         }
 
-        public Task ForEachAsync(Func<T, ValueTask> asyncAction)
+        public Task ForEachAsync(Func<T, ValueTask> action)
         {
-            CheckIfIterating(beginIterating: true);
-            m_iteratorValueTaskCallback = asyncAction;
-            return ForEachAsyncImpl();
-        }
-
-        private Task ForEachAsyncImpl()
-        {
-            return m_iteratorCompletionTask.Task;
+            return BeginIterating(action);
         }
 
         private static void TryDisposeItem(T item, Exception ex = null)
@@ -374,17 +364,27 @@ namespace Spfx.Utilities.Threading
                 waiter.TrySetException(m_disposeException);
         }
 
-        private void CheckIfIterating(bool beginIterating)
+        private Task BeginIterating(Delegate action)
         {
-            if (m_isIteratorMode)
-                ThrowAlreadyIterating();
-
-            if (!beginIterating)
-                return;
+            Guard.ArgumentNotNull(action, nameof(action));
+            EnsureNotIterating();
 
             m_iteratorCompletionTask = new TaskCompletionSource<VoidType>(TaskCreationOptions.RunContinuationsAsynchronously);
             m_iteratorExecutionCompletedHandler = OnIteratorCallbackCompleted;
             m_iteratorThreadpoolInvoker = ThreadPoolInvoker.Create(new AsyncQueueRescheduleItem { Parent = this });
+
+            switch(action)
+            {
+                case Action<T> a:
+                    m_iteratorActionCallback = a;
+                    break;
+                case Func<T, Task> t:
+                    m_iteratorTaskCallback = t;
+                    break;
+                case Func<T, ValueTask> vt:
+                    m_iteratorValueTaskCallback = vt;
+                    break;
+            }
 
             bool launchIterator = false;
             lock (m_queue)
@@ -400,6 +400,14 @@ namespace Spfx.Utilities.Threading
 
             if (launchIterator)
                 RescheduleIterator();
+
+            return m_iteratorCompletionTask.Task;
+        }
+
+        private void EnsureNotIterating()
+        {
+            if (m_isIteratorMode)
+                ThrowAlreadyIterating();
         }
 
         private void ThrowAlreadyIterating()
