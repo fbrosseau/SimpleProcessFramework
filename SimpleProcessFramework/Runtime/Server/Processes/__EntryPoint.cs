@@ -2,6 +2,7 @@
 using Spfx.Subprocess;
 using Spfx.Utilities.Runtime;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -17,7 +18,7 @@ namespace Spfx.Runtime.Server.Processes
             if (Environment.GetCommandLineArgs().Contains(SubprocessMainShared.CommandLineArgs.DescribeCmdLineArg))
             {
                 Console.Write(HostFeaturesHelper.DescribeHost());
-                SubprocessMainShared.FinalExitProcess(SubprocessMainShared.SubprocessExitCodes.Success);
+                SubprocessMainShared.FinalExitProcess(SubprocessExitCodes.Success);
             }
 
             Run(Console.In, isStandaloneProcess: true);
@@ -36,9 +37,9 @@ namespace Spfx.Runtime.Server.Processes
                     container.Run();
                 graceful = true;
             }
-            catch(Exception ex)
+            catch(Exception ex) when (SubprocessMainShared.FilterFatalException(ex))
             {
-                TraceFatalException(ex);
+                SubprocessMainShared.HandleFatalException(ex);
             }
             finally
             {
@@ -54,11 +55,6 @@ namespace Spfx.Runtime.Server.Processes
                     }
                 }
             }
-        }
-
-        private static void TraceFatalException(Exception ex)
-        {
-            Console.Error.WriteLine($"FATAL EXCEPTION -------{Environment.NewLine}{ex}");
         }
     }
 }

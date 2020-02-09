@@ -10,7 +10,7 @@ namespace Spfx.Runtime.Exceptions
         public int ExitCodeNumber { get; set; }
 
         [DataMember]
-        internal SubprocessMainShared.SubprocessExitCodes ExitCode { get; set; }
+        internal SubprocessExitCodes ExitCode { get; set; }
 
         public SubprocessLostException(string msg, Exception innerEx = null)
             : base(msg, innerEx)
