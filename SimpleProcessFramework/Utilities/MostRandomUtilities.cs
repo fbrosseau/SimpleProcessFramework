@@ -43,7 +43,7 @@ namespace Spfx.Utilities
                 return null;
 
             var original = ex.ToString();
-            if (!HostFeaturesHelper.LocalProcessKind.IsNetfx())
+            if (!HostFeaturesHelper.LocalProcessIsNetfx)
                 return original;
 
             if(s_netfxExceptionTidyRegex is null)

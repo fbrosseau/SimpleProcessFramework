@@ -12,7 +12,7 @@ namespace Spfx.Runtime.Server.Processes
             if (processKind == HostFeaturesHelper.LocalProcessKind)
                 return PathHelper.CurrentBinFolder.FullName;
 
-            if (HostFeaturesHelper.LocalProcessKind.IsNetfxProcess() && processKind.IsNetfxProcess())
+            if (HostFeaturesHelper.LocalProcessIsNetfx && processKind.IsNetfxProcess())
                 return PathHelper.CurrentBinFolder.FullName;
 
             string relativeCodebase;

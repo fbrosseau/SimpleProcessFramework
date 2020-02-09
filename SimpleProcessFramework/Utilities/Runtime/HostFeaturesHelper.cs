@@ -28,6 +28,9 @@ namespace Spfx.Utilities.Runtime
 
         public static bool IsNetFxSupported { get; } = IsWindows;
 
+        public static bool LocalProcessIsNetfx => LocalProcessKind.IsNetfx();
+        public static bool LocalProcessIsNetcore => LocalProcessKind.IsNetcore();
+
 #if DEBUG
         public static readonly bool IsDebugBuildConstant = true;
 #else
@@ -38,7 +41,7 @@ namespace Spfx.Utilities.Runtime
 
         private static string GetRuntimeDescription()
         {
-            if (LocalProcessKind.IsNetfxProcess())
+            if (LocalProcessIsNetfx)
             {
                 var currentDomain = AppDomain.CurrentDomain;
                 var setupInfo = typeof(AppDomain).GetProperty("SetupInformation").GetValue(currentDomain);

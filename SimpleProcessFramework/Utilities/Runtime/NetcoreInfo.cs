@@ -58,7 +58,7 @@ namespace Spfx.Utilities.Runtime
 
         internal static bool IsCurrentProcessAtLeastNetcoreVersion(int major, int minor = -1)
         {
-            if (!HostFeaturesHelper.LocalProcessKind.IsNetcore())
+            if (!HostFeaturesHelper.LocalProcessIsNetcore)
                 return false;
             return CurrentProcessNetcoreVersion.Major >= major && CurrentProcessNetcoreVersion.Minor >= minor;
         }
