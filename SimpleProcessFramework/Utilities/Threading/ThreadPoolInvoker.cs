@@ -4,7 +4,7 @@ using System.Threading.Tasks.Sources;
 
 namespace Spfx.Utilities.Threading
 {
-    public static class ThreadPoolInvoker
+    internal static class ThreadPoolInvoker
     {
         internal static ThreadPoolInvoker<TCallbackInvoker> Create<TCallbackInvoker>(TCallbackInvoker invoker)
             where TCallbackInvoker : IThreadPoolWorkItem
