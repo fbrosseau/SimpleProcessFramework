@@ -1,7 +1,9 @@
 ﻿using Spfx.Reflection;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Spfx.Diagnostics
 {
@@ -9,16 +11,12 @@ namespace Spfx.Diagnostics
     {
         public static Action<Exception> UnhandledExceptionHandler { get; set; }
 
-        public static void DefaultRunWithActionAsObject(object o)
-        {
-            DefaultRun((Action)o);
-        }
+        private static ParameterizedThreadStart DefaultRunWithActionAsObjectAsThreadStart { get; } = DefaultRunWithActionAsObject;
 
-        public static void DefaultRun(Action func)
-        {
-            Run(DefaultTypeResolverFactory.DefaultTypeResolver, func);
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DefaultRunWithActionAsObject(object o) => DefaultRun((Action)o);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DefaultRun(Action func) => Run(DefaultTypeResolverFactory.DefaultTypeResolver, func);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Run(ITypeResolver typeResolver, Action func) => Run(typeResolver, new ActionDelegateInvoker(func));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -49,6 +47,26 @@ namespace Spfx.Diagnostics
             catch (Exception ex) when (GetHandler().FilterCaughtException(ex))
             {
                 GetHandler().HandleCaughtException(ex);
+            }
+        }
+
+        public static Thread StartThread(string threadName, Action callback, ThreadPriority priority = ThreadPriority.Normal, bool suppressFlow = false)
+        {
+            using (TaskEx.MaybeSuppressExecutionContext(suppressFlow))
+            {
+                var thread = new Thread(DefaultRunWithActionAsObjectAsThreadStart)
+                {
+                    Name = threadName,
+                    IsBackground = true
+                };
+
+                if (priority != ThreadPriority.Normal)
+                {
+                    thread.Priority = priority;
+                }
+
+                thread.Start(callback);
+                return thread;
             }
         }
     }

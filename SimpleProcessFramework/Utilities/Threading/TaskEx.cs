@@ -476,7 +476,7 @@ namespace Spfx.Utilities.Threading
             return suppressFlow ? ExecutionContext.SuppressFlow() : (AsyncFlowControl?)null;
         }
 
-        public class ThreadSwitchAwaiter : ICriticalNotifyCompletion
+        public struct ThreadSwitchAwaiter : ICriticalNotifyCompletion
         {
             private readonly string m_threadName;
             private readonly ThreadPriority m_priority;
@@ -489,21 +489,7 @@ namespace Spfx.Utilities.Threading
 
             private void StartThread(Action callback, bool suppressFlow)
             {
-                using (MaybeSuppressExecutionContext(suppressFlow))
-                {
-                    var thread = new Thread(CriticalTryCatch.DefaultRunWithActionAsObject)
-                    {
-                        Name = m_threadName,
-                        IsBackground = true
-                    };
-
-                    if (m_priority != ThreadPriority.Normal)
-                    {
-                        thread.Priority = m_priority;
-                    }
-
-                    thread.Start(callback);
-                }
+                CriticalTryCatch.StartThread(m_threadName, callback, m_priority, suppressFlow);
             }
 
             public ThreadSwitchAwaiter(string name, ThreadPriority priority)

@@ -1,4 +1,5 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Diagnostics;
+using Spfx.Utilities;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -20,13 +21,7 @@ namespace Spfx.Io
             Guard.ArgumentNotNull(stream, nameof(stream));
             m_stream = stream;
 
-            m_writeThread = new Thread(WriteLoop)
-            {
-                Name = name,
-                IsBackground = true
-            };
-
-            m_writeThread.Start();
+            m_writeThread = CriticalTryCatch.StartThread(name, WriteLoop);
         }
 
         private void WriteLoop()
