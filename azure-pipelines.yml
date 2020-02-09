@@ -1,4 +1,4 @@
-name: '$(Year:yy)$(DayOfYear)$(Rev:rr)'
+name: '$(DayOfYear)$(Rev:rr)'
 trigger:
 - master
 

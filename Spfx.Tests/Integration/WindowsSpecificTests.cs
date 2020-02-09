@@ -18,23 +18,29 @@ namespace Spfx.Tests.Integration
 
         [Test]
         public void BasicDefaultSubprocess_DefaultKind_Managed()
-            => CreateAndDestroySuccessfulSubprocess(
+        {
+            if (!WslUtilities.IsWslSupported)
+                Assert.Pass("WSL not supported"); // Assert.Ignore reports as error in the pipeline...
+            CreateAndDestroySuccessfulSubprocess(
                 p => p.TargetFramework = TargetFramework.Create(DefaultProcessKind),
                 customConfig: cfg => cfg.UseGenericProcessSpawnOnWindows = true);
+        }
 
         [Test]
         public void BasicDefaultSubprocess_Wsl_Managed()
-            => CreateAndDestroySuccessfulSubprocess(
+        {
+            if (!WslUtilities.IsWslSupported)
+                Assert.Pass("WSL not supported"); // Assert.Ignore reports as error in the pipeline...
+            CreateAndDestroySuccessfulSubprocess(
                 p => p.TargetFramework = TargetFramework.Create(ProcessKind.Wsl),
                 customConfig: cfg => cfg.UseGenericProcessSpawnOnWindows = true);
+        }
 
 #if NETFRAMEWORK
         [Test]
         [Category("NetfxHost-Only"), Category("Netfx-Only"), Category("Windows-Only")]
         public void BasicDefaultSubprocess_AppDomain()
         {
-            if (!HostFeaturesHelper.IsWindows || !HostFeaturesHelper.LocalProcessKind.IsNetfx())
-                Assert.Ignore("AppDomains not supported");
             CreateAndDestroySuccessfulSubprocess(
                  p => p.TargetFramework = TargetFramework.Create(ProcessKind.AppDomain),
                  customConfig: cfg => cfg.UseGenericProcessSpawnOnWindows = true);
