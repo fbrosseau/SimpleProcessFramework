@@ -22,7 +22,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         private ISubprocessConnector m_connector;
         private readonly List<SubprocessShutdownEvent> m_shutdownEvents = new List<SubprocessShutdownEvent>();
         protected ProcessSpawnPunchPayload InputPayload { get; private set; }
-        private IDisposable m_gcHandleToThis;
+        private DisposableGCHandle m_gcHandleToThis;
         private ILogger m_logger = NullLogger.Logger;
 
         public string LocalProcessUniqueId => m_processCore.UniqueId;
@@ -44,8 +44,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void Initialize(TextReader input)
         {
-            var gcHandleToThis = GCHandle.Alloc(this);
-            m_gcHandleToThis = new DisposableAction(() => gcHandleToThis.Free());
+            m_gcHandleToThis = new DisposableGCHandle(this);
 
             InputPayload = ProcessSpawnPunchPayload.Deserialize(input);
 
