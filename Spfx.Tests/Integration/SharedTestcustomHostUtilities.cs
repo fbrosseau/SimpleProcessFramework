@@ -1,4 +1,5 @@
 ﻿using System;
+using Spfx.Utilities;
 using System.Linq;
 using System.Reflection;
 
@@ -26,6 +27,7 @@ public class SharedTestcustomHostUtilities
 
     internal static bool IsCustomHostAssembly(string assemblyName, bool includeDll = true, bool includeExe = true)
     {
+        Guard.ArgumentNotNullOrEmpty(assemblyName, nameof(assemblyName));
         return (includeExe && assemblyName.StartsWith(ExecutableName)) || (includeDll && assemblyName.StartsWith(StandaloneDllName));
     }
 }

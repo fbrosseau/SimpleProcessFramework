@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Spfx.Utilities.Interop
+namespace Spfx.Runtime.Server.Processes.Windows
 {
     internal class Win32ForeignProcessHandle : IDisposable
     {

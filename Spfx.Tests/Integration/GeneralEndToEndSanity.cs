@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Spfx.Interfaces;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Collections.Generic;
 
@@ -7,6 +8,7 @@ namespace Spfx.Tests.Integration
 {
     [TestFixture(SanityTestOptions.Tcp)]
     [TestFixture(SanityTestOptions.Interprocess)]
+    [Parallelizable(ParallelScope.Children)]
     public partial class GeneralEndToEndSanity : CommonSpfxIntegrationTestsClass
     {
         public GeneralEndToEndSanity(SanityTestOptions options)
@@ -14,32 +16,32 @@ namespace Spfx.Tests.Integration
         {
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         [TestCaseSource(nameof(AllGenericSupportedFrameworks))]
         public void BasicDefaultSubprocess(TargetFramework fw)
             => CreateAndDestroySuccessfulSubprocess(p => p.TargetFramework = fw);
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void BasicTestInMasterProcess()
         {
             using var cluster = CreateTestCluster();
             CreateAndValidateTestInterface(cluster, cluster.MasterProcess.UniqueAddress);
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void BasicProcessCallbackToMaster() => TestCallback(DefaultProcessKind);
-        [Test/*, Parallelizable*/]
+        [Test]
         public void FakeProcessCallbackToMaster() => TestCallback(ProcessKind.DirectlyInRootProcess);
-        [Test/*, Parallelizable*/]
+        [Test]
         public void FakeProcessCallbackToOtherProcess() => TestCallback(ProcessKind.DirectlyInRootProcess, callbackInMaster: false);
-        [Test/*, Parallelizable*/]
+        [Test]
         public void BasicProcessCallbackToOtherProcess() => TestCallback(DefaultProcessKind, callbackInMaster: false);
 
-        [Test/*, Parallelizable*/]
+        [Test]
         [TestCaseSource(nameof(AllNetcore_AllArchs))]
         public void BasicNetcore_SpecificRuntime(TargetFramework fw) => CreateAndDestroySuccessfulSubprocess(p => { p.TargetFramework = fw; });
 
-        [Test/*, Parallelizable*/]
+        [Test]
         [TestCaseSource(nameof(Simple_Netfx_And_Netcore))]
         public void BasicEnvironmentVariableSubprocess(TargetFramework fw)
         {
@@ -56,9 +58,9 @@ namespace Spfx.Tests.Integration
             Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
         }
 
-        private void TestCallback(ProcessKind processKind, bool callbackInMaster = true)
+        private void TestCallback(ProcessKind processKind, bool callbackInMaster = true, ClusterCustomizationDelegate clusterCustomization = null)
         {
-            using var cluster = CreateTestCluster();
+            using var cluster = CreateTestCluster(clusterCustomization);
             TestCallback(cluster, processKind, callbackInMaster);
         }
 
@@ -98,12 +100,6 @@ namespace Spfx.Tests.Integration
             {
                 svc.Dispose();
             }
-        }
-
-        private void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null, Action<ProcessClusterConfiguration> customConfig = null)
-        {
-            using var cluster = CreateTestCluster(customConfig);
-            CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
         }
     }
 }

@@ -50,7 +50,8 @@ namespace Spfx.Runtime.Server.Processes
                 ProcessKind = ProcessCreationInfo.TargetFramework.ProcessKind,
                 ProcessUniqueId = ProcessCreationInfo.ProcessUniqueId,
                 ParentProcessId = ProcessUtilities.CurrentProcessId,
-                TypeResolverFactory = Config.TypeResolverFactoryType?.AssemblyQualifiedName
+                TypeResolverFactory = Config.TypeResolverFactoryType?.AssemblyQualifiedName,
+                HandshakeTimeout = (int)Config.CreateProcessTimeout.TotalMilliseconds
             };
 
             try
@@ -147,6 +148,11 @@ namespace Spfx.Runtime.Server.Processes
         {
             m_createProcessCancellation?.SafeCancelAsync();
             return null == Interlocked.CompareExchange(ref m_firstCaughtException, ex, null);
+        }
+
+        public override string ToString()
+        {
+            return $"{ProcessUniqueId}->{GetType().Name}";
         }
     }
 }

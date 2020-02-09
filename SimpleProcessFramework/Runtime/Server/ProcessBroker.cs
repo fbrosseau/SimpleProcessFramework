@@ -11,6 +11,7 @@ using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes;
 using Spfx.Utilities.Threading;
 using Spfx.Diagnostics.Logging;
+using Spfx.Runtime.Server.Processes.Windows;
 
 namespace Spfx.Runtime.Server
 {

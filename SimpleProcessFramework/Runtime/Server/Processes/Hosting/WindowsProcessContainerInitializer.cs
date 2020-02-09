@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Io;
 using System.IO.Pipes;
-using Spfx.Utilities.Interop;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Linq;
+using Spfx.Utilities;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {

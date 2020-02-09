@@ -3,10 +3,12 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Interfaces;
+using Spfx.Io;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Runtime.Server.Processes.Windows;
 using Spfx.Subprocess;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
@@ -41,15 +43,16 @@ namespace Spfx.Runtime.Server.Processes
             RemotePunchPayload = punchPayload;
 
             using var disposeBag = new DisposeBag();
-
-            var remoteProcessHandles = CreatePunchHandles();
-            disposeBag.Add(remoteProcessHandles);
-
-            await remoteProcessHandles.InitializeAsync(ct).ConfigureAwait(false);
+            using var remoteProcessHandles = CreatePunchHandles();
 
             try
             {
-                m_targetProcess = await SpawnProcess(remoteProcessHandles, ct).WithCancellation(ct);
+                await Task.Run(async () => 
+                {
+                    await remoteProcessHandles.InitializeAsync(RemotePunchPayload, ct).ConfigureAwait(false);
+                    m_targetProcess = await SpawnProcess(remoteProcessHandles, ct);
+                    await remoteProcessHandles.CompleteHandshakeAsync();
+                }).WithCancellation(ct);
             }
             catch (Exception ex)
             {
@@ -59,10 +62,16 @@ namespace Spfx.Runtime.Server.Processes
                 throw;
             }
 
-            var connector = new MasterProcessIpcConnector(this, remoteProcessHandles, TypeResolver);
-            disposeBag.Add(connector);
+            var streams = remoteProcessHandles.AcquireIOStreams();
+            var writer = PipeWriterFactory.CreateWriter(streams.writeStream, ProcessUniqueId + " - MasterWrite");
+            disposeBag.Add(writer);
+            var reader = PipeWriterFactory.CreateReader(streams.readStream, ProcessUniqueId + " - MasterRead");
+            disposeBag.Add(reader);
 
-            var initTask = connector.InitializeAsync(ct).WithCancellation(ct);
+            m_ipcConnector = new MasterProcessIpcConnector(this, reader, writer, TypeResolver);
+            disposeBag.Add(m_ipcConnector);
+
+            var initTask = m_ipcConnector.InitializeAsync(ct).WithCancellation(ct);
             var failureTask = m_processExitEvent.Task;
             var winnerTask = await Task.WhenAny(initTask, failureTask);
             if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
@@ -72,7 +81,6 @@ namespace Spfx.Runtime.Server.Processes
                 (await GetInitFailureException()).Rethrow();
             }
 
-            m_ipcConnector = connector;
             disposeBag.ReleaseAll();
 
             OnInitializationCompleted();
@@ -90,7 +98,7 @@ namespace Spfx.Runtime.Server.Processes
             {
                 if (ProcessCreationInfo.TargetFramework.ProcessKind == ProcessKind.Wsl)
                     return new WslProcessSpawnPunchHandles();
-                return new WindowsProcessSpawnPunchHandles();
+                return new WindowsPunchHandlesThroughStdIn();
             }
 
             throw new NotImplementedException();
@@ -98,11 +106,17 @@ namespace Spfx.Runtime.Server.Processes
 
         protected abstract Task<Process> SpawnProcess(IRemoteProcessInitializer punchHandles, CancellationToken ct);
 
+        protected void HandleProcessExit(Process process)
+        {
+            var exitCode = process.SafeGetExitCode(defaultValue: (int)SubprocessExitCodes.Unknown);
+            OnProcessLost(exitCode);
+        }
+        
         protected void OnProcessLost(int exitCodeNumber)
         {
-            var exitCode = (SubprocessMainShared.SubprocessExitCodes)exitCodeNumber;
-            if (!Enum.IsDefined(typeof(SubprocessMainShared.SubprocessExitCodes), exitCode))
-                exitCode = SubprocessMainShared.SubprocessExitCodes.Unknown;
+            var exitCode = (SubprocessExitCodes)exitCodeNumber;
+            if (!Enum.IsDefined(typeof(SubprocessExitCodes), exitCode))
+                exitCode = SubprocessExitCodes.Unknown;
 
             var msg = $"The process has exited with code {exitCode} ({exitCodeNumber})";
             OnProcessLost(msg, new SubprocessLostException(msg) { ExitCode = exitCode, ExitCodeNumber = exitCodeNumber });

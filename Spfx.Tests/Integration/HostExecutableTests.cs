@@ -16,16 +16,16 @@ namespace Spfx.Tests.Integration
         {
             var builder = new CommandLineBuilder(DefaultTestResolver, ProcessClusterConfiguration.Default, new ProcessCreationInfo
             {
-                TargetFramework = fw,
+                TargetFramework = fw, 
                 ExtraCommandLineArguments = new[] { SubprocessMainShared.CommandLineArgs.CmdLinePrefix }
-            });
+            }, false);
 
             var processStartInfo = builder.CreateProcessStartupInfo();
             var proc = Process.Start(processStartInfo);
             proc.PrepareExitCode();
 
             proc.WaitForExit(5000).Should().BeTrue();
-            proc.ExitCode.Should().Be((int)SubprocessMainShared.SubprocessExitCodes.BadCommandLine);
+            proc.ExitCode.Should().Be((int)SubprocessExitCodes.BadCommandLine);
         }
     }
 }

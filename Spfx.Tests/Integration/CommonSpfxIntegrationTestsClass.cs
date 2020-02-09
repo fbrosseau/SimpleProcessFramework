@@ -15,6 +15,8 @@ using FluentAssertions;
 
 namespace Spfx.Tests.Integration
 {
+    public delegate void ClusterCustomizationDelegate(ProcessClusterConfiguration config);
+
     public abstract class CommonSpfxIntegrationTestsClass : CommonSpfxTestsClass
     {
         private readonly SanityTestOptions m_options;
@@ -40,7 +42,13 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        protected ProcessCluster CreateTestCluster(Action<ProcessClusterConfiguration> customConfig = null)
+        protected void CreateAndDestroySuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null, ClusterCustomizationDelegate customConfig = null)
+        {
+            using var cluster = CreateTestCluster(customConfig);
+            CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
+        }
+
+        protected ProcessCluster CreateTestCluster(ClusterCustomizationDelegate customConfig = null)
         {
             var config = new ProcessClusterConfiguration
             {
@@ -150,7 +158,9 @@ namespace Spfx.Tests.Integration
             if (expectedProcessKind.IsNetcore())
             {
                 var ver = Unwrap(iface.GetNetCoreVersion());
-                expectDotNetExe |= ver.Major < 3 || SharedTestcustomHostUtilities.IsCustomHostAssembly(expectedProcessName, includeDll: true, includeExe: false);
+                expectDotNetExe |= ver.Major < 3
+                    || (expectedProcessName != null
+                        && SharedTestcustomHostUtilities.IsCustomHostAssembly(expectedProcessName, includeDll: true, includeExe: false));
 
                 if (!string.IsNullOrWhiteSpace(targetNetcoreRuntime))
                 {

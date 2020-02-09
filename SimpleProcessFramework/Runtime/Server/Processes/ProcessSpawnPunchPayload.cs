@@ -3,6 +3,8 @@ using System.IO;
 using System.Threading.Tasks;
 using Spfx.Utilities.Threading;
 using Spfx.Interfaces;
+using System.Threading;
+using Spfx.Subprocess;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -42,33 +44,35 @@ namespace Spfx.Runtime.Server.Processes
 
         public static ProcessSpawnPunchPayload Deserialize(TextReader reader)
         {
-            var readTask = Task.Run(() =>
-            {
-                var output = new ProcessSpawnPunchPayload
-                {
-                    HostAuthority = reader.ReadLine(),
-                    ProcessUniqueId = reader.ReadLine(),
-                    ProcessKind = (ProcessKind)Enum.Parse(typeof(ProcessKind), reader.ReadLine()),
-                    IntegrityLevel = reader.ReadLine(),
-                    WritePipe = reader.ReadLine(),
-                    ReadPipe = reader.ReadLine(),
-                    ShutdownEvent = reader.ReadLine(),
-                    ParentProcessId = int.Parse(reader.ReadLine()),
-                    HandshakeTimeout = int.Parse(reader.ReadLine()),
-                    TypeResolverFactory = reader.ReadLine()
-                };
-                return output;
-            });
+            int timedOut = -1;
 
-            try
+            var timeoutTimer = new Timer(_ =>
             {
-                return readTask.WaitOrTimeout(TimeSpan.FromSeconds(15));
-            }
-            catch
-            {
+                if (Interlocked.Exchange(ref timedOut, 1) != -1)
+                    return;
+
                 Console.Error.WriteLine("Timeout waiting for parent process input");
-                throw;
-            }
+                SubprocessMainShared.FinalExitProcess(SubprocessExitCodes.InitFailure);
+            }, null, TimeSpan.FromSeconds(15), Timeout.InfiniteTimeSpan);
+
+            var output = new ProcessSpawnPunchPayload
+            {
+                HostAuthority = reader.ReadLine(),
+                ProcessUniqueId = reader.ReadLine(),
+                ProcessKind = (ProcessKind)Enum.Parse(typeof(ProcessKind), reader.ReadLine()),
+                IntegrityLevel = reader.ReadLine(),
+                WritePipe = reader.ReadLine(),
+                ReadPipe = reader.ReadLine(),
+                ShutdownEvent = reader.ReadLine(),
+                ParentProcessId = int.Parse(reader.ReadLine()),
+                HandshakeTimeout = int.Parse(reader.ReadLine()),
+                TypeResolverFactory = reader.ReadLine()
+            };
+
+            timeoutTimer.Dispose();
+            Interlocked.Exchange(ref timedOut, 0);
+
+            return output;
         }
     }
 }

@@ -4,10 +4,22 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Spfx.Utilities.Interop
+namespace Spfx.Utilities
 {
     internal static class SafeHandleUtilities
     {
+        private class ZeroSafeHandle : NoDisposeSafeHandle
+        {
+            public override bool IsInvalid => true;
+
+            protected override bool ReleaseHandle()
+            {
+                return true;
+            }
+        }
+
+        public static SafeHandle NullSafeHandle { get; } = new ZeroSafeHandle();
+
         public static string SerializeHandle(SafeHandle safeHandle)
         {
             return SerializeHandle(safeHandle.DangerousGetHandle());
@@ -26,9 +38,14 @@ namespace Spfx.Utilities.Interop
         public static SafeHandle DeserializeHandleFromString(string str)
         {
             var intptr = DeserializeRawHandleFromString(str);
+            return CreateSafeHandleFromIntPtr(intptr);
+        }
+
+        public static SafeHandle CreateSafeHandleFromIntPtr(IntPtr intptr, bool ownsHandle = true)
+        {
             return HostFeaturesHelper.IsWindows
-                ? new SafeWaitHandle(intptr, true)
-                : throw new NotImplementedException();
+               ? new SafeWaitHandle(intptr, ownsHandle)
+               : throw new NotImplementedException();
         }
 
         public static WaitHandle CreateWaitHandleFromString(string str)

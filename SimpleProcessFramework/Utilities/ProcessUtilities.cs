@@ -136,7 +136,7 @@ namespace Spfx.Utilities
             procInfo.SetCommandLine(executable, commandLine);
 
             Process proc = null;
-            await ProcessCreationUtilities.InvokeCreateProcess(() =>
+            await ProcessCreationUtilities.InvokeCreateProcessAsync(() =>
             {
                 proc = Process.Start(procInfo);
             });
@@ -178,7 +178,14 @@ namespace Spfx.Utilities
 
         internal static void PrepareExitCode(this Process proc)
         {
-            _ = proc.SafeHandle;
+            try
+            {
+                _ = proc.SafeHandle;
+            }
+            catch
+            {
+                // oh well.
+            }
         }
 
         internal static int SafeGetExitCode(this Process proc, int defaultValue = -1)

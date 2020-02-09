@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
@@ -20,16 +21,18 @@ namespace Spfx.Runtime.Server.Processes
         private readonly List<string> m_dotNetExeArguments = new List<string>();
         private readonly ProcessKind m_processKind;
 
-        public bool ManuallyRedirectConsole { get; }
+        public bool ManuallyRedirectConsoleOutput { get; }
+        public bool RedirectConsoleInput { get; }
         public string WorkingDirectory { get; private set; }
         public Dictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>();
         public List<string> CommandLineArguments { get; } = new List<string>();
         public string UserExecutableName { get; private set; }
         public string PrimaryExecutableName { get; }
 
-        public string AllFormattedArguments => ProcessUtilities.FormatCommandLine(CommandLineArguments);
+        public string GetAllFormattedArguments() => ProcessUtilities.FormatCommandLine(CommandLineArguments);
+        public string GetFullCommandLineWithExecutable() => ProcessUtilities.FormatCommandLine(new[] { PrimaryExecutableName }.Concat(CommandLineArguments));
 
-        public CommandLineBuilder(ITypeResolver typeResolver, ProcessClusterConfiguration config, ProcessCreationInfo processCreationInfo)
+        public CommandLineBuilder(ITypeResolver typeResolver, ProcessClusterConfiguration config, ProcessCreationInfo processCreationInfo, bool redirectStdIn, IEnumerable<StringKeyValuePair> extraEnvironmentVariables = null)
         {
             m_logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: $"{processCreationInfo.ProcessUniqueId} ({processCreationInfo.ProcessName},{processCreationInfo.TargetFramework})");
 
@@ -70,7 +73,7 @@ namespace Spfx.Runtime.Server.Processes
             if (config.AppendProcessIdToCommandLine)
                 CommandLineArguments.Add(ProcessUtilities.CurrentProcessId.ToString());
 
-            ManuallyRedirectConsole = m_processCreationInfo.ManuallyRedirectConsole;
+            ManuallyRedirectConsoleOutput = m_processCreationInfo.ManuallyRedirectConsole;
 
             void AddEnvVars(IEnumerable<StringKeyValuePair> values)
             {
@@ -85,6 +88,13 @@ namespace Spfx.Runtime.Server.Processes
 
             AddEnvVars(config.ExtraEnvironmentVariables);
             AddEnvVars(m_processCreationInfo.ExtraEnvironmentVariables);
+
+            if (redirectStdIn)
+            {
+                RedirectConsoleInput = true;
+            }
+
+            AddEnvVars(extraEnvironmentVariables);
 
             if (m_processCreationInfo.ExtraCommandLineArguments?.Length > 0)
                 CommandLineArguments.AddRange(m_processCreationInfo.ExtraCommandLineArguments);
@@ -241,9 +251,9 @@ namespace Spfx.Runtime.Server.Processes
             var info = new ProcessStartInfo
             {
                 FileName = PrimaryExecutableName,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = ManuallyRedirectConsole,
-                RedirectStandardError = ManuallyRedirectConsole,
+                RedirectStandardInput = RedirectConsoleInput,
+                RedirectStandardOutput = ManuallyRedirectConsoleOutput,
+                RedirectStandardError = ManuallyRedirectConsoleOutput,
                 WorkingDirectory = WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = false

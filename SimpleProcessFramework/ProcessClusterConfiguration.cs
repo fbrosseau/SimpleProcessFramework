@@ -46,7 +46,7 @@ namespace Spfx
         /// </summary>
         public string ConsoleRedirectionOutputFormat { get; set; } = "{%PID%}>{%MSG%}";
 
-        public bool UseGenericProcessSpawnOnWindows { get; set; } = true;
+        public bool UseGenericProcessSpawnOnWindows { get; set; }
         public bool EnableNetcore { get; set; } = true;
 
         public bool EnableAppDomains { get; set; }
@@ -61,7 +61,7 @@ namespace Spfx
         public string DefaultNetcoreProcessName { get; set; } = "Spfx.Process.Netcore";
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static readonly ProcessKind DefaultDefaultProcessKind = HostFeaturesHelper.LocalProcessKind.IsNetfx() ? ProcessKind.Netfx : ProcessKind.Netcore;
+        public static readonly ProcessKind DefaultDefaultProcessKind = HostFeaturesHelper.LocalProcessIsNetfx ? ProcessKind.Netfx : ProcessKind.Netcore;
         public ProcessKind DefaultProcessKind { get; set; } = DefaultDefaultProcessKind;
 
         public bool EnableFakeProcesses { get; set; }

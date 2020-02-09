@@ -47,6 +47,11 @@ namespace Spfx.Utilities
             }
         }
 
+        public static Socket CreateUnixSocket()
+        {
+            return CreateSocket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void SetNotInheritable(Socket sock)
         {

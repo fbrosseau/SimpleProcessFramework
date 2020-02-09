@@ -23,7 +23,7 @@ namespace Spfx.Tests
         public static readonly bool Test32Bit = HostFeaturesHelper.Is32BitSupported;
 
 #if DEBUG
-        public const int DefaultTestTimeout = 30000;
+        public const int DefaultTestTimeout = 30000000;
 #else
         public const int DefaultTestTimeout = 30000;
 #endif
@@ -130,7 +130,7 @@ namespace Spfx.Tests
         {
             var wrapped = WrapWithUnhandledExceptions(task);
 
-            if (!wrapped.WaitSilent(Math.Min(15000, DefaultTestTimeout)))
+            if (!wrapped.WaitSilent(DefaultTestTimeout))
                 throw new TimeoutException();
 
             wrapped.WaitOrRethrow();

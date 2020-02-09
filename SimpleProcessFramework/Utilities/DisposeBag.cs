@@ -23,6 +23,11 @@ namespace Spfx.Utilities
             return val;
         }
 
+        public void Add(Action callback)
+        {
+            Add(new DisposableAction(callback));
+        }
+
         public void Add(IDisposable d)
         {
             if (m_disposables is null)

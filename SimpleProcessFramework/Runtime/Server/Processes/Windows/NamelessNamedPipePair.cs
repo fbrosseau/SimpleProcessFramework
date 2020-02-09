@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Spfx.Utilities.Interop
+namespace Spfx.Runtime.Server.Processes.Windows
 {
     internal class NamelessNamedPipePair
     {
@@ -24,9 +24,9 @@ namespace Spfx.Utilities.Interop
             RemoteProcessPipe = clientConnect;
         }
 
-        public static async Task<NamelessNamedPipePair> CreatePair(FileAccess localAccess = FileAccess.ReadWrite, FileAccess remoteAccess = FileAccess.ReadWrite)
+        public static async Task<NamelessNamedPipePair> CreatePair(FileAccess localAccess = FileAccess.ReadWrite, FileAccess remoteAccess = FileAccess.ReadWrite, bool remoteIsAsync = true)
         {
-            var pipename = $"Spfx_{s_currentProcessId}_{Guid.NewGuid():N}";
+            var pipename = $"Spfx_IpcPrivatePipe_{s_currentProcessId}_{Guid.NewGuid():N}";
             var fullname = @"\\.\pipe\" + pipename;
             var serverStream = CreateAsyncServerStream(pipename, localAccess);
             using var cts = new CancellationTokenSource();
@@ -40,9 +40,10 @@ namespace Spfx.Utilities.Interop
                 {
                     try
                     {
-                        remotePipe = Win32Interop.SafeCreateFile(fullname, remoteAccess, FileShare.None, FileMode.Open, async: true);
+                        remotePipe = Win32Interop.SafeCreateFile(fullname, remoteAccess, FileShare.None, FileMode.Open, async: remoteIsAsync);
                         if (remotePipe?.IsInvalid == false)
                             return;
+                        remotePipe?.Dispose();
                     }
                     catch
                     {
@@ -78,7 +79,7 @@ namespace Spfx.Utilities.Interop
             if ((access & FileAccess.Write) == FileAccess.Write)
                 dir |= PipeDirection.Out;
 
-            if (HostFeaturesHelper.LocalProcessKind.IsNetfx())
+            if (HostFeaturesHelper.LocalProcessIsNetfx)
             {
                 const string pipesAssembly = ", System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089";
                 var pipeSecurityType = Type.GetType("System.IO.Pipes.PipeSecurity" + pipesAssembly);
@@ -107,7 +108,7 @@ namespace Spfx.Utilities.Interop
             }
             else
             {
-                const PipeOptions CurrentUserOnly = (PipeOptions)536870912;
+                const PipeOptions CurrentUserOnly = (PipeOptions)0x20000000;
                 return new NamedPipeServerStream(pipeName, dir, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | CurrentUserOnly);
             }
         }

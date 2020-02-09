@@ -1,30 +1,43 @@
-﻿using System;
+﻿#if WINDOWS_BUILD
+
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
-namespace Spfx.Runtime.Server.Processes
+namespace Spfx.Runtime.Server.Processes.Windows
 {
-    internal class AppDomainProcessHandle : GenericRemoteTargetHandle
+    internal class AppDomainProcessHandle : AbstractExternalProcessTargetHandle
     {
         [Serializable]
         private class AppDomainStartData
         {
-            public string InputString { get; internal set; }
+            public string InputString { get; set; }
+            public IntPtr OutputHandle { get; set; }
+            public IntPtr ErrorHandle { get; set; }
 
             internal void CrossDomainCallback()
             {
+                TextWriter RecreateWriter(IntPtr h)
+                    => new StreamWriter(new FileStream(new SafeFileHandle(h, true), FileAccess.Write, 4096, false));
+
+                if (OutputHandle != IntPtr.Zero)
+                    Console.SetOut(RecreateWriter(OutputHandle));
+                if (ErrorHandle != IntPtr.Zero)
+                    Console.SetError(RecreateWriter(ErrorHandle));
+
                 __EntryPoint.Run(new StringReader(InputString), isStandaloneProcess: false);
             }
         }
 
-        public AppDomainProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver) 
+        public AppDomainProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
         }
@@ -42,19 +55,19 @@ namespace Spfx.Runtime.Server.Processes
                 BindingFlags.Public | BindingFlags.Static | BindingFlags.InvokeMethod,
                 null,
                 null,
-                new [] { ProcessUniqueId, null, appDomainSetup });
+                new[] { ProcessUniqueId, null, appDomainSetup });
 
-            await ProcessCreationUtilities.InvokeCreateProcess(() =>
-            {
-                handles.InitializeInLock();
-                handles.HandleProcessCreatedInLock(Process.GetCurrentProcess(), RemotePunchPayload);
-            });
+            await DoProtectedCreateProcess(handles, () => Process.GetCurrentProcess(), ct);
 
-            var serializedHandles = handles.FinalizeInitDataAndSerialize(Process.GetCurrentProcess(), RemotePunchPayload);
+            var consoleRedirector = await WindowsConsoleRedirector.CreateAsync(this);
+
+            PrepareConsoleRedirection(Process.GetCurrentProcess(), ProcessUniqueId);          
 
             Action callback = new AppDomainStartData
             {
-                InputString = serializedHandles
+                InputString = handles.PayloadText,
+                OutputHandle = consoleRedirector.RemoteProcessOut.DangerousGetHandle(),
+                ErrorHandle = consoleRedirector.RemoteProcessErr.DangerousGetHandle()
             }.CrossDomainCallback;
 
             var callbackType = Type.GetType("System.CrossAppDomainDelegate");
@@ -62,16 +75,23 @@ namespace Spfx.Runtime.Server.Processes
 
             Task.Run(() =>
             {
-                typeof(AppDomain).InvokeMember("DoCallBack",
-                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod,
-                    null,
-                    dom,
-                    new object[] { typedCallback });
+                using (consoleRedirector)
+                {
+                    typeof(AppDomain).InvokeMember("DoCallBack",
+                        BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod,
+                        null,
+                        dom,
+                        new object[] { typedCallback });
+
+                    consoleRedirector.StartReading();
+                }
             }, CancellationToken.None)
                 .ContinueWith(t => OnProcessLost("AppDomain callback failed: " + t.ExtractException()), ct, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
                 .FireAndForget();
 
-            return Process.GetCurrentProcess();
+            return ExternalProcess;
         }
     }
 }
+
+#endif

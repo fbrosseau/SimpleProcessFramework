@@ -58,8 +58,9 @@ namespace Spfx.Tests
                 result.Add(TargetFramework.Create(ProcessKind.Netfx32));
             }
 
-            if (HostFeaturesHelper.IsWslSupported)
-                result.Add(TargetFramework.Create(ProcessKind.Wsl));
+            // WSL is done as its own tests now
+            // if (HostFeaturesHelper.IsWslSupported)
+            //    result.Add(TargetFramework.Create(ProcessKind.Wsl));
 
             return result.ToArray();
         }
