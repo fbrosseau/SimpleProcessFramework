@@ -7,6 +7,16 @@ using System.Runtime.CompilerServices;
 
 namespace Spfx.Subprocess
 {
+    internal enum SubprocessExitCodes
+    {
+        Unknown = -1,
+        Success = 0,
+        BadCommandLine = -99999,
+        InitFailure,
+        HostProcessLost,
+        Crash
+    }
+
     internal class SubprocessMainShared
     {
         public static class CommandLineArgs
@@ -37,15 +47,6 @@ namespace Spfx.Subprocess
         {
             get => (bool)GetAppContextValueCached(AppContextSwitches.VerboseHostLogs, ref s_verboseLogs, defaultValue: s_false);
             set => SetAppContextValueCached(AppContextSwitches.VerboseHostLogs, value, ref s_verboseLogs);
-        }
-
-        public enum SubprocessExitCodes
-        {
-            Unknown = -1,
-            Success = 0,
-            BadCommandLine = -99999,
-            HostProcessLost,
-            Crash
         }
 
         internal static void HandleFatalException(Exception ex)
@@ -114,16 +115,20 @@ namespace Spfx.Subprocess
                     FinalExitProcess(SubprocessExitCodes.BadCommandLine);
                 }
             }
+
+            Log("Cctor complete");
         }
 
         public static void Initialize()
         {
+            Log(nameof(Initialize));
             // for cctor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ExecuteRun()
         {
+            Log("ExecuteRun");
             var entrypoint = GetEntryPoint();
             Log("Executing entry point");
             entrypoint();
@@ -134,6 +139,7 @@ namespace Spfx.Subprocess
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static Action GetEntryPoint()
         {
+            Log(nameof(GetEntryPoint));
             var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Spfx");
             if (asm is null)
                 throw new FileNotFoundException("Could not load SimpleProcessFramework");

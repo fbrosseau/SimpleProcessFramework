@@ -18,6 +18,7 @@ namespace Spfx.Runtime.Server.Processes.HostProgram
         {
             try
             {
+                SubprocessMainShared.Log("Main");
                 LoadSpfx();
                 SubprocessMainShared.ExecuteRun();
             }
