@@ -1,5 +1,4 @@
-﻿using Spfx.Interfaces;
-using Spfx.Utilities.Runtime;
+﻿using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;

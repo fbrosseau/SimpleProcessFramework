@@ -2,7 +2,6 @@
 
 using Microsoft.Win32.SafeHandles;
 using Spfx.Utilities;
-using Spfx.Utilities.ApiGlue;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;

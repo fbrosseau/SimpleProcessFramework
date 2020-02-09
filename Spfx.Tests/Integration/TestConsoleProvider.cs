@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using System;
 using Spfx.Diagnostics.Logging;
 using System.IO;
 

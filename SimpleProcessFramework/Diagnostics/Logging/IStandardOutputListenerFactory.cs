@@ -1,6 +1,4 @@
-﻿using Spfx.Runtime.Server.Processes;
-using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Spfx.Diagnostics.Logging
 {

@@ -2,7 +2,6 @@
 using Spfx.Runtime.Messages;
 using Spfx.Utilities.Threading;
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;

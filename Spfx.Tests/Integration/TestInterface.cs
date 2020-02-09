@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using System.Linq;
 using Spfx.Utilities.Runtime;
 
 namespace Spfx.Tests.Integration

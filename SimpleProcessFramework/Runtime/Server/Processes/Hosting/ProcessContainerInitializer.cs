@@ -1,6 +1,5 @@
 ﻿using Spfx.Utilities;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Interfaces;

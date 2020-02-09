@@ -1,6 +1,4 @@
 ﻿using NUnit.Framework;
-using System;
-using System.Diagnostics;
 using Spfx.Diagnostics.Logging;
 using System.IO;
 using Spfx.Reflection;

@@ -1,12 +1,10 @@
 ﻿#if WINDOWS_BUILD
 
-using Microsoft.Win32.SafeHandles;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;

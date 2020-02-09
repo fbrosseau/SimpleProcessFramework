@@ -9,9 +9,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using Spfx.Diagnostics.Logging;
-using System.IO;
-using FluentAssertions;
 
 namespace Spfx.Tests.Integration
 {

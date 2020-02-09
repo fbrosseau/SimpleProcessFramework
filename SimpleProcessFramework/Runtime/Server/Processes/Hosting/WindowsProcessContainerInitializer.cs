@@ -1,12 +1,10 @@
 ﻿using Spfx.Utilities.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Spfx.Reflection;
 using Spfx.Io;
 using System.IO.Pipes;
 using Microsoft.Win32.SafeHandles;
 using System;
-using System.Linq;
 using Spfx.Utilities;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
