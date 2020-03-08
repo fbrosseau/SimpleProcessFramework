@@ -5,6 +5,7 @@
 
   <ItemGroup>    
     <None Include="@(SpfxExtraOutputs)">
+      <Visible>false</Visible>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
