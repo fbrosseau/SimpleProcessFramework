@@ -18,12 +18,12 @@ namespace Spfx.Diagnostics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DefaultRun(Action func) => Run(DefaultTypeResolverFactory.DefaultTypeResolver, func);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Run(ITypeResolver typeResolver, Action func) => Run(typeResolver, new ActionDelegateInvoker(func));
+        public static void Run(ITypeResolver typeResolver, Action func) => Run(typeResolver, ActionDelegateInvoker.Create(func));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Run<TState>(ITypeResolver typeResolver, TState state, Action<TState> func) => Run(typeResolver, new ActionDelegateInvoker<TState>(func, state));
+        public static void Run<TState>(ITypeResolver typeResolver, TState state, Action<TState> func) => Run(typeResolver, ActionDelegateInvoker.Create(func, state));
 
-        public static void Run<TFunc>(ITypeResolver typeResolver, TFunc func)
-            where TFunc : IDelegateInvoker
+        public static void Run<TDelegateInvoker>(ITypeResolver typeResolver, in TDelegateInvoker delegateInvoker)
+            where TDelegateInvoker : IDelegateInvoker
         {
             IUnhandledExceptionsHandler handler = null;
             IUnhandledExceptionsHandler GetHandler()
@@ -42,7 +42,7 @@ namespace Spfx.Diagnostics
 
             try
             {
-                func.Invoke();
+                delegateInvoker.Invoke();
             }
             catch (Exception ex) when (GetHandler().FilterCaughtException(ex))
             {
