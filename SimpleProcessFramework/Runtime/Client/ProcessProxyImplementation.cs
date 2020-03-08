@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Utilities.Threading;
+using Spfx.Utilities;
+using Spfx.Runtime.Client.Eventing;
 
 namespace Spfx.Runtime.Client
 {
@@ -32,21 +34,28 @@ namespace Spfx.Runtime.Client
 
     public abstract class ProcessProxyImplementation
     {
-        private IClientInterprocessConnection m_connection;
+        internal IClientInterprocessConnection m_connection;
         internal TimeSpan CallTimeout { get; set; }
 
-        protected Dictionary<string, ProcessProxyEventSubscriptionInfo> EventDispatchMethods { get; } = new Dictionary<string, ProcessProxyEventSubscriptionInfo>();
+        private Dictionary<string, ProcessProxyEventSubscriptionInfo> m_eventDispatchMethods;
         internal ProcessEndpointAddress RemoteAddress { get; set; }
+        internal ProcessProxy ParentProxy { get; private set; }
 
-        internal void Initialize(IClientInterprocessConnection connection, ProcessEndpointAddress remoteAddress)
+        internal void Initialize(ProcessProxy parentProxy, IClientInterprocessConnection connection, ProcessEndpointAddress remoteAddress)
         {
             m_connection = connection;
             RemoteAddress = remoteAddress;
+            ParentProxy = parentProxy;
         }
 
-        protected void InitEventInfo(ProcessProxyEventSubscriptionInfo evt)
+        protected ProcessProxyEventSubscriptionInfo InitEventInfo(ReflectedEventInfo evt, ProcessProxyEventSubscriptionInfo.RaiseEventDelegate raiseEventCallback)
         {
-            EventDispatchMethods.Add(evt.Event.Name, evt);
+            if (m_eventDispatchMethods is null)
+                m_eventDispatchMethods = new Dictionary<string, ProcessProxyEventSubscriptionInfo>();
+
+            var info = new ProcessProxyEventSubscriptionInfo(this, evt, raiseEventCallback);
+            m_eventDispatchMethods.Add(evt.Name, info);
+            return info;
         }
 
         protected Task WrapTaskReturn(object[] args, ReflectedMethodInfo method, CancellationToken ct)
@@ -83,60 +92,28 @@ namespace Spfx.Runtime.Client
                 callReq.MethodName = calledMethod.GetUniqueName();
                 //callReq.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
             }
-            
+
             var compl = m_connection.SerializeAndSendMessage(remoteCallRequest, ct);
             return TaskEx.ContinueWithCast<object, T>(compl);
         }
 
-        internal void RaiseEvent(EventRaisedMessage msg)
-        {
-            if (!EventDispatchMethods.TryGetValue(msg.EventName, out var eventInfo))
-                throw new NotSupportedException("This type has no events");
-
-            eventInfo.RaiseEventCallback(this, eventInfo.EventHandler, msg.EventArgs);
-        }
-
         protected void AddEventSubscription(Delegate handler, ProcessProxyEventSubscriptionInfo eventInfo)
         {
-            bool add;
-            lock (eventInfo)
-            {
-                add = eventInfo.EventHandler is null;
-                eventInfo.EventHandler = Delegate.Combine(eventInfo.EventHandler, handler);
-            }
-
-            if (!add)
-                return;
-
-            m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(RemoteAddress)
-            {
-                NewEvents = { new EventRegistrationRequestInfo.NewEventRegistration(eventInfo.Event.Name, RaiseEvent)}
-            }).Wait();
+            EventSubscriptionScope.AddEventSubscription(RemoteAddress, m_connection, handler, eventInfo);
         }
 
         protected void RemoveEventSubscription(Delegate handler, ProcessProxyEventSubscriptionInfo eventInfo)
         {
-            bool delete;
-            lock (eventInfo)
-            {
-                delete = eventInfo.EventHandler != null;
-                eventInfo.EventHandler = Delegate.Remove(eventInfo.EventHandler, handler);
-                delete &= eventInfo.EventHandler == null;
-            }
+            EventSubscriptionScope.RemoveEventSubscription(RemoteAddress, m_connection, handler, eventInfo);
+        }
 
-            if (!delete)
-                return;
+        internal static ProcessProxyImplementation Unwrap(object endpointInstance)
+        {
+            Guard.ArgumentNotNull(endpointInstance, nameof(endpointInstance));
+            if (endpointInstance is ProcessProxyImplementation impl)
+                return impl;
 
-            try
-            {
-                m_connection.ChangeEventSubscription(new EventRegistrationRequestInfo(RemoteAddress)
-                {
-                    RemovedEvents = { eventInfo.Event.Name }
-                }).FireAndForget();
-            }
-            catch
-            {
-            }
+            throw new ArgumentException("The instance must be a valid proxy, not " + endpointInstance.GetType().AssemblyQualifiedName);
         }
 
         internal static class Reflection
@@ -151,14 +128,14 @@ namespace Spfx.Runtime.Client
             public static MethodInfo GetWrapTaskOfTReturnMethod(Type t) => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapTaskOfTReturn)).MakeGenericMethod(t);
             public static MethodInfo GetWrapValueTaskOfTReturnMethod(Type t) => typeof(ProcessProxyImplementation).FindUniqueMethod(nameof(WrapValueTaskReturnMethod)).MakeGenericMethod(t);
 
-            internal static readonly Action<ProcessProxyImplementation, Delegate, object> RaiseNonGenericEventAction = (sender, handler, args) =>
+            internal static readonly ProcessProxyEventSubscriptionInfo.RaiseEventDelegate RaiseNonGenericEventAction = (sender, handler, args) =>
             {
                 ((EventHandler)handler)?.Invoke(sender, (EventArgs)args);
             };
 
             public static class GenericHelper<T>
             {
-                internal static readonly Action<ProcessProxyImplementation, Delegate, object> RaiseGenericEventAction = (sender, handler, args) =>
+                internal static readonly ProcessProxyEventSubscriptionInfo.RaiseEventDelegate RaiseGenericEventAction = (sender, handler, args) =>
                 {
                     ((EventHandler<T>)handler)?.Invoke(sender, (T)args);
                 };
@@ -171,19 +148,6 @@ namespace Spfx.Runtime.Client
                 var parentType = typeof(GenericHelper<>).MakeGenericType(eventArgsType);
                 return parentType.GetField(nameof(GenericHelper<int>.RaiseGenericEventAction), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             }
-        }
-    }
-
-    public class ProcessProxyEventSubscriptionInfo
-    {
-        public ReflectedEventInfo Event { get; }
-        public Action<ProcessProxyImplementation, Delegate, object> RaiseEventCallback { get; }
-        public Delegate EventHandler { get; internal set; }
-
-        public ProcessProxyEventSubscriptionInfo(ReflectedEventInfo evt, Action<ProcessProxyImplementation, Delegate, object> raiseEventCallback)
-        {
-            Event = evt;
-            RaiseEventCallback = raiseEventCallback;
         }
     }
 }

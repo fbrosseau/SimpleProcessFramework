@@ -25,6 +25,8 @@ namespace Spfx.Serialization.DataContracts
             public object DefaultValueForType;
             public Type MemberType;
             public bool IsValueType;
+
+            public override string ToString() => MemberType.AssemblyQualifiedName;
         }
 
         internal class ReflectedDataMember : ISimpleMemberInfo

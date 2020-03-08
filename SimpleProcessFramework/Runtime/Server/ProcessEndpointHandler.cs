@@ -16,7 +16,8 @@ namespace Spfx.Runtime.Server
     [DataContract]
     public abstract class ProcessEndpointHandler : AsyncDestroyable, IProcessEndpointHandler
     {
-        private readonly object m_realTarget;
+        public object ImplementationObject { get; }
+
         private readonly IProcessEndpoint m_realTargetAsEndpoint;
         private readonly ProcessEndpointDescriptor m_descriptor;
         private readonly Dictionary<PendingCallKey, IInterprocessRequestContext> m_pendingCalls = new Dictionary<PendingCallKey, IInterprocessRequestContext>();
@@ -25,10 +26,15 @@ namespace Spfx.Runtime.Server
         private readonly Dictionary<string, EventSubscriptionInfo> m_eventsByName = new Dictionary<string, EventSubscriptionInfo>();
         private readonly ILogger m_logger;
 
-        protected ProcessEndpointHandler(object realTarget, ProcessEndpointDescriptor descriptor)
+        private ProcessEndpointAddress EndpointAddress { get; }
+        private IProcess ParentProcess { get; }
+
+        protected ProcessEndpointHandler(IProcess parentProcess, string endpointId, object realTarget, ProcessEndpointDescriptor descriptor)
         {
-            m_realTarget = realTarget;
-            m_realTargetAsEndpoint = m_realTarget as IProcessEndpoint;
+            ParentProcess = parentProcess;
+            EndpointAddress = parentProcess.UniqueAddress.Combine(endpointId);
+            ImplementationObject = realTarget;
+            m_realTargetAsEndpoint = ImplementationObject as IProcessEndpoint;
             m_descriptor = descriptor;
             m_methods = m_descriptor.Methods.ToArray();
             m_methodsByName = m_methods.ToDictionary(m => m.Method.GetUniqueName());
@@ -40,7 +46,7 @@ namespace Spfx.Runtime.Server
             m_logger.Info?.Trace("OnDispose");
 
             CancelAllCalls();
-            (m_realTarget as IDisposable)?.Dispose();
+            (ImplementationObject as IDisposable)?.Dispose();
             base.OnDispose();
             m_logger.Dispose();
         }
@@ -49,17 +55,18 @@ namespace Spfx.Runtime.Server
         {
             m_logger.Info?.Trace("OnTeardownAsync");
 
-            if (m_realTarget is IAsyncDestroyable d)
+            if (ImplementationObject is IAsyncDestroyable d)
                 await d.TeardownAsync(ct).ConfigureAwait(false);
 
             await base.OnTeardownAsync(ct);
         }
 
-        public async Task InitializeAsync(IProcess parentProcess)
+        public async ValueTask InitializeAsync()
         {
             m_logger.Info?.Trace("InitializeAsync");
+
             if (m_realTargetAsEndpoint != null)
-                await m_realTargetAsEndpoint.InitializeAsync(parentProcess).ConfigureAwait(false);
+                await m_realTargetAsEndpoint.InitializeAsync(ParentProcess, EndpointAddress).ConfigureAwait(false);
         }
         
         private void CancelAllCalls()
@@ -80,10 +87,10 @@ namespace Spfx.Runtime.Server
 
         protected void PrepareEvent(ReflectedEventInfo evt)
         {
-            m_eventsByName.Add(evt.Name, new EventSubscriptionInfo(m_realTarget, evt));
+            m_eventsByName.Add(evt.Name, new EventSubscriptionInfo(EndpointAddress, ImplementationObject, evt));
         }
 
-        public virtual void HandleMessage(IInterprocessRequestContext req)
+        public void HandleMessage(IInterprocessRequestContext req)
         {
             try
             {
@@ -142,7 +149,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        private void DoRemoteCall(IInterprocessRequestContext req, RemoteCallRequest remoteCall)
+        private void DoRemoteCall(IInterprocessRequestContext req, IRemoteCallRequest remoteCall)
         {
             if (remoteCall.MethodName != null)
             {
@@ -156,10 +163,10 @@ namespace Spfx.Runtime.Server
                 ThrowBadInvocation("Method ID is unknown");
 
             var method = m_methods[remoteCall.MethodId];
-            var args = remoteCall.GetArgsOrEmpty();
+            var argsCount = remoteCall.ArgsCount;
 
-            if (args.Length != method.Method.GetArgumentCount())
-                ThrowBadInvocation($"Expected {method.Method.GetArgumentCount()} parameters - {args.Length} provided");
+            if (argsCount != method.Method.GetArgumentCount())
+                ThrowBadInvocation($"Method {method.MethodId} expected {method.Method.GetArgumentCount()} parameters - {argsCount} provided");
 
             var key = new PendingCallKey(req);
             lock (m_pendingCalls)
@@ -186,6 +193,7 @@ namespace Spfx.Runtime.Server
             private Delegate m_eventHandler;
 
             private static readonly MethodInfo s_eventHandlerMethod = typeof(EventSubscriptionInfo).FindUniqueMethod(nameof(OnEventRaised));
+            private readonly ProcessEndpointAddress m_endpointAddress;
             private readonly object m_target;
 
             private Delegate CreateEventHandler()
@@ -195,8 +203,9 @@ namespace Spfx.Runtime.Server
                 return m_eventHandler;
             }
 
-            public EventSubscriptionInfo(object target, ReflectedEventInfo eventInfo)
+            public EventSubscriptionInfo(ProcessEndpointAddress endpointAddress, object target, ReflectedEventInfo eventInfo)
             {
+                m_endpointAddress = endpointAddress;
                 m_target = target;
                 Event = eventInfo;
             }
@@ -243,6 +252,7 @@ namespace Spfx.Runtime.Server
                 {
                     l.Client.SendMessage(new EventRaisedMessage
                     {
+                        EndpointId = m_endpointAddress,
                         SubscriptionId = l.RegistrationId,
                         EventName = Event.Name,
                         EventArgs = args
@@ -257,10 +267,10 @@ namespace Spfx.Runtime.Server
             {
                 foreach (var e in evt.AddedEvents)
                 {
-                    if (!m_eventsByName.TryGetValue(e.EventName, out var eventInfo))
-                        ThrowBadInvocation("Event does not exist: " + e.EventName);
+                    if (!m_eventsByName.TryGetValue(e, out var eventInfo))
+                        ThrowBadInvocation("Event does not exist: " + e);
 
-                    eventInfo.AddConsumer(req.Client, e.RegistrationId);
+                    eventInfo.AddConsumer(req.Client, -1);
                 }
             }
 

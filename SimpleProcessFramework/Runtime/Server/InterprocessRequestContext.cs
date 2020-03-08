@@ -106,7 +106,7 @@ namespace Spfx.Runtime.Server
             if (t is null)
                 throw new InvalidOperationException("Methods cannot return null Tasks");
 
-            m_tcs.CompleteWithResultAsObject<T>(t);
+            m_tcs.CompleteWith<T>(t);
         }
 
         public override string ToString()

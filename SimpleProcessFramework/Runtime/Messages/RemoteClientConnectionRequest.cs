@@ -3,7 +3,7 @@
 namespace Spfx.Runtime.Messages
 {
     [DataContract]
-    public class RemoteClientConnectionRequest
+    public sealed class RemoteClientConnectionRequest
     {
         public static int MaximumMessageSize = 32;
 

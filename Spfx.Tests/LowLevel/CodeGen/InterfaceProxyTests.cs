@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
+using Spfx.Runtime.Client.Eventing;
 using Spfx.Runtime.Messages;
 
 namespace Spfx.Tests.LowLevel.CodeGen
@@ -37,7 +38,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 m_messageHandler = messageHandler;
             }
 
-            public Task ChangeEventSubscription(EventRegistrationRequestInfo req)
+            public ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req)
             {
                 throw new NotImplementedException();
             }
@@ -61,6 +62,16 @@ namespace Spfx.Tests.LowLevel.CodeGen
             {
                 return m_messageHandler(req, ct);
             }
+
+            public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         [Test/*, Parallelizable*/]
@@ -78,8 +89,8 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 return Task.FromResult(expectedResult);
             });
 
-            var expectedAddress = new ProcessEndpointAddress("localhost", "test1", "test2");
-            rawInterface.Initialize(handler, expectedAddress);
+            var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
+            rawInterface.Initialize(new ProcessProxy(), handler, expectedAddress);
             var iface = (ITestInterface1)rawInterface;
 
             Unwrap(iface.Test());
@@ -105,8 +116,8 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 return Task.FromResult(expectedResult);
             });
 
-            var expectedAddress = new ProcessEndpointAddress("localhost", "test1", "test2");
-            rawInterface.Initialize(handler, expectedAddress);
+            var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
+            rawInterface.Initialize(new ProcessProxy(), handler, expectedAddress);
             var iface = (ITestInterface3)rawInterface;
 
             Unwrap(iface.Test(longval));
@@ -132,8 +143,8 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 return Task.FromResult(expectedResult);
             });
 
-            var expectedAddress = new ProcessEndpointAddress("localhost", "test1", "test2");
-            rawInterface.Initialize(handler, expectedAddress);
+            var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
+            rawInterface.Initialize(new ProcessProxy(), handler, expectedAddress);
             var iface = (ITestInterface4)rawInterface;
 
             Unwrap(iface.Test(longval));
@@ -156,8 +167,8 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 return Task.FromResult((object)expectedResult);
             });
 
-            var expectedAddress = new ProcessEndpointAddress("localhost", "test1", "test2");
-            rawInterface.Initialize(handler, expectedAddress);
+            var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
+            rawInterface.Initialize(new ProcessProxy(), handler, expectedAddress);
             var iface = (ITestInterface2)rawInterface;
 
             var actualResult = Unwrap(iface.Test());
@@ -168,7 +179,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
 
         private void AssertArgsEqual(IInterprocessMessage req, object[] expectedArgs)
         {
-            var actualArgs = ((RemoteCallRequest)req).GetArgsOrEmpty();
+            var actualArgs = ((RemoteCallRequest)req).Arguments;
 
             if (expectedArgs is null)
                 expectedArgs = Array.Empty<object>();

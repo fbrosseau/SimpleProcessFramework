@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Runtime.Client.Eventing;
 
 namespace Spfx.Runtime.Client
 {
@@ -80,26 +81,26 @@ namespace Spfx.Runtime.Client
                 methodInfoFieldNames.Add(m, actualName);
 
                 var methodInfoField = typeBuilder.DefineField(
-                  actualName,
+                    actualName,
                     typeof(ReflectedMethodInfo),
                     FieldAttributes.Private | FieldAttributes.Static);
 
                 ilgen = implBuilder.GetILGenerator();
 
-                LocalBuilder loc = null;
+                LocalBuilder argsArrayLocal = null;
 
                 var cancellationTokenLocal = ilgen.DeclareLocal(typeof(CancellationToken));
 
                 if (parameters.Length > 0)
                 {
-                    loc = ilgen.DeclareLocal(typeof(object[]));
+                    argsArrayLocal = ilgen.DeclareLocal(typeof(object[]));
                     ilgen.Emit(OpCodes.Ldc_I4, parameters.Length);
                     ilgen.Emit(OpCodes.Newarr, typeof(object));
-                    ilgen.Emit(OpCodes.Stloc, loc);
+                    ilgen.Emit(OpCodes.Stloc, argsArrayLocal);
 
                     for (int i = 0; i < parameters.Length; ++i)
                     {
-                        ilgen.Emit(OpCodes.Ldloc, loc);
+                        ilgen.Emit(OpCodes.Ldloc, argsArrayLocal);
                         ilgen.Emit(OpCodes.Ldc_I4, i);
                         ilgen.Emit(OpCodes.Conv_I);
 
@@ -133,8 +134,8 @@ namespace Spfx.Runtime.Client
 
                 ilgen.Emit(OpCodes.Ldarg_0);
 
-                if (loc != null)
-                    ilgen.Emit(OpCodes.Ldloc, loc);
+                if (argsArrayLocal != null)
+                    ilgen.Emit(OpCodes.Ldloc, argsArrayLocal);
                 else
                     ilgen.Emit(OpCodes.Ldnull);
 
@@ -167,21 +168,21 @@ namespace Spfx.Runtime.Client
                 ilgen.Emit(OpCodes.Ret);
             }
 
-            string GetEventInfoField(EventInfo evt)
-            {
-                return "FieldInfo__" + evt.Name;
-            }
+            string GetEventInfoFieldName(EventInfo evt) 
+                => "FieldInfo__" + evt.Name;
 
             var events = allInterfaces.SelectMany(i => i.GetEvents()).ToList();
             if (events.Count > 0)
             {
-                var eventBackingFields = new Dictionary<EventInfo, FieldBuilder>();
+                var addMethod = ProcessProxyImplementation.Reflection.AddEventSubscriptionMethod;
+                var removeMethod = ProcessProxyImplementation.Reflection.RemoveEventSubscriptionMethod;
+
                 foreach (var evt in events)
                 {
-                    var eventInfoField = typeBuilder.DefineField(GetEventInfoField(evt), typeof(ReflectedEventInfo), FieldAttributes.Private | FieldAttributes.Static);
+                    var eventInfoField = typeBuilder.DefineField(GetEventInfoFieldName(evt), typeof(ReflectedEventInfo), FieldAttributes.Private | FieldAttributes.Static);
                     var backingField = typeBuilder.DefineField("Event__" + evt.Name, typeof(ProcessProxyEventSubscriptionInfo), FieldAttributes.Private | FieldAttributes.InitOnly);
-                    eventBackingFields[evt] = backingField;
 
+                    ctorIlgen.Emit(OpCodes.Ldarg_0); // for stfld
                     ctorIlgen.Emit(OpCodes.Ldarg_0);
                     ctorIlgen.Emit(OpCodes.Ldsfld, eventInfoField);
 
@@ -189,22 +190,18 @@ namespace Spfx.Runtime.Client
                     {
                         ctorIlgen.Emit(OpCodes.Ldsfld, ProcessProxyImplementation.Reflection.EventState_NonGenericCallbackField);
                     }
-                    else if (evt.EventHandlerType.IsGenericType && evt.EventHandlerType.GetGenericTypeDefinition() == typeof(EventHandler<>))
+                    else if (evt.EventHandlerType.IsGenericType && evt.EventHandlerType.GetGenericTypeDefinition() == typeof(EventHandler<>)
+                        && typeof(EventArgs).IsAssignableFrom(evt.EventHandlerType.GetGenericArguments()[0]))
                     {
                         ctorIlgen.Emit(OpCodes.Ldsfld, ProcessProxyImplementation.Reflection.GetEventState_GenericCallbackField(evt.EventHandlerType.GetGenericArguments().Single()));
                     }
                     else
                     {
-                        throw new InvalidOperationException("TODO");
+                        throw new NotSupportedException("EventHandler must be of type EventHandler or EventHandler<T>, and T must be EventArgs.");
                     }
 
-                    ctorIlgen.Emit(OpCodes.Newobj, typeof(ProcessProxyEventSubscriptionInfo).GetConstructors().Single());
-                    ctorIlgen.Emit(OpCodes.Stfld, backingField);
-
-                    ctorIlgen.Emit(OpCodes.Ldarg_0);
-                    ctorIlgen.Emit(OpCodes.Ldarg_0);
-                    ctorIlgen.Emit(OpCodes.Ldfld, backingField);
                     ctorIlgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.InitEventInfoMethod, null);
+                    ctorIlgen.Emit(OpCodes.Stfld, backingField);
 
                     void EmitAddAndRemoveMethod(ILGenerator il, bool isAdd)
                     {
@@ -212,7 +209,8 @@ namespace Spfx.Runtime.Client
                         il.Emit(OpCodes.Ldarg_1);
                         il.Emit(OpCodes.Ldarg_0);
                         il.Emit(OpCodes.Ldfld, backingField);
-                        il.EmitCall(OpCodes.Callvirt, isAdd ? ProcessProxyImplementation.Reflection.AddEventSubscriptionMethod : ProcessProxyImplementation.Reflection.RemoveEventSubscriptionMethod, null);
+                        var m = isAdd ? addMethod : removeMethod;
+                        il.EmitCall(OpCodes.Callvirt, m, null);
                         il.Emit(OpCodes.Ret);
                     }
 
@@ -243,7 +241,7 @@ namespace Spfx.Runtime.Client
 
             foreach(var evt in events)
             {
-                var eventInfoField = finalType.GetField(GetEventInfoField(evt), BindingFlags.NonPublic | BindingFlags.Static);
+                var eventInfoField = finalType.GetField(GetEventInfoFieldName(evt), BindingFlags.NonPublic | BindingFlags.Static);
                 eventInfoField.SetValue(null, new ReflectedEventInfo(evt, cacheVisitedTypes: true));
             }
                        

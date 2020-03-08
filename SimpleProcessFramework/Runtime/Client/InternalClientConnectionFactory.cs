@@ -24,7 +24,7 @@ namespace Spfx.Runtime.Client
         {
             if (!string.IsNullOrWhiteSpace(address.HostAuthority))
                 return address;
-            return new ProcessEndpointAddress(m_localAuthority, address.TargetProcess, address.LeafEndpoint);
+            return ProcessEndpointAddress.Create(m_localAuthority, address.ProcessId, address.EndpointId);
         }
 
         public bool IsLoopback(ref ProcessEndpointAddress destination)

@@ -18,7 +18,7 @@ namespace Spfx.Runtime.Messages
         long CallId { get; set; }
     }
 
-    itnernal static class StatefulInterprocessMessageExtensions
+    internal static class StatefulInterprocessMessageExtensions
     {
         public static IInterprocessMessage Unwrap(this IInterprocessMessage msg, IBinarySerializer serializer)
         {

@@ -3,10 +3,12 @@
 namespace Spfx.Runtime.Messages
 {
     [DataContract]
-    public class EventRaisedMessage : IInterprocessMessage
+    public sealed class EventRaisedMessage : IEventMessage
     {
         ProcessEndpointAddress IInterprocessMessage.Destination { get => null; set { } }
 
+        [DataMember]
+        public ProcessEndpointAddress EndpointId { get; set; }
         [DataMember]
         public long SubscriptionId { get; set; }
         [DataMember]
@@ -15,6 +17,6 @@ namespace Spfx.Runtime.Messages
         public object EventArgs { get; set; }
 
         public override string ToString() => GetTinySummaryString();
-        public string GetTinySummaryString() => $"{GetType().Name} {EventName} (Sub {SubscriptionId})";
+        public string GetTinySummaryString() => $"{nameof(EventRaisedMessage)} {EventName} (Sub {EndpointId})";
     }
 }

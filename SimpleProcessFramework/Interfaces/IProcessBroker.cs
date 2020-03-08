@@ -48,7 +48,7 @@ namespace Spfx.Interfaces
         }
     }
 
-    public enum ProcessCreationOutcome
+    public enum ProcessCreationResults
     {
         CreatedNew,
         AlreadyExists,
@@ -116,11 +116,11 @@ namespace Spfx.Interfaces
     public class ProcessAndEndpointCreationOutcome
     {
         [DataMember]
-        public ProcessCreationOutcome ProcessOutcome { get; }
+        public ProcessCreationResults ProcessOutcome { get; }
         [DataMember]
-        public ProcessCreationOutcome EndpointOutcome { get; }
+        public ProcessCreationResults EndpointOutcome { get; }
 
-        public ProcessAndEndpointCreationOutcome(ProcessCreationOutcome processOutcome, ProcessCreationOutcome endpointOutcome)
+        public ProcessAndEndpointCreationOutcome(ProcessCreationResults processOutcome, ProcessCreationResults endpointOutcome)
         {
             ProcessOutcome = processOutcome;
             EndpointOutcome = endpointOutcome;
@@ -137,7 +137,7 @@ namespace Spfx.Interfaces
 
         Task<ProcessClusterHostInformation> GetHostInformation();
 
-        Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req);
+        Task<ProcessCreationResults> CreateProcess(ProcessCreationRequest req);
         Task<ProcessAndEndpointCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processInfo, EndpointCreationRequest endpointInfo);
 
         Task<bool> DestroyProcess(string processName, bool onlyIfEmpty = true);

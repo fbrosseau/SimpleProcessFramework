@@ -5,8 +5,10 @@ namespace Spfx.Runtime.Server
 {
     internal interface IProcessEndpointHandler : IAsyncDestroyable
     {
+        object ImplementationObject { get; }
+
         void HandleMessage(IInterprocessRequestContext req);
         void CompleteCall(IInterprocessRequestContext req);
-        Task InitializeAsync(IProcess process2);
+        ValueTask InitializeAsync();
     }
 }

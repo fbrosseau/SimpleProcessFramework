@@ -9,7 +9,7 @@ using System.Threading;
 namespace Spfx.Reflection
 {
     [DataContract(IsReference = true)]
-    public class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>
+    public sealed class ReflectedTypeInfo : IEquatable<ReflectedTypeInfo>
     {
         private static readonly ThreadSafeAppendOnlyDictionary<Type, ReflectedTypeInfo> s_knownTypes = new ThreadSafeAppendOnlyDictionary<Type, ReflectedTypeInfo>();
 

@@ -3,7 +3,7 @@
 namespace Spfx.Runtime.Messages
 {
     [DataContract]
-    public class EndpointDescriptionRequest : RemoteInvocationRequest
+    public sealed class EndpointDescriptionRequest : RemoteInvocationRequest
     {
         public override bool ExpectResponse => true;
     }

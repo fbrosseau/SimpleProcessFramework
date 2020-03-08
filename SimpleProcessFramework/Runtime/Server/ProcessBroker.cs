@@ -85,7 +85,7 @@ namespace Spfx.Runtime.Server
 
             foreach (var p in processes)
             {
-                teardownTasks.Add(p.TeardownAsync(ct).AsTask());
+                teardownTasks.Add(p.TeardownAsync(ct));
             }
 
             await Task.WhenAll(teardownTasks);
@@ -113,7 +113,7 @@ namespace Spfx.Runtime.Server
             throw new ProcessNotFoundException(targetProcess);
         }
 
-        public async Task<ProcessCreationOutcome> CreateProcess(ProcessCreationRequest req)
+        public async Task<ProcessCreationResults> CreateProcess(ProcessCreationRequest req)
         {
             var info = req.ProcessInfo;
             m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}");
@@ -150,14 +150,14 @@ namespace Spfx.Runtime.Server
                     m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}: Already exists");
                     await existingHandle.WaitForInitializationComplete();
                     m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Process init complete");
-                    return ProcessCreationOutcome.AlreadyExists;
+                    return ProcessCreationResults.AlreadyExists;
                 }
 
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
                 await handle.CreateProcess();
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Creation complete. PID is {handle.ProcessInfo.OsPid}");
 
-                return ProcessCreationOutcome.CreatedNew;
+                return ProcessCreationResults.CreatedNew;
             }
             catch(Exception ex)
             {
@@ -184,8 +184,8 @@ namespace Spfx.Runtime.Server
             processReq.EnsureIsValid();
             endpointReq.EnsureIsValid();
 
-            var processOutcome = ProcessCreationOutcome.Failure;
-            ProcessCreationOutcome endpointOutcome;
+            var processOutcome = ProcessCreationResults.Failure;
+            ProcessCreationResults endpointOutcome;
 
             try
             {
@@ -200,7 +200,7 @@ namespace Spfx.Runtime.Server
             {
                 m_logger.Warn?.Trace(ex, $"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} failed: " + ex.Message);
 
-                if (processOutcome == ProcessCreationOutcome.CreatedNew)
+                if (processOutcome == ProcessCreationResults.CreatedNew)
                 {
                     await DestroyProcess(processReq.ProcessInfo.ProcessUniqueId, onlyIfEmpty: true);
                 }
@@ -264,14 +264,14 @@ namespace Spfx.Runtime.Server
             Guard.ArgumentNotNull(source, nameof(source));
             Guard.ArgumentNotNull(req, nameof(req));
 
-            if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.TargetProcess, ProcessCore.MasterProcessUniqueId))
+            if (ProcessEndpointAddress.StringComparer.Equals(req.Destination.ProcessId, ProcessCore.MasterProcessUniqueId))
             {
                 var sourceProxy = source.GetWrapperProxy();
                 m_masterProcess.ProcessIncomingMessage(sourceProxy, req);
             }
             else
             {
-                var target = GetSubprocess(req.Destination.TargetProcess, throwIfMissing: true);
+                var target = GetSubprocess(req.Destination.ProcessId, throwIfMissing: true);
                 target.HandleMessage(source.UniqueId, req);
             }
         }
@@ -284,7 +284,7 @@ namespace Spfx.Runtime.Server
             string targetProcess;
             if (wrappedMessage.IsRequest)
             {
-                targetProcess = wrappedMessage.Destination.TargetProcess;
+                targetProcess = wrappedMessage.Destination.ProcessId;
             }
             else
             {

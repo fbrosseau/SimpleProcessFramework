@@ -13,12 +13,9 @@ namespace Spfx.Runtime.Client
 {
     internal class TcpClientInterprocessConnection : StreamBasedClientInterprocessConnection
     {
-        protected EndPoint Destination { get; }
-
-        public TcpClientInterprocessConnection(EndPoint destination, ITypeResolver typeResolver)
-            : base(typeResolver)
+        public TcpClientInterprocessConnection(ProcessEndpointAddress destination, ITypeResolver typeResolver)
+            : base(destination, typeResolver)
         {
-            Destination = destination;
         }
 
         protected override async Task<ProcessEndpointDescriptor> GetRemoteEndpointMetadata(ProcessEndpointAddress destination, ReflectedTypeInfo type)
@@ -36,7 +33,7 @@ namespace Spfx.Runtime.Client
             var client = SocketUtilities.CreateSocket(SocketType.Stream, ProtocolType.Tcp);
             disposeBag.Add(client);
 
-            await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination, cb, s), client.EndConnect, null);
+            await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination.HostEndpoint, cb, s), client.EndConnect, null);
 
             var ns = disposeBag.Add(new NetworkStream(client));
 

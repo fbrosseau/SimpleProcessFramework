@@ -9,6 +9,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using System.Collections.Generic;
 
 namespace Spfx.Tests.Integration
 {
@@ -24,15 +27,16 @@ namespace Spfx.Tests.Integration
             m_options = options;
         }
 
-        public override void ClassSetUp()
+        public override async ValueTask ClassSetUp()
         {
-            base.ClassSetUp();
+            await base.ClassSetUp();
 
             try
             {
-                _ = NetcoreInfo.Default.InstalledVersions;
+                await NetcoreInfo.InitializeInstalledVersionsAsync();
+                // this is just to run those constructors first
                 if (NetcoreInfo.X86.IsSupported)
-                    _ = NetcoreInfo.X86.InstalledVersions;
+                    await NetcoreInfo.InitializeInstalledVersionsAsync(x86: true);
             }
             catch
             {
@@ -68,6 +72,14 @@ namespace Spfx.Tests.Integration
             cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler);
 
             return cluster;
+        }
+
+        protected TestInterfaceWrapper CreateSuccessfulSubprocess(Action<ProcessCreationInfo> requestCustomization = null, ClusterCustomizationDelegate customConfig = null)
+        {
+            var cluster = CreateTestCluster(customConfig);
+            var iface = CreateSuccessfulSubprocess(cluster, requestCustomization);
+            iface.AddExtraDisposable(cluster);
+            return iface;
         }
 
         protected TestInterfaceWrapper CreateSuccessfulSubprocess(ProcessCluster cluster, Action<ProcessCreationInfo> requestCustomization = null)
@@ -221,14 +233,41 @@ namespace Spfx.Tests.Integration
 
             var proxy = CreateProxy(cluster);
 
-            var endpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, processEndpointAddress.TargetProcess, WellKnownEndpoints.EndpointBroker);
+            var endpointBroker = CreateProxyInterface<IEndpointBroker>(proxy, cluster, processEndpointAddress.ProcessId, WellKnownEndpoints.EndpointBroker);
             Unwrap(endpointBroker.CreateEndpoint(testEndpoint, typeof(ITestInterface), typeof(TestInterface)));
             Log("Create Endpoint " + testEndpoint);
 
-            var testInterface = CreateProxyInterface<ITestInterface>(proxy, cluster, processEndpointAddress.TargetProcess, testEndpoint);
+            var testInterface = CreateProxyInterface<ITestInterface>(proxy, cluster, processEndpointAddress.ProcessId, testEndpoint);
             var res = Unwrap(testInterface.GetDummyValue());
             TestReturnValue.Verify(res);
             Log("Validated Endpoint " + testEndpoint);
+
+            string testArg = Guid.NewGuid().ToString();
+            var receivedArg = new TaskCompletionSource<string>();
+
+            EventHandler<TestEventArgs> h = (sender, e) =>
+            {
+                try
+                {
+                    receivedArg.TrySetResult(e.Arg as string);
+                }
+                catch (Exception ex)
+                {
+                    receivedArg.TrySetException(ex);
+                }
+            };
+
+            try
+            {
+                Unwrap(ProcessProxy.SubscribeEventsAsync(() => testInterface.TestEvent += h));
+                Unwrap(testInterface.RaiseEvent(testArg));
+                Unwrap(receivedArg.Task);
+                receivedArg.Task.Result.Should().Be(testArg);
+            }
+            finally
+            {
+                testInterface.TestEvent -= h;
+            }
 
             return testInterface;
         }
@@ -281,7 +320,7 @@ namespace Spfx.Tests.Integration
                         ep = new IPEndPoint(IPAddress.IPv6Loopback, ep.Port);
                 }
 
-                var addr = new ProcessEndpointAddress(ep.ToString(), processId, endpointId);
+                var addr = ProcessEndpointAddress.Create(ep.ToString(), processId, endpointId);
                 return proxy.CreateInterface<T>(addr);
             }
         }
@@ -292,7 +331,11 @@ namespace Spfx.Tests.Integration
             var proc = testInterface.ProcessInfo;
             var pid = proc.Id;
 
-            var processName = ProcessProxy.GetEndpointAddress(svc).TargetProcess;
+            var addr = ProcessProxy.GetEndpointAddress(svc);
+            var processName = addr.ProcessId;
+
+            Log("Invoking DestroyEndpoint for " + addr.EndpointId);
+            Unwrap(testInterface.Cluster.PrimaryProxy.DestroyEndpoint(addr));
 
             Log("Invoking DestroyProcess for " + processName);
             Unwrap(testInterface.Cluster.ProcessBroker.DestroyProcess(processName));
@@ -311,6 +354,8 @@ namespace Spfx.Tests.Integration
             public ProcessCluster Cluster { get; }
             public string PhysicalProcessName { get; }
             public bool CanWaitForExit { get; }
+            private readonly List<IDisposable> m_objectsToDisposeLast = new List<IDisposable>();
+            private readonly List<IDisposable> m_objectsToDisposeFirst = new List<IDisposable>();
 
             public TestInterfaceWrapper(ProcessCluster cluster, Process processObject, ITestInterface iface)
             {
@@ -337,7 +382,20 @@ namespace Spfx.Tests.Integration
 
             public void Dispose()
             {
+                foreach(var f in m_objectsToDisposeFirst)
+                {
+                    f.Dispose();
+                }
                 DisposeTestProcess(this);
+                foreach(var l in m_objectsToDisposeLast)
+                {
+                    l.Dispose();
+                }
+            }
+
+            internal void AddExtraDisposable(IDisposable disposable, bool processLast = true)
+            {
+                (processLast ? m_objectsToDisposeLast : m_objectsToDisposeFirst).Add(disposable);
             }
         }
     }

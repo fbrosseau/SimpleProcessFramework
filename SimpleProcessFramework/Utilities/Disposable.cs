@@ -6,12 +6,13 @@ namespace Spfx.Utilities
     {
         public bool HasDisposeStarted { get; private set; }
         public bool IsDisposed { get; private set; }
+        public virtual bool HasTeardownStarted => HasDisposeStarted;
 
-        protected readonly object m_disposeLock;
+        protected object DisposeLock { get; }
 
-        protected Disposable(object disposeLockObject = null)
+        protected Disposable(object disposeLockObject = null, bool useThisAsLock = true)
         {
-            m_disposeLock = disposeLockObject ?? new object();
+            DisposeLock = disposeLockObject ?? (useThisAsLock ? this : new object());
         }
 
         public void Dispose()
@@ -19,7 +20,7 @@ namespace Spfx.Utilities
             if (HasDisposeStarted)
                 return;
 
-            lock (m_disposeLock)
+            lock (DisposeLock)
             {
                 if (HasDisposeStarted)
                     return;
@@ -38,7 +39,7 @@ namespace Spfx.Utilities
 
         protected void ThrowIfDisposed()
         {
-            lock (m_disposeLock)
+            lock (DisposeLock)
             {
                 if (IsDisposed)
                     throw new ObjectDisposedException(GetType().FullName);
@@ -47,7 +48,7 @@ namespace Spfx.Utilities
 
         protected virtual void ThrowIfDisposing()
         {
-            lock (m_disposeLock)
+            lock (DisposeLock)
             {
                 if (HasDisposeStarted)
                     throw new ObjectDisposedException(GetType().FullName);

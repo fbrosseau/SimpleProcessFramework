@@ -6,7 +6,7 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>692</MinorVersion>
+    <MinorVersion>713</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>

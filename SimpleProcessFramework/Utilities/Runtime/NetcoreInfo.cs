@@ -1,11 +1,14 @@
 ﻿using Spfx.Interfaces;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Utilities.Runtime
 {
@@ -29,9 +32,9 @@ namespace Spfx.Utilities.Runtime
         public static NetcoreInfo X86 { get; } = new NetcoreInfo(() => GetDefaultDotNetExePath(false));
         public static NetcoreInfo Wsl => WslUtilities.NetcoreHelper;
 
-        private readonly Lazy<string[]> m_installedNetcoreRuntimes;
+        private readonly AsyncLazy<string[]> m_installedNetcoreRuntimes;
         private readonly Lazy<string> m_dotnetExePath;
-        private readonly Lazy<string> m_dotnetExeVersion;
+        private readonly AsyncLazy<string> m_dotnetExeVersion;
         private readonly Lazy<bool> m_isInstalled;
 
         protected NetcoreInfo(Func<string> dotnetPath)
@@ -41,13 +44,15 @@ namespace Spfx.Utilities.Runtime
 
             m_dotnetExePath = Lazy(dotnetPath);
             m_isInstalled = Lazy(CheckIsSupported);
-            m_dotnetExeVersion = Lazy(() => RunDotNetExe(WellKnownArguments.VersionCommand));
-            m_installedNetcoreRuntimes = Lazy(GetInstalledNetcoreRuntimesInternal);
+            m_dotnetExeVersion = AsyncLazy.Create(() => RunDotNetExeAsync(WellKnownArguments.VersionCommand));
+            m_installedNetcoreRuntimes = AsyncLazy.Create(GetInstalledNetcoreRuntimesInternal);
         }
 
         public string NetCoreHostPath => m_dotnetExePath.Value;
-        public IReadOnlyList<string> InstalledVersions => m_installedNetcoreRuntimes.Value;
-        public string DotNetExeVersion => m_dotnetExeVersion.Value;
+        public IReadOnlyList<string> InstalledVersions => m_installedNetcoreRuntimes.SynchronousResult;
+        public Task<string[]> GetInstalledVersionsAsync() => m_installedNetcoreRuntimes.ResultTask;
+        public string DotNetExeVersion => m_dotnetExeVersion.SynchronousResult;
+        public Task<string> GetDotNetExeVersionAsync => m_dotnetExeVersion.ResultTask;
         public bool IsSupported => m_isInstalled.Value;
         public string NotSupportedReason { get; private set; }
 
@@ -63,20 +68,20 @@ namespace Spfx.Utilities.Runtime
             return CurrentProcessNetcoreVersion.Major >= major && CurrentProcessNetcoreVersion.Minor >= minor;
         }
 
-        private string[] GetInstalledNetcoreRuntimesInternal()
+        private async Task<string[]> GetInstalledNetcoreRuntimesInternal()
         {
-            var versions = RunDotNetExe(WellKnownArguments.ListRuntimesCommand);
+            var versions = await RunDotNetExeAsync(WellKnownArguments.ListRuntimesCommand).ConfigureAwait(false);
             return ParseNetcoreRuntimes(versions);
         }
 
-        internal static string RunDotNetExe(bool anyCpu, string command)
+        internal static Task<string> RunDotNetExeAsync(bool anyCpu, string command)
         {
-            return GetHelper(anyCpu).RunDotNetExe(command);
+            return GetHelper(anyCpu).RunDotNetExeAsync(command);
         }
 
-        internal virtual string RunDotNetExe(string command)
+        internal virtual Task<string> RunDotNetExeAsync(string command)
         {
-            return ProcessUtilities.ExecAndGetConsoleOutput(NetCoreHostPath, command, TimeSpan.FromSeconds(30)).Result;
+            return ProcessUtilities.ExecAndGetConsoleOutput(NetCoreHostPath, command, TimeSpan.FromSeconds(30));
         }
 
         internal static string[] ParseNetcoreRuntimes(string listRuntimesProgramOutput)
@@ -228,6 +233,11 @@ namespace Spfx.Utilities.Runtime
         {
             var version = ParseRuntimeVersionNumber(runtime);
             return $"netcoreapp{version.Major}.{version.Minor}";
+        }
+
+        public static Task InitializeInstalledVersionsAsync(bool x86 = false)
+        {
+            return (x86 ? X86 : Default).GetInstalledVersionsAsync();
         }
     }
 }

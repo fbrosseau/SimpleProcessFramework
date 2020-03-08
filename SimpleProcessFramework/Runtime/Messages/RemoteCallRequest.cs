@@ -5,9 +5,20 @@ using System.Runtime.Serialization;
 
 namespace Spfx.Runtime.Messages
 {
-    [DataContract]
-    public sealed class RemoteCallRequest : RemoteInvocationRequest
+    internal interface IRemoteCallRequest
     {
+        int MethodId { get; set; }
+        string MethodName { get; }
+
+        int ArgsCount { get; }
+        T GetArg<T>(int index);
+    }
+
+    [DataContract]
+    public sealed class RemoteCallRequest : RemoteInvocationRequest, IRemoteCallRequest
+    {
+        public override bool ExpectResponse => true;
+
         [DataMember]
         public int MethodId { get; set; }
 
@@ -17,17 +28,23 @@ namespace Spfx.Runtime.Messages
         [DataMember]
         public object[] Arguments { get; set; }
 
-        public object[] GetArgsOrEmpty() => Arguments ?? Array.Empty<object>();
-        public override bool ExpectResponse => true;
+        public T GetArg<T>(int index)
+        {
+            return (T)Arguments[index];
+        }
+
+        public int ArgsCount => Arguments?.Length ?? 0;
 
         public override string GetTinySummaryString() 
             => nameof(RemoteCallRequest) + ":" + MethodName + "(#" + CallId + ")";
 
         internal static class Reflection
         {
-            public static MethodInfo GetArgsOrEmptyMethod => typeof(RemoteCallRequest).FindUniqueMethod(nameof(GetArgsOrEmpty));
-            public static MethodInfo Get_MethodIdMethod => typeof(RemoteCallRequest)
+            public static MethodInfo Get_MethodIdMethod => typeof(IRemoteCallRequest)
                 .GetProperty(nameof(MethodId)).GetGetMethod();
+            public static MethodInfo GetArgMethod(Type resultType) => typeof(IRemoteCallRequest)
+                .GetMethod(nameof(GetArg))
+                .MakeGenericMethod(resultType);
         }
     }
 }

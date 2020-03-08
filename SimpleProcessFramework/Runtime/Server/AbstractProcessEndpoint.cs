@@ -1,28 +1,76 @@
 ﻿using Spfx.Utilities.Threading;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server
 {
     public interface IProcessEndpoint : IAsyncDestroyable
     {
-        Task InitializeAsync(IProcess parentProcess);
+        ProcessEndpointAddress EndpointAddress { get; }
+        Task InitializeAsync(IProcess parentProcess, ProcessEndpointAddress endpointAddress);
 
         bool FilterMessage(IInterprocessRequestContext request);
     }
 
     public class AbstractProcessEndpoint : AsyncDestroyable, IProcessEndpoint
     {
-        public IProcess ParentProcess { get; private set; }
+        protected IProcess ParentProcess { get; private set; }
+        protected ProcessEndpointAddress EndpointAddress { get; private set; }
 
-        Task IProcessEndpoint.InitializeAsync(IProcess parentProcess)
+        ProcessEndpointAddress IProcessEndpoint.EndpointAddress => EndpointAddress;
+
+        private CancellationTokenSource m_disposeTokenSource;
+
+        protected CancellationToken GetDisposeToken()
         {
-            ParentProcess = parentProcess;
-            return InitializeAsync();
+            if (m_disposeTokenSource != null)
+                return m_disposeTokenSource.Token;
+
+            if (HasTeardownStarted)
+                return new CancellationToken(true);
+
+            var cts = new CancellationTokenSource();
+            lock (DisposeLock)
+            {
+                if (HasTeardownStarted)
+                    return new CancellationToken(true);
+
+                if (null != Interlocked.CompareExchange(ref m_disposeTokenSource, cts, null))
+                    cts.Dispose();
+            }
+
+            return m_disposeTokenSource.Token;
         }
 
-        protected virtual Task InitializeAsync()
+        protected override void OnDispose()
         {
-            return Task.CompletedTask;
+            SignalDispose();
+            m_disposeTokenSource?.Dispose();
+            base.OnDispose();
+        }
+
+        protected override ValueTask OnTeardownAsync(CancellationToken ct = default)
+        {
+            SignalDispose();
+            return base.OnTeardownAsync(ct);
+        }
+
+        private void SignalDispose()
+        {
+            m_disposeTokenSource?.SafeCancelAsync();
+        }
+
+        Task IProcessEndpoint.InitializeAsync(IProcess parentProcess, ProcessEndpointAddress endpointAddress)
+        {
+            ParentProcess = parentProcess;
+            EndpointAddress = endpointAddress;
+            return InitializeAsync().AsTask();
+        }
+
+        protected virtual ValueTask InitializeAsync()
+        {
+            return default;
         }
 
         protected virtual bool FilterMessage(IInterprocessRequestContext request) => true;

@@ -16,7 +16,7 @@ namespace Spfx.Runtime.Server
     {
         private static class FactoryStorage<T>
         {
-            internal static readonly Func<object, ProcessEndpointHandler> Func;
+            internal static readonly ProcessEndpointHandlerFactoryDelegate Func;
 
             static FactoryStorage()
             {
@@ -24,20 +24,18 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public static IProcessEndpointHandler Create<T>(T realTarget)
+        public static IProcessEndpointHandler Create<T>(IProcess parentProcess, string endpointId, T realTarget)
         {
             Guard.ArgumentNotNull(realTarget, nameof(realTarget));
-
-            var handler = FactoryStorage<T>.Func(realTarget);
-            return handler;
+            return FactoryStorage<T>.Func(parentProcess, endpointId, realTarget);
         }
 
-        public static IProcessEndpointHandler Create(object handler, Type interfaceType)
+        public static IProcessEndpointHandler Create(IProcess parentProcess, string endpointId, object handler, Type interfaceType)
         {
             try
             {
                 var createMethod = typeof(ProcessEndpointHandlerFactory).GetMethods(BindingFlags.Public | BindingFlags.Static).First(m => m.Name == "Create" && m.IsGenericMethod);
-                return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { handler });
+                return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { parentProcess, endpointId, handler });
             }
             catch(Exception ex)
             {
@@ -47,8 +45,10 @@ namespace Spfx.Runtime.Server
                 throw new CodeGenerationFailedException("ProcessEndpointHandlerFactory.Create failed for " + interfaceType.AssemblyQualifiedName, ex);
             }
         }
+
+        private delegate ProcessEndpointHandler ProcessEndpointHandlerFactoryDelegate(IProcess parentProcess, string endpointId, object target);
         
-        private static Func<object, ProcessEndpointHandler> CreateFactory(Type type)
+        private static ProcessEndpointHandlerFactoryDelegate CreateFactory(Type type)
         {
             Guard.ArgumentNotNull(type, nameof(type));
 
@@ -61,20 +61,24 @@ namespace Spfx.Runtime.Server
                 TypeAttributes.Public,
                 typeof(ProcessEndpointHandler));
 
+            var ctorArgs = new[] { typeof(IProcess), typeof(string), typeof(object) };
+
             var factoryName = "Type Factory";
             var factoryMethodBuilder = typeBuilder.DefineMethod(factoryName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 CallingConventions.Standard,
                 typeof(ProcessEndpointHandler),
-                new[] { typeof(object) });
+                ctorArgs);
 
             var ctor = typeBuilder.DefineConstructor(
                 MethodAttributes.Public,
                 CallingConventions.Standard,
-                new[] { typeof(object) });
+                ctorArgs);
 
             var ilgen = factoryMethodBuilder.GetILGenerator();
             ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Ldarg_2);
             ilgen.Emit(OpCodes.Newobj, ctor);
             ilgen.Emit(OpCodes.Ret);
 
@@ -90,14 +94,16 @@ namespace Spfx.Runtime.Server
             ilgen = ctor.GetILGenerator();
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Ldarg_2);
+            ilgen.Emit(OpCodes.Ldarg_3);
             ilgen.Emit(OpCodes.Ldsfld, endpointMetadataField);
             ilgen.Emit(OpCodes.Call, ProcessEndpointHandler.Reflection.Constructor);
             ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Ldarg_3);
             ilgen.Emit(OpCodes.Castclass, type);
             ilgen.Emit(OpCodes.Stfld, realImplField);
 
-            string GetFieldNameForEvent(EventInfo evt)
+            static string GetFieldNameForEvent(EventInfo evt)
             {
                 return "EventInfo__" + evt.Name;
             }
@@ -138,20 +144,15 @@ namespace Spfx.Runtime.Server
 
             ilgen = doRemoteCallImplMethod.GetILGenerator();
 
-            var rawArgsArrayLocal = ilgen.DeclareLocal(typeof(object[]));
-
             var ldarg_this = OpCodes.Ldarg_0;
             var ldarg_callContext = OpCodes.Ldarg_1;
 
-            var callRequestLocal = ilgen.DeclareLocal(typeof(RemoteCallRequest));
+            var callRequestLocal = ilgen.DeclareLocal(typeof(IRemoteCallRequest));
 
             ilgen.Emit(ldarg_callContext);
             ilgen.EmitCall(OpCodes.Callvirt, InterprocessRequestContext.Reflection.Get_RequestMethod, null);
             ilgen.Emit(OpCodes.Castclass, typeof(RemoteCallRequest));
             ilgen.Emit(OpCodes.Stloc, callRequestLocal);
-            ilgen.Emit(OpCodes.Ldloc, callRequestLocal);
-            ilgen.EmitCall(OpCodes.Callvirt, RemoteCallRequest.Reflection.GetArgsOrEmptyMethod, null);
-            ilgen.Emit(OpCodes.Stloc, rawArgsArrayLocal);
 
             var jumpLabels = new List<Label>();
 
@@ -195,18 +196,9 @@ namespace Spfx.Runtime.Server
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Ldloc, rawArgsArrayLocal);
+                        ilgen.Emit(OpCodes.Ldloc, callRequestLocal);
                         ilgen.Emit(OpCodes.Ldc_I4, argI);
-                        ilgen.Emit(OpCodes.Ldelem, typeof(object));
-
-                        if (argInfo.ParameterType.IsValueType)
-                        {
-                            ilgen.Emit(OpCodes.Unbox_Any, argInfo.ParameterType);
-                        }
-                        else
-                        {
-                            ilgen.Emit(OpCodes.Castclass, argInfo.ParameterType);
-                        }
+                        ilgen.Emit(OpCodes.Callvirt, RemoteCallRequest.Reflection.GetArgMethod(argInfo.ParameterType));
                     }
                 }
 
@@ -234,7 +226,7 @@ namespace Spfx.Runtime.Server
                     {
                         handlerMethod = InterprocessRequestContext.Reflection.GetCompleteWithTaskOfTMethod(retType.GetGenericArguments()[0]);
                     }
-                    else if (baseGeneric == typeof(Task<>))
+                    else if (baseGeneric == typeof(ValueTask<>))
                     {
                         handlerMethod = InterprocessRequestContext.Reflection.GetCompleteWithValueTaskOfTMethod(retType.GetGenericArguments()[0]);
                     }
@@ -266,7 +258,7 @@ namespace Spfx.Runtime.Server
                 staticField.SetValue(null, new ReflectedEventInfo(evt));
             }
 
-            return (Func<object, ProcessEndpointHandler>)Delegate.CreateDelegate(typeof(Func<object, ProcessEndpointHandler>), factoryMethod);
+            return (ProcessEndpointHandlerFactoryDelegate)Delegate.CreateDelegate(typeof(ProcessEndpointHandlerFactoryDelegate), factoryMethod);
         }
     }
 }

@@ -9,9 +9,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Spfx.Utilities.Runtime;
+using Spfx.Tests.Integration;
+using System.Runtime.Serialization;
 
-namespace Spfx.Tests.Integration
+namespace Spfx.Tests
 {
+    [DataContract]
+    public class TestEventArgs : EventArgs
+    {
+        [DataMember]
+        public object Arg { get; set; }
+    }
+
     public interface ITestInterface
     {
         Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow = default, TimeSpan delay = default, CancellationToken ct = default, string exceptionText = null);
@@ -27,13 +36,19 @@ namespace Spfx.Tests.Integration
         Task<int> GetProcessId();
         Task<bool> IsWsl();
         Task ValidateCustomProcessEntryPoint();
+        Task RaiseEvent(object arg);
+        Task<ProcessEndpointAddress> GetOwnAddress();
+
+        Task<bool> IsSubscribedToEvent();
+        event EventHandler<TestEventArgs> TestEvent;
     }
 
     internal class TestInterface : AbstractProcessEndpoint, ITestInterface
     {
         public ILogger Logger { get; private set; }
+        public event EventHandler<TestEventArgs> TestEvent;
 
-        protected override Task InitializeAsync()
+        protected override ValueTask InitializeAsync()
         {
             Logger = ParentProcess.DefaultTypeResolver.GetLogger(GetType(), true);
             Logger.Info?.Trace("InitializeAsync");
@@ -108,6 +123,14 @@ namespace Spfx.Tests.Integration
             }
         }
 
+        public Task RaiseEvent(object arg)
+        {
+            TestEvent?.Invoke(this, new TestEventArgs { Arg = arg });
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> IsSubscribedToEvent() => Task.FromResult(TestEvent != null);
+
         public static readonly string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -115,6 +138,8 @@ namespace Spfx.Tests.Integration
         {
             throw (Exception)Activator.CreateInstance(exceptionToThrow.ResolvedType, exceptionText ?? "<no exception text>");
         }
+
+        public Task<ProcessEndpointAddress> GetOwnAddress() => Task.FromResult(EndpointAddress);
 
         public Task<string> GetEnvironmentVariable(string key) => Task.FromResult(Environment.GetEnvironmentVariable(key));
         public Task<OsKind> GetOsKind() => Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);

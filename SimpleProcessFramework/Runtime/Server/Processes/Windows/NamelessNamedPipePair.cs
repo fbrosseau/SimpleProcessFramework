@@ -56,7 +56,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 var serverConnect = serverStream.WaitForConnectionAsync(ct);
                 var clientConnect = CreateClientHandle();
 
-                var combinedConnect = TaskEx.WhenAllOrRethrow(serverConnect, clientConnect);
+                var combinedConnect = TaskEx.WhenAllOrRethrow(serverConnect, clientConnect).AsTask();
 
                 if (!await combinedConnect.WaitAsync(TimeSpan.FromSeconds(10)))
                     throw new TimeoutException("Loopback connection should have been instantaneous!");

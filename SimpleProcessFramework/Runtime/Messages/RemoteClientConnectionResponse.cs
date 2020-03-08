@@ -3,7 +3,7 @@
 namespace Spfx.Runtime.Messages
 {
     [DataContract]
-    public class RemoteClientConnectionResponse
+    public sealed class RemoteClientConnectionResponse
     {
         [DataMember]
         public bool Success { get; set; }

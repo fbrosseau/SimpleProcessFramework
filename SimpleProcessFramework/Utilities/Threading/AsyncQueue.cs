@@ -186,7 +186,7 @@ namespace Spfx.Utilities.Threading
                 if (IsAddingCompleted)
                 {
                     m_isInIteratorCallback = false;
-                    m_iteratorCompletionTask.TrySetResult(VoidType.Value);
+                    m_iteratorCompletionTask.TryComplete();
                 }
                 else if (m_queue.Count > 0)
                 {
@@ -298,7 +298,7 @@ namespace Spfx.Utilities.Threading
 
                 if (m_isIteratorMode && !m_isInIteratorCallback)
                 {
-                    m_iteratorCompletionTask.TrySetResult(VoidType.Value);
+                    m_iteratorCompletionTask.TryComplete();
                 }
             }
 
@@ -339,7 +339,7 @@ namespace Spfx.Utilities.Threading
                     }
                     else
                     {
-                        m_iteratorCompletionTask.TrySetResult(VoidType.Value);
+                        m_iteratorCompletionTask.TryComplete();
                     }
                 }
             }

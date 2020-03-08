@@ -59,58 +59,67 @@ namespace Spfx.Utilities.Threading
 
         public static void CompleteWith<T>(this TaskCompletionSource<T> tcs, Task task)
         {
-            task.ContinueWith((innerTask, s) =>
-            {
-                var innerTcs = (TaskCompletionSource<T>)s;
-                if (innerTask.IsCompletedSuccessfully())
-                {
-                    if (typeof(T) == typeof(VoidType))
-                    {
-                        innerTcs.TrySetResult((T)VoidType.BoxedValue);
-                    }
-                    else
-                    {
-                        innerTcs.TrySetResult(((Task<T>)task).Result);
-                    }
-                }
-                else if (innerTask.Status == TaskStatus.Canceled)
-                {
-                    innerTcs.TrySetCanceled();
-                }
-                else if (innerTask.Status == TaskStatus.Faulted)
-                {
-                    innerTcs.TrySetException(innerTask.Exception);
-                }
-            }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            CompleteWith<T, T>(tcs, task);
         }
 
-        public static void CompleteWithResultAsObject<T>(this TaskCompletionSource<object> tcs, Task task)
+        public static void CompleteWith<T>(this TaskCompletionSource<object> tcs, Task task)
         {
-            Guard.ArgumentNotNull(task, nameof(task));
+            CompleteWith<T, object>(tcs, task);
+        }
 
-            task.ContinueWith((innerTask, s) =>
+        public static void CompleteWith<TTaskResult, TTcs>(TaskCompletionSource<TTcs> tcs, Task task)
+        {
+            if (task.IsCompleted)
             {
-                var innerTcs = (TaskCompletionSource<object>)s;
-                if (innerTask.IsCompletedSuccessfully())
+                CompleteWithTaskResult<TTaskResult, TTcs>(tcs, task);
+            }
+            else
+            {
+                task.ContinueWith((innerTask, s) =>
                 {
-                    if (typeof(T) == typeof(VoidType))
-                    {
-                        innerTcs.TrySetResult(null);
-                    }
-                    else
-                    {
-                        innerTcs.TrySetResult(BoxHelper.Box(((Task<T>)innerTask).Result));
-                    }
-                }
-                else if (innerTask.Status == TaskStatus.Canceled)
+                    var innerTcs = (TaskCompletionSource<TTcs>)s;
+                    CompleteWithTaskResult<TTaskResult, TTcs>(innerTcs, innerTask);
+                }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
+        }
+
+        public static void CompleteWithTaskResult<T>(TaskCompletionSource<T> tcs, Task innerTask)
+        {
+            CompleteWithTaskResult<T, T>(tcs, innerTask);
+        }
+
+        public static void CompleteWithTaskResult<TTaskResult, TTcs>(TaskCompletionSource<TTcs> tcs, Task task)
+        {
+            if (!task.IsCompleted)
+                throw new InvalidOperationException("The task must be completed first");
+
+            if (task.IsCompletedSuccessfully())
+            {
+                if (typeof(TTaskResult) == typeof(VoidType) || task is Task<VoidType>)
                 {
-                    innerTcs.TrySetCanceled();
+                    tcs.TrySetResult(default);
                 }
-                else if (innerTask.Status == TaskStatus.Faulted)
+                else if (tcs is TaskCompletionSource<object> objectTcs)
                 {
-                    innerTcs.TrySetException(innerTask.Exception);
+                    objectTcs.TrySetResult(BoxHelper.Box(((Task<TTaskResult>)task).Result));
                 }
-            }, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                else if (default(TTcs) != null)
+                {
+                    tcs.TrySetResult(((Task<TTcs>)task).Result);
+                }
+                else
+                {
+                    tcs.TrySetResult((TTcs)(object)((Task<TTaskResult>)task).Result);
+                }
+            }
+            else if (task.Status == TaskStatus.Canceled)
+            {
+                tcs.TrySetCanceled();
+            }
+            else if (task.Status == TaskStatus.Faulted)
+            {
+                tcs.TrySetException(task.Exception);
+            }
         }
 
         internal static Task<TOut> ContinueWithCast<TIn, TOut>(Task<TIn> t)
@@ -125,16 +134,25 @@ namespace Spfx.Utilities.Threading
 
             return t.ContinueWith(innerT =>
             {
-                return (TOut)(object)innerT.Result;
+                return (TOut)(object)innerT.GetResultOrRethrow();
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         internal static async ValueTask ExpectFirstTask(Task taskExpectedToComplete, Task taskNotExpectedToWin)
         {
-            var winner = await Task.WhenAny(taskExpectedToComplete, taskNotExpectedToWin).ConfigureAwait(false);
-            await winner.ConfigureAwait(false);
-            if (ReferenceEquals(winner, taskExpectedToComplete))
+            if (taskExpectedToComplete.IsCompleted)
+            {
+                taskExpectedToComplete.WaitOrRethrow();
                 return;
+            }
+
+            if (!taskNotExpectedToWin.IsCompleted)
+            {
+                var winner = await Task.WhenAny(taskExpectedToComplete, taskNotExpectedToWin).ConfigureAwait(false);
+                winner.WaitOrRethrow();
+                if (ReferenceEquals(winner, taskExpectedToComplete))
+                    return;
+            }
 
             throw new TaskCanceledException("The expected task did not complete first");
         }
@@ -369,6 +387,18 @@ namespace Spfx.Utilities.Threading
                 throw new InvalidOperationException("This task was supposed to be already completed");
         }
 
+        public static void ExpectAlreadyCompleted(this ValueTask t)
+        {
+            if (!t.IsCompleted)
+                throw new InvalidOperationException("This task was supposed to be already completed");
+        }
+
+        public static void ExpectAlreadyCompleted<T>(this ValueTask<T> t)
+        {
+            if (!t.IsCompleted)
+                throw new InvalidOperationException("This task was supposed to be already completed");
+        }
+
         public static Exception ExtractException(this Task t)
         {
             Exception ex = t.Exception;
@@ -387,27 +417,27 @@ namespace Spfx.Utilities.Threading
             return t.AsTask().ExtractException();
         }
 
-        public static Task WhenAllOrRethrow(Task t1) => t1;
-        public static Task WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrowInternal(new List<Task> { t1, t2 });
-        public static Task WhenAllOrRethrow(Task t1, Task t2, Task t3) => WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
-        public static Task WhenAllOrRethrow(IEnumerable<Task> tasks) => WhenAllOrRethrowInternal(tasks.ToList());
+        public static ValueTask WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrowInternal(new List<Task> { t1, t2 });
+        public static ValueTask WhenAllOrRethrow(Task t1, Task t2, Task t3) => WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
+        public static ValueTask WhenAllOrRethrow(IEnumerable<Task> tasks) => WhenAllOrRethrowInternal(tasks.ToList());
+        public static ValueTask WhenAllOrRethrow(IReadOnlyCollection<Task> tasks) => tasks.Count == 0 ? default : WhenAllOrRethrowInternal(tasks.ToList());
+        public static ValueTask WhenAllOrRethrow(params Task[] tasks) => WhenAllOrRethrow((IReadOnlyCollection<Task>)tasks);
 
-        private static async Task WhenAllOrRethrowInternal(List<Task> remaining)
+        public static bool TryComplete(this TaskCompletionSource<VoidType> tcs)
+        {
+            return tcs.TrySetResult(default);
+        }
+
+        private static async ValueTask WhenAllOrRethrowInternal(List<Task> remaining)
         {
             while (remaining.Count > 0)
             {
-                if (remaining.Count == 1)
-                {
-                    await remaining[0];
-                    return;
-                }
-
                 for (int i = remaining.Count - 1; i >= 0; --i)
                 {
                     if (!remaining[i].IsCompleted)
                         continue;
 
-                    remaining[i].Wait();
+                    remaining[i].WaitOrRethrow();
                     if (remaining.Count == 1)
                         return;
                     remaining.RemoveAt(i);
@@ -415,7 +445,7 @@ namespace Spfx.Utilities.Threading
 
                 if (remaining.Count == 1)
                 {
-                    await remaining[0];
+                    await remaining[0].ConfigureAwait(false);
                     return;
                 }
 
@@ -428,9 +458,12 @@ namespace Spfx.Utilities.Threading
             if (t.IsCompletedSuccessfully())
                 return TaskCache.VoidTypeTask;
 
-            return t.ContinueWith(t =>
+            if (t is Task<VoidType> vt)
+                return vt;
+
+            return t.ContinueWith(innerT =>
             {
-                t.WaitOrRethrow();
+                innerT.WaitOrRethrow();
                 return VoidType.Value;
             }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
         }

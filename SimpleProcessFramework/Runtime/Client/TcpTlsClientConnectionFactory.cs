@@ -11,7 +11,7 @@ namespace Spfx.Runtime.Client
 
         protected override IClientInterprocessConnection CreateNewConnection(ProcessEndpointAddress destination)
         {
-            return new TcpTlsClientInterprocessConnection(destination.HostEndpoint, TypeResolver);
+            return new TcpTlsClientInterprocessConnection(destination, TypeResolver);
         }
     }
 }

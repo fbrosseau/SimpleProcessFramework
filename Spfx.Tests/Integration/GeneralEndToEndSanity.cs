@@ -47,8 +47,7 @@ namespace Spfx.Tests.Integration
             var envVar = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
             var envValue = "CustomEnvVar_" + Guid.NewGuid().ToString("N");
 
-            using var cluster = CreateTestCluster();
-            using var iface = CreateSuccessfulSubprocess(cluster, procInfo =>
+            using var iface = CreateSuccessfulSubprocess(procInfo =>
             {
                 procInfo.TargetFramework = fw;
                 procInfo.ExtraEnvironmentVariables = new[] { new StringKeyValuePair(envVar, envValue) };
@@ -75,7 +74,7 @@ namespace Spfx.Tests.Integration
             {
                 var test2 = CreateSuccessfulSubprocess(cluster, proc => proc.TargetFramework = TargetFramework.Create(processKind));
                 testServices.Add(test2);
-                targetProcess = ProcessProxy.GetEndpointAddress(test2.TestInterface).TargetProcess;
+                targetProcess = ProcessProxy.GetEndpointAddress(test2.TestInterface).ProcessId;
             }
 
             var proxy = CreateProxy(cluster);

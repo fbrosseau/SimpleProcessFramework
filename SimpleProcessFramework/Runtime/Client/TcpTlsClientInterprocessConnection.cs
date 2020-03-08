@@ -9,7 +9,7 @@ namespace Spfx.Runtime.Client
 {
     internal class TcpTlsClientInterprocessConnection : TcpClientInterprocessConnection
     {
-        public TcpTlsClientInterprocessConnection(EndPoint destination, ITypeResolver typeResolver)
+        public TcpTlsClientInterprocessConnection(ProcessEndpointAddress destination, ITypeResolver typeResolver)
             : base(destination, typeResolver)
         {
         }

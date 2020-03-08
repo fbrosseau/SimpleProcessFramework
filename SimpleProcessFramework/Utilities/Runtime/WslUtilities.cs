@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Spfx.Utilities.Threading;
+using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Spfx.Utilities.Runtime
 {
@@ -33,7 +35,8 @@ namespace Spfx.Utilities.Runtime
         {
             bool isDir = fullName.EndsWith("\\");
 
-            var output = ExecuteWslExe($"{WellKnownUtilities.WslPathUtility} {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}");
+            var output = ExecuteWslExeAsync($"{WellKnownUtilities.WslPathUtility} {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}")
+                .GetResultOrRethrow();
 
             output = output.Trim(' ', '\r', '\t', '\n');
 
@@ -43,9 +46,9 @@ namespace Spfx.Utilities.Runtime
             return output;
         }
 
-        private static string ExecuteWslExe(string linuxCommand)
+        private static Task<string> ExecuteWslExeAsync(string linuxCommand)
         {
-            return ProcessUtilities.ExecAndGetConsoleOutput(WslExeFullPath, linuxCommand, TimeSpan.FromSeconds(30)).Result;
+            return ProcessUtilities.ExecAndGetConsoleOutput(WslExeFullPath, linuxCommand, TimeSpan.FromSeconds(30));
         }
 
         private class WslNetcoreInfo : NetcoreInfo
@@ -106,9 +109,9 @@ namespace Spfx.Utilities.Runtime
                 }
             }
 
-            internal override string RunDotNetExe(string command)
+            internal override Task<string> RunDotNetExeAsync(string command)
             {
-                return ExecuteWslExe(
+                return ExecuteWslExeAsync(
                     $"{ProcessUtilities.FormatCommandLineArgument(NetCoreHostPath)} {command}");
             }
         }

@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Runtime.Client.Eventing;
 using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
@@ -14,35 +15,38 @@ namespace Spfx.Runtime.Client
     public interface IClientInterprocessConnection : IInterprocessConnection
     {
         ValueTask<ProcessEndpointMethodDescriptor> GetRemoteMethodDescriptor(ProcessEndpointAddress destination, ReflectedMethodInfo calledMethod);
-        Task ChangeEventSubscription(EventRegistrationRequestInfo req);
+        
+        ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req);
+
+        ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler);
+        void UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler);
     }
 
     internal abstract class StreamBasedClientInterprocessConnection : StreamBasedInterprocessConnection, IClientInterprocessConnection
     {
-        private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
-        private readonly SimpleUniqueIdFactory<Action<EventRaisedMessage>> m_eventRegistrations = new SimpleUniqueIdFactory<Action<EventRaisedMessage>>();
+        private class DescribedRemoteEndpoint
+        {
+            public Dictionary<ReflectedMethodInfo, ProcessEndpointMethodDescriptor> RemoteMethods;
+        }
 
-        protected StreamBasedClientInterprocessConnection(ITypeResolver typeResolver)
+        protected ProcessEndpointAddress Destination { get; }
+
+        private readonly Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint> m_knownRemoteEndpoints = new Dictionary<ProcessEndpointAddress, DescribedRemoteEndpoint>();
+        private readonly EventSubscriptionManager m_eventManager;
+
+        protected StreamBasedClientInterprocessConnection(ProcessEndpointAddress destination, ITypeResolver typeResolver)
             : base(typeResolver)
         {
+            Destination = destination;
+            m_eventManager = new EventSubscriptionManager(typeResolver, this, Destination);
         }
 
         protected override void ProcessReceivedMessage(IInterprocessMessage msg)
         {
             msg = msg.Unwrap(BinarySerializer);
-
-            switch (msg)
-            {
-                case EventRaisedMessage eventMsg:
-                    {
-                        var handler = m_eventRegistrations.TryGetById(eventMsg.SubscriptionId);
-                        handler?.Invoke(eventMsg);
-                    }
-                    break;
-                default:
-                    base.ProcessReceivedMessage(msg);
-                    break;
-            }
+            Logger.Debug?.Trace("ProcessReceivedMessage: " + msg.GetTinySummaryString());
+            if (!m_eventManager.ProcessIncomingMessage(msg))
+                base.ProcessReceivedMessage(msg);
         }
 
         protected override async ValueTask DoWrite(PendingOperation op, Stream dataStream)
@@ -76,11 +80,6 @@ namespace Spfx.Runtime.Client
             }
         }
 
-        private class DescribedRemoteEndpoint
-        {
-            public Dictionary<ReflectedMethodInfo, ProcessEndpointMethodDescriptor> RemoteMethods;
-        }
-
         public async ValueTask<ProcessEndpointMethodDescriptor> GetRemoteMethodDescriptor(ProcessEndpointAddress destination, ReflectedMethodInfo calledMethod)
         {
             DescribedRemoteEndpoint remoteDescription;
@@ -108,29 +107,21 @@ namespace Spfx.Runtime.Client
 
         protected abstract Task<ProcessEndpointDescriptor> GetRemoteEndpointMetadata(ProcessEndpointAddress destination, ReflectedTypeInfo type);
 
-        public Task ChangeEventSubscription(EventRegistrationRequestInfo req)
+        ValueTask IClientInterprocessConnection.SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
         {
-            var outgoingMessage = new EventRegistrationRequest
-            {
-                Destination = req.Destination,
-                RemovedEvents = req.RemovedEvents?.ToList()
-            };
-
-            if (req.NewEvents?.Count > 0)
-            {
-                outgoingMessage.AddedEvents = new List<EventRegistrationItem>();
-
-                foreach (var evt in req.NewEvents)
-                {
-                    outgoingMessage.AddedEvents.Add(new EventRegistrationItem
-                    {
-                        EventName = evt.EventName,
-                        RegistrationId = m_eventRegistrations.GetNextId(evt.Callback)
-                    });
-                }
-            }
-
-            return SerializeAndSendMessage(outgoingMessage);
+            return m_eventManager.SubscribeEndpointLost(address, handler);
         }
+
+        void IClientInterprocessConnection.UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+        {
+            m_eventManager.UnsubscribeEndpointLost(address, handler);
+        }
+
+        ValueTask IClientInterprocessConnection.ChangeEventSubscription(EventSubscriptionChangeRequest req)
+        {
+            return m_eventManager.ChangeEventSubscription(req);
+        }
+
+        public override string ToString() => $"{GetType().Name}->" + Destination;
     }
 }

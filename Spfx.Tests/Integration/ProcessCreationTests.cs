@@ -8,20 +8,21 @@ using System.Threading.Tasks;
 
 namespace Spfx.Tests.Integration
 {
+    [Parallelizable(ParallelScope.Children)]
     public class ProcessCreationTests : CommonSpfxIntegrationTestsClass
     {
         private class LongInitEndpoint : TestInterface
         {
-            protected override async Task InitializeAsync()
+            protected override async ValueTask InitializeAsync()
             {
                 await Task.Delay(1000);
                 await base.InitializeAsync();
             }
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void ConcurrentCreateProcess_Throw() => ConcurrentCreateProcess(ProcessCreationOptions.ThrowIfExists);
-        [Test/*, Parallelizable*/]
+        [Test]
         public void ConcurrentCreateProcess_NoThrow() => ConcurrentCreateProcess(ProcessCreationOptions.ContinueIfExists);
 
         private void ConcurrentCreateProcess(ProcessCreationOptions mustCreateNewProcess)
@@ -61,7 +62,7 @@ namespace Spfx.Tests.Integration
                 Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void DuplicateProcesses_ThrowsExpectedException()
         {
             using var cluster = CreateTestCluster();
@@ -82,7 +83,7 @@ namespace Spfx.Tests.Integration
             });
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void DuplicateEndpoints_ThrowsExpectedException()
         {
             using var cluster = CreateTestCluster();
@@ -113,9 +114,9 @@ namespace Spfx.Tests.Integration
                 });
         }
 
-        [Test/*, Parallelizable*/]
+        [Test]
         public void ConcurrentCreateProcessAndEndpoint_Throw() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ThrowIfExists);
-        [Test/*, Parallelizable*/]
+        [Test]
         public void ConcurrentCreateProcessAndEndpoint_NoThrow() => ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions.ContinueIfExists);
 
         public void ConcurrentCreateProcessAndEndpoint(ProcessCreationOptions mustCreateNewProcess)

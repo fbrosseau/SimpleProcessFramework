@@ -35,6 +35,8 @@ namespace Spfx.Runtime.Client
                     return conn;
             }
 
+            destination = destination.ClusterAddress;
+
             var newConn = isLoopback ? m_loopbackConnectionProvider.GetLoopbackConnection() : CreateNewConnection(destination);
             var winner = TryRegisterConnection(destination, newConn);
 

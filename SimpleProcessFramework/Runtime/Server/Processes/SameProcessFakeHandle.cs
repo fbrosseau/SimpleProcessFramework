@@ -44,7 +44,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override ValueTask OnTeardownAsync(CancellationToken ct)
         {
-            return m_processContainer.TeardownAsync(ct);
+            return new ValueTask(m_processContainer.TeardownAsync(ct));
         }
 
         private class FakeProcessContainer : ProcessContainer
@@ -108,8 +108,8 @@ namespace Spfx.Runtime.Server.Processes
 
             public Task InitializeAsync(CancellationToken ct)
                 => Task.CompletedTask;
-            public ValueTask TeardownAsync(CancellationToken ct = default)
-                => default;
+            public Task TeardownAsync(CancellationToken ct = default)
+                => Task.CompletedTask;
         }
     }
 }

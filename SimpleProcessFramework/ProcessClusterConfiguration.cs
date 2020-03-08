@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
+using System.Threading;
 
 namespace Spfx
 {
@@ -93,6 +94,8 @@ namespace Spfx
         
         public bool Append32BitSuffix { get; set; } = true;
         public string SuffixFor32BitProcesses { get; set; } = "32";
+
+        public TimeSpan DestroyEndpointTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         [DataMember]
         public StringKeyValuePair[] ExtraEnvironmentVariables { get; set; }

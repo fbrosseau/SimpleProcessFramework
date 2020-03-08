@@ -42,8 +42,9 @@ namespace Spfx.Tests
         }
 
         [OneTimeSetUp]
-        public virtual void ClassSetUp()
+        public virtual ValueTask ClassSetUp()
         {
+            return default;
         }
 
         protected static async Task WaitForAsync(Func<bool> func, TimeSpan operationsTimeout)

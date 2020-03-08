@@ -27,13 +27,13 @@ namespace Spfx.Interfaces
 
         Task<ProcessCreationInfo> GetProcessCreationInfo();
 
-        Task<ProcessCreationOutcome> CreateEndpoint(EndpointCreationRequest req);
+        Task<ProcessCreationResults> CreateEndpoint(EndpointCreationRequest req);
         Task<bool> DestroyEndpoint(string uniqueId);
     }
 
     public static class EndpointBrokerExtensions
     {
-        public static Task<ProcessCreationOutcome> CreateEndpoint(this IEndpointBroker broker, string uniqueId, ReflectedTypeInfo endpointType, ReflectedTypeInfo implType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
+        public static Task<ProcessCreationResults> CreateEndpoint(this IEndpointBroker broker, string uniqueId, ReflectedTypeInfo endpointType, ReflectedTypeInfo implType, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists)
         {
             return broker.CreateEndpoint(new EndpointCreationRequest
             {
