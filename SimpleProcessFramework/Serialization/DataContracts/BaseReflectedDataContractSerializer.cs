@@ -46,7 +46,10 @@ namespace Spfx.Serialization.DataContracts
             internal void SerializeMember(SerializerSession session, object graph)
             {
                 var value = GetAccessor(graph);
-                if (TypeInfo.IsDefaultValueForType(value))
+
+                if (value is null)
+                    return;
+                else if (TypeInfo.IsDefaultValueForType?.Invoke(value) ?? false)
                     return;
 
                 session.WriteReference(Name);
@@ -66,7 +69,6 @@ namespace Spfx.Serialization.DataContracts
         protected readonly Type ReflectedType;
         protected readonly bool IsSerializedByRef;
         private static readonly Dictionary<Type, ReflectedMemberTypeInfo> s_typeInfos = new Dictionary<Type, ReflectedMemberTypeInfo>();
-        private static readonly Func<object, bool> s_fallbackIsDefaultValue = o => o is null;
 
         protected BaseReflectedDataContractSerializer(Type actualType, List<ReflectedDataMember> members)
         {
@@ -179,14 +181,16 @@ namespace Spfx.Serialization.DataContracts
                 IsValueType = memberType.IsValueType
             };
 
-            if (!info.IsValueType)
-            {
-                info.IsDefaultValueForType = s_fallbackIsDefaultValue;
-            }
-            else
+            if (info.IsValueType)
             {
                 info.DefaultValueForType = Activator.CreateInstance(memberType);
-                info.IsDefaultValueForType = o => info.DefaultValueForType.Equals(o);
+
+                // Nullable<T> is actually a real null when boxed.
+                // Treat that as a regular ref type.
+                if (info.DefaultValueForType != null) 
+                {
+                    info.IsDefaultValueForType = o => info.DefaultValueForType.Equals(o);
+                }
             }
 
             lock (s_typeInfos)

@@ -74,6 +74,7 @@ namespace Spfx.Tests.LowLevel.Serialization
                 new TestContract{ Value = new TestContract() },
                 new TestContract{ Value = 5 },
                 new GenericTestContract<int> { Value = 5 },
+                new GenericTestContract<int?> { Value = 5 },
                 new GenericTestContract<string> { Value = "asdf" },
                 new InheritedContract { Value = 5, Value2 = 15 },
                 new IPAddress(new byte[]{1,2,3,4}),
