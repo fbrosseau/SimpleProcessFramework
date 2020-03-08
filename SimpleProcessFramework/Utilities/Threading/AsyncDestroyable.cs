@@ -6,7 +6,7 @@ namespace Spfx.Utilities.Threading
 {
     public interface IAsyncDestroyable : IDisposable
     {
-        ValueTask TeardownAsync(CancellationToken ct = default);
+        Task TeardownAsync(CancellationToken ct = default);
     }
 
     public static class AsyncDestroyableExtensions
@@ -18,31 +18,48 @@ namespace Spfx.Utilities.Threading
         }
     }
 
-    public class AsyncDestroyable : Disposable, IAsyncDestroyable
-#if NETSTANDARD2_1_PLUS
-        , IAsyncDisposable
-#endif
+    public class AsyncDestroyable : Disposable, IAsyncDestroyable, IAsyncDisposable
     {
-        public bool HasAsyncTeardownStarted { get; private set; }
+        public bool HasAsyncTeardownStarted => m_teardownTask != null;
+        public sealed override bool HasTeardownStarted => HasDisposeStarted || HasAsyncTeardownStarted;
 
-        public async ValueTask TeardownAsync(CancellationToken ct = default)
+        private Task m_teardownTask;
+        private TaskCompletionSource<VoidType> m_teardownTaskCompletion;
+
+        protected override void OnDispose()
         {
-            using (this)
-            {
-                if (HasDisposeStarted || ct.IsCancellationRequested)
-                    return;
+            base.OnDispose();
+            if (m_teardownTask is null)
+                Interlocked.CompareExchange(ref m_teardownTask, Task.CompletedTask, null);
 
-                lock (m_disposeLock)
-                {
-                    if (HasDisposeStarted || HasAsyncTeardownStarted)
-                        return;
-                    HasAsyncTeardownStarted = true;
-                }
-
-                await OnTeardownAsync(ct).ConfigureAwait(false);
-            }
+            m_teardownTaskCompletion?.TryComplete();
         }
 
+        public Task TeardownAsync(CancellationToken ct = default)
+        {
+            if (HasTeardownStarted)
+                return EnsureHasShutdownTask();
+
+            lock (DisposeLock)
+            {
+                if (!HasTeardownStarted)
+                    m_teardownTask = OnTeardownAsync(ct).AsTask();
+            }
+
+            return EnsureHasShutdownTask();
+        }
+
+        private Task EnsureHasShutdownTask()
+        {
+            if (m_teardownTask != null)
+                return m_teardownTask;
+
+            var tcs = new TaskCompletionSource<VoidType>();
+            Interlocked.CompareExchange(ref m_teardownTaskCompletion, tcs, null);
+            Interlocked.CompareExchange(ref m_teardownTask, m_teardownTaskCompletion.Task, null);
+            return m_teardownTask;
+        }
+        
         protected override void ThrowIfDisposing()
         {
             base.ThrowIfDisposing();
@@ -57,7 +74,7 @@ namespace Spfx.Utilities.Threading
 
         public ValueTask DisposeAsync()
         {
-            return TeardownAsync();
+            return new ValueTask(TeardownAsync());
         }
     }
 }
