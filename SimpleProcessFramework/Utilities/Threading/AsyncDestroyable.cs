@@ -1,9 +1,11 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Utilities.Threading
 {
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IAsyncDestroyable : IDisposable
     {
         Task TeardownAsync(CancellationToken ct = default);
@@ -18,6 +20,7 @@ namespace Spfx.Utilities.Threading
         }
     }
 
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class AsyncDestroyable : Disposable, IAsyncDestroyable, IAsyncDisposable
     {
         public bool HasAsyncTeardownStarted => m_teardownTask != null;
