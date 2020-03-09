@@ -149,7 +149,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateProcess(
             [In] string lpApplicationName,
-            [In] string lpCommandLine,
+            [In] byte[] lpCommandLine,
             /*[In] ref SECURITY_ATTRIBUTES*/IntPtr lpProcessAttributes,
             /*[In] ref SECURITY_ATTRIBUTES*/IntPtr lpThreadAttributes,
             [MarshalAs(UnmanagedType.Bool)] bool bInheritHandles,

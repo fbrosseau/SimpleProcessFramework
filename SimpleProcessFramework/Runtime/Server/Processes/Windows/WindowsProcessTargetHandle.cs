@@ -20,6 +20,8 @@ namespace Spfx.Runtime.Server.Processes.Windows
 {
     internal partial class WindowsProcessTargetHandle : AbstractExternalProcessTargetHandle
     {
+        private UnicodeEncoding s_unicodeEncoding = new UnicodeEncoding(false, false, true);
+
         public WindowsProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
@@ -32,6 +34,10 @@ namespace Spfx.Runtime.Server.Processes.Windows
             var cmdLine = builder.GetFullCommandLineWithExecutable();
 
             Logger.Debug?.Trace($"Spawning process with cmdline=[{cmdLine}]");
+
+            //https://devblogs.microsoft.com/oldnewthing/20090601-00/?p=18083
+            // Why does the CreateProcess function modify its input command line?
+            var cmdLineBytes = s_unicodeEncoding.GetBytes(cmdLine);
 
             var envVarBuilder = new WindowsEnvironmentVariablesBlockBuilder();
 
@@ -162,7 +168,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                         {
                             var success = Win32Interop.CreateProcess(
                                 lpApplicationName: null,
-                                lpCommandLine: cmdLine,
+                                lpCommandLine: cmdLineBytes,
                                 lpProcessAttributes: IntPtr.Zero,
                                 lpThreadAttributes: IntPtr.Zero,
                                 bInheritHandles: true,
