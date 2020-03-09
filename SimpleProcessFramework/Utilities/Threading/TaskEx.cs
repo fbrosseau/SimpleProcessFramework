@@ -129,7 +129,7 @@ namespace Spfx.Utilities.Threading
 
             if (t.IsCompleted)
             {
-                return TaskCache.FromResult((TOut)(object)t.Result);
+                return TaskCache.FromResult((TOut)(object)t.GetResultOrRethrow());
             }
 
             return t.ContinueWith(innerT =>
