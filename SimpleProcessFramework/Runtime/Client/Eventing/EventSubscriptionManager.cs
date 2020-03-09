@@ -1,4 +1,5 @@
-﻿using Spfx.Diagnostics.Logging;
+﻿using Spfx.Diagnostics;
+using Spfx.Diagnostics.Logging;
 using Spfx.Reflection;
 using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
@@ -17,6 +18,7 @@ namespace Spfx.Runtime.Client.Eventing
     {
         private readonly AsyncThread m_subscriptionThread;
         private readonly IInterprocessConnection m_connection;
+        private readonly ITypeResolver m_typeResolver;
 
         public ProcessEndpointAddress RemoteAddress { get; }
         private ILogger Logger { get; }
@@ -66,6 +68,7 @@ namespace Spfx.Runtime.Client.Eventing
             RemoteAddress = remoteAddress;
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: remoteAddress.ToString());
             m_connection = parent;
+            m_typeResolver = typeResolver;
             m_subscriptionThread = new AsyncThread();
             m_root = new EndpointEventSubscriptionState(null, RemoteAddress.ClusterAddress);
 
@@ -208,12 +211,14 @@ namespace Spfx.Runtime.Client.Eventing
             RawEventDelegate h;
             lock (m_knownEndpoints)
             {
-                if (!m_knownEndpoints.TryGetValue(evtReceived.EndpointId, out var s))
+                if (!m_knownEndpoints.TryGetValue(evtReceived.EndpointId, out var s)
+                    || !s.CallbackHandlers.TryGetValue(evtReceived.EventName, out h))
                     return;
-                s.CallbackHandlers.TryGetValue(evtReceived.EventName, out h);
             }
 
-            h?.Invoke(evtReceived.EventArgs);
+            CriticalTryCatch.Run(m_typeResolver,
+                (handle: h, e: evtReceived),
+                (state) => state.handle.Invoke(state.e.EventArgs));
         }
 
         private void HandleEndpointLost(EndpointLostMessage epLost)

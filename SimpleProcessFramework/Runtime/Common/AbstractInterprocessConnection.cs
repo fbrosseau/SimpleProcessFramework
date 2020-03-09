@@ -18,10 +18,12 @@ namespace Spfx.Runtime.Common
         private bool m_raisedConnectionLost;
         private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();
         protected ILogger Logger { get; }
+        protected ITypeResolver TypeResolver { get; }
 
         protected AbstractInterprocessConnection(ITypeResolver typeResolver)
         {
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
+            TypeResolver = typeResolver;
             
             m_pendingWrites = new AsyncQueue<PendingOperation>
             {

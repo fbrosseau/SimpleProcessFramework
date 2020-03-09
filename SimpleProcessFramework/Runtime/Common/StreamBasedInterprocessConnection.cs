@@ -158,6 +158,7 @@ namespace Spfx.Runtime.Common
                     var len = stream.Length;
                     var msg = BinarySerializer.Deserialize<IInterprocessMessage>(stream);
                     Logger.Debug?.Trace($"Recv {msg.GetTinySummaryString()} ({len} bytes)");
+
                     ProcessReceivedMessage(msg);
                 }
             }
