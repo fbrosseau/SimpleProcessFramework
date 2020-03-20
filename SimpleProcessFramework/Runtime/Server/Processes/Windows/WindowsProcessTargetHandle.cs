@@ -45,7 +45,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
             bool isProcThreadAttributeListInitialized = false;
             AnonymousPipeServerStream remoteInputStream = null;
-            IntPtr procThreadAttributeListBlock = default;
+            UnmanagedAllocationSafeHandle procThreadAttributeListBlock = null;
 
             try
             {
@@ -58,7 +58,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 var requiredAttrListSize = IntPtr.Zero;
                 if (!Win32Interop.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref requiredAttrListSize) && requiredAttrListSize == IntPtr.Zero)
                     ThrowWin32Exception("InitializeProcThreadAttributeList");
-                procThreadAttributeListBlock = Marshal.AllocHGlobal(requiredAttrListSize);
+                procThreadAttributeListBlock = new UnmanagedAllocationSafeHandle(requiredAttrListSize);
                 isProcThreadAttributeListInitialized = Win32Interop.InitializeProcThreadAttributeList(procThreadAttributeListBlock, 1, 0, ref requiredAttrListSize);
                 if (!isProcThreadAttributeListInitialized)
                 {
@@ -69,7 +69,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 var startupinfo = new STARTUPINFOEX
                 {
                     dwFlags = StartupInfoFlags.USESTDHANDLES | StartupInfoFlags.FORCEOFFFEEDBACK,
-                    lpAttributeList = procThreadAttributeListBlock,
+                    lpAttributeList = procThreadAttributeListBlock.DangerousAllocationAddress,
                 };
 
                 using var consoleRedirector = builder.ManuallyRedirectConsoleOutput
@@ -224,8 +224,6 @@ namespace Spfx.Runtime.Server.Processes.Windows
             {
                 if (isProcThreadAttributeListInitialized)
                     Win32Interop.DeleteProcThreadAttributeList(procThreadAttributeListBlock);
-
-                Marshal.FreeHGlobal(procThreadAttributeListBlock);
             }
         }
         
