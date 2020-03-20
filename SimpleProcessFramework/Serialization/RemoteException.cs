@@ -54,7 +54,7 @@ namespace Spfx.Serialization
             ExceptionType = ex.GetType();
         }
 
-        public static IRemoteExceptionInfo Create(Exception ex)
+        public static IRemoteExceptionInfo Create(Exception ex, bool exposeRemoteCallstacks)
         {
             if (ex is SerializableException s)
                 return new MarshalledRemoteExceptionInfo(s);

@@ -87,7 +87,8 @@ namespace Spfx.Runtime.Server
             }
             else
             {
-                Client.SendMessage(RemoteCallFailureResponse.Create(Request.CallId, Completion));
+                var failureResponsesFactory = m_typeResolver.CreateSingleton<IFailureCallResponsesFactory>();
+                Client.SendMessage(failureResponsesFactory.Create(Request.CallId, Completion));
             }
         }
 

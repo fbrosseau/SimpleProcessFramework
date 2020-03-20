@@ -9,7 +9,7 @@ namespace Spfx.Utilities
         public static readonly object ProcessCreationLock = new object();
         private static readonly AsyncLock s_asyncLock = new AsyncLock();
 
-        public static async Task InvokeCreateProcessAsync(Action createProcessCallback)
+        public static async ValueTask InvokeCreateProcessAsync(Action createProcessCallback)
         {
             using var lockSession = await s_asyncLock.LockAsync().ConfigureAwait(false);
 

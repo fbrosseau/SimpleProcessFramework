@@ -56,11 +56,7 @@ namespace Spfx.Utilities
 
             lock (m_values)
             {
-                if(m_values.TryGetValue(id, out TValue t))
-                {
-                    m_values.Remove(id);
-                }
-
+                m_values.Remove(id, out TValue t);
                 return t;
             }
         }

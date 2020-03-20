@@ -180,7 +180,8 @@ namespace Spfx.Tests.LowLevel.CodeGen
         private void AssertArgsEqual(IInterprocessMessage req, object[] expectedArgs)
         {
             var actualArgs = ((RemoteCallRequest)req).Arguments;
-
+            if (actualArgs is null)
+                actualArgs = Array.Empty<object>();
             if (expectedArgs is null)
                 expectedArgs = Array.Empty<object>();
 

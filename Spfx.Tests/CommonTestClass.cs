@@ -101,6 +101,23 @@ namespace Spfx.Tests
             exceptionCallback?.Invoke(caughtEx);
         }
 
+        internal static async ValueTask AssertThrowsAsync(Func<Task> callback, Action<Exception> exceptionCallback = null)
+        {
+            Exception caughtEx = null;
+            try
+            {
+                await callback();
+            }
+            catch (Exception ex)
+            {
+                caughtEx = ex;
+            }
+
+            Assert.IsNotNull(caughtEx, "The callback did not throw");
+            Log("Caught " + caughtEx.GetType().FullName);
+            exceptionCallback?.Invoke(caughtEx);
+        }
+
         private static Task WrapWithUnhandledExceptions(Task task)
         {
             var unhandledEx = ExceptionReportingEndpoint.GetUnhandledExceptionTask();

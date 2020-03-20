@@ -30,6 +30,7 @@ namespace Spfx.Reflection
             resolver.RegisterFactory<IStandardOutputListenerFactory>(r => new DefaultStandardOutputListenerFactory(r));
             resolver.RegisterFactory(r => ProcessClusterConfiguration.Default);
             resolver.RegisterFactory(r => new SubProcessConfiguration());
+            resolver.RegisterFactory<IFailureCallResponsesFactory>(r => new DefaultFailureCallResponsesFactory());
             DefaultTypeResolver = resolver;
         }
 

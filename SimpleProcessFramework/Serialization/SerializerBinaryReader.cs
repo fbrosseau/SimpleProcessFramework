@@ -94,7 +94,7 @@ namespace Spfx.Serialization
             {
                 var count = Read(buf, 0, buffer.Length);
                 if (count > 0)
-                    new Span<byte>(buf, 0, count).CopyTo(buffer);
+                    buf.AsSpan(0, count).CopyTo(buffer);
                 return count;
             }
             finally

@@ -33,8 +33,15 @@ namespace Spfx.Runtime.Client
             var client = SocketUtilities.CreateSocket(SocketType.Stream, ProtocolType.Tcp);
             disposeBag.Add(client);
 
-            await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination.HostEndpoint, cb, s), client.EndConnect, null);
-
+            try
+            {
+                await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination.HostEndpoint, cb, s), client.EndConnect, null);
+            }
+            catch (SocketException ex)
+            {
+                throw new ProxySocketConnectionFailedException(ex);
+            }
+            
             var ns = disposeBag.Add(new NetworkStream(client));
 
             var finalStream = disposeBag.Add(await CreateFinalStream(ns));
@@ -69,7 +76,7 @@ namespace Spfx.Runtime.Client
             if (response.Success)
                 return;
 
-            throw new RemoteConnectionException(string.IsNullOrWhiteSpace(response.Error) ? "The connection was refused by the remote host" : response.Error);
+            throw new ProxyConnectionAuthenticationFailedException(string.IsNullOrWhiteSpace(response.Error) ? "The connection was refused by the remote host" : response.Error);
         }
     }
 }

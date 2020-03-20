@@ -1,6 +1,6 @@
 ﻿using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using System.IO;
-using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading.Tasks;
@@ -16,9 +16,16 @@ namespace Spfx.Runtime.Client
         
         protected override async Task<Stream> CreateFinalStream(Stream ns)
         {
-            var tlsStream = new SslStream(ns, false, delegate { return true; });
-            await tlsStream.AuthenticateAsClientAsync("unused", null, SslProtocols.None, false);
-            return tlsStream;
+            try
+            {
+                var tlsStream = new SslStream(ns, false, delegate { return true; });
+                await tlsStream.AuthenticateAsClientAsync("unused", null, SslProtocols.None, false).ConfigureAwait(false);
+                return tlsStream;
+            }
+            catch (AuthenticationException ex)
+            {
+                throw new ProxyTlsConnectionFailedException(ex);
+            }
         }
     }
 }
