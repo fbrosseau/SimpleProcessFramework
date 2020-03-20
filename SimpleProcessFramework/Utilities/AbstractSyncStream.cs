@@ -17,7 +17,7 @@ namespace Spfx.Utilities
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return Read(new Span<byte>(buffer, offset, count));
+            return Read(buffer.AsSpan(offset, count));
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken ct)
@@ -66,7 +66,7 @@ namespace Spfx.Utilities
         public override void Write(byte[] buffer, int offset, int count)
         {
             Guard.ArgumentNotNull(buffer, nameof(buffer));
-            Write(new Span<byte>(buffer, offset, count));
+            Write(buffer.AsSpan(offset, count));
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken ct)
@@ -74,7 +74,7 @@ namespace Spfx.Utilities
             Guard.ArgumentNotNull(buffer, nameof(buffer));
             if (ct.IsCancellationRequested)
                 return Task.FromCanceled<int>(ct);
-            Write(new Span<byte>(buffer, offset, count));
+            Write(buffer.AsSpan(offset, count));
             return Task.CompletedTask;
         }
 

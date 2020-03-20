@@ -119,7 +119,7 @@ namespace Spfx.Utilities
             m_buffer = newBuffer;
 
             // a lot less bug prone to keep the behavior of always having brand new bytes in the entire array
-            new Span<byte>(newBuffer, m_count, capacity - m_count).Fill(0);
+            newBuffer.AsSpan(m_count, capacity - m_count).Clear();
 
             Capacity = capacity;
         }
@@ -127,7 +127,7 @@ namespace Spfx.Utilities
         public Span<byte> AsSpan()
         {
             EnsureNotReadOnly();
-            return new Span<byte>(m_buffer, 0, m_count);
+            return m_buffer.AsSpan(0, m_count);
         }
 
         public ReadOnlySpan<byte> AsReadOnlySpan()
@@ -203,7 +203,7 @@ namespace Spfx.Utilities
         {
             EnsureNotDisposed();
             var available = Math.Min(buffer.Length, m_count - m_position);
-            new Span<byte>(m_buffer, m_position, available).CopyTo(buffer);
+            m_buffer.AsSpan(m_position, available).CopyTo(buffer);
             m_position += available;
             return available;
         }
@@ -224,7 +224,7 @@ namespace Spfx.Utilities
                 return;
 
             EnsureCapacity(m_position + buffer.Length);
-            var dest = new Span<byte>(m_buffer, m_position, buffer.Length);
+            var dest = m_buffer.AsSpan(m_position, buffer.Length);
             buffer.CopyTo(dest);
             m_position += buffer.Length;
             if (m_position > m_count)
