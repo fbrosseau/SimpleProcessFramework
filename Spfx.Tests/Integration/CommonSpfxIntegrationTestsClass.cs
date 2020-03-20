@@ -151,7 +151,7 @@ namespace Spfx.Tests.Integration
 
             Log("CreateProcess...");
             var createdNew = Unwrap(cluster.ProcessBroker.CreateProcess(req));
-            Assert.AreEqual(ProcessCreationOutcome.CreatedNew, createdNew);
+            Assert.AreEqual(ProcessCreationResults.CreatedNew, createdNew);
 
             var processInfo = Unwrap(cluster.ProcessBroker.GetProcessInformation(procId));
             Assert.AreEqual(procId, processInfo.ProcessName);

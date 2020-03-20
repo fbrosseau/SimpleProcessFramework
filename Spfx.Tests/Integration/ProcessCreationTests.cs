@@ -29,7 +29,7 @@ namespace Spfx.Tests.Integration
         {
             using var cluster = CreateTestCluster();
 
-            var tasks = new List<Task<Task<ProcessCreationOutcome>>>();
+            var tasks = new List<Task<Task<ProcessCreationResults>>>();
             var processId = "asdfasdf";
 
             const int concurrencyCount = 10;
@@ -54,12 +54,12 @@ namespace Spfx.Tests.Integration
 
             Task.WaitAll(tasks.ToArray());
 
-            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result == ProcessCreationResults.CreatedNew), "Expected only 1 task to have CreatedNew");
 
             if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
                 Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Status == TaskStatus.Faulted), "Expected all other tasks to fail");
             else
-                Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
+                Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result == ProcessCreationResults.AlreadyExists), "Expected all other tasks to be AlreadyExists");
         }
 
         [Test]
@@ -161,7 +161,7 @@ namespace Spfx.Tests.Integration
 
             Task.WaitAll(tasks.ToArray());
 
-            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result.ProcessOutcome == ProcessCreationOutcome.CreatedNew), "Expected only 1 task to have CreatedNew");
+            Assert.AreEqual(1, tasks.Count(t => t.Result.IsCompletedSuccessfully() && t.Result.Result.ProcessOutcome == ProcessCreationResults.CreatedNew), "Expected only 1 task to have CreatedNew");
 
             if (mustCreateNewProcess == ProcessCreationOptions.ThrowIfExists)
             {
@@ -169,11 +169,11 @@ namespace Spfx.Tests.Integration
             }
             else
             {
-                Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result.ProcessOutcome == ProcessCreationOutcome.AlreadyExists), "Expected all other tasks to be AlreadyExists");
+                Assert.AreEqual(concurrencyCount - 1, tasks.Count(t => t.Result.Result.ProcessOutcome == ProcessCreationResults.AlreadyExists), "Expected all other tasks to be AlreadyExists");
 
                 foreach (var t in tasks)
                 {
-                    Assert.AreEqual(ProcessCreationOutcome.CreatedNew, t.Result.Result.EndpointOutcome);
+                    Assert.AreEqual(ProcessCreationResults.CreatedNew, t.Result.Result.EndpointOutcome);
                 }
             }
         }
