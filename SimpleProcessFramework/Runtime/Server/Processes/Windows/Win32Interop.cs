@@ -157,16 +157,46 @@ namespace Spfx.Runtime.Server.Processes.Windows
             [In] byte[] lpEnvironment,
             [In] string lpCurrentDirectory,
             [In] STARTUPINFOEX lpStartupInfo,
-            [Out] out PROCESS_INFORMATION lpProcessInformation);      
+            [Out] out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("ms-win-downlevel-shell32-l1-1-0", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static unsafe extern IntPtr CommandLineToArgvW(string cmdline, out int numArgs);
+
+        [DllImport("api-ms-win-core-heap-l2-1-0")]
+        private static extern IntPtr LocalFree(IntPtr addr);
+
+        public static unsafe string[] CommandLineToArgs(string cmdline)
+        {
+            var res = CommandLineToArgvW(cmdline, out int count);
+            if (res == null)
+                throw new Win32Exception();
+
+            var results = new string[count];
+
+            try
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    results[i] = Marshal.PtrToStringUni(Marshal.ReadIntPtr(res, IntPtr.Size * i));
+                }
+
+                return results;
+            }
+            finally
+            {
+                LocalFree(res);
+            }
+        }
 
         [DllImport("api-ms-win-core-processthreads-l1-1-2", SetLastError = true)]
         public static extern bool InitializeProcThreadAttributeList(SafeHandle lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
         [DllImport("api-ms-win-core-processthreads-l1-1-2", SetLastError = true)]
         public static extern bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
         [DllImport("api-ms-win-core-processthreads-l1-1-2", SetLastError = true)]
-        public static extern bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr Attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
+        public static extern bool UpdateProcThreadAttribute(SafeHandle lpAttributeList, uint dwFlags, IntPtr Attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
         [DllImport("api-ms-win-core-processthreads-l1-1-2", SetLastError = true)]
-        public static extern void DeleteProcThreadAttributeList(IntPtr lpAttributeList);
+        public static extern void DeleteProcThreadAttributeList(SafeHandle lpAttributeList);
 
         [DllImport("api-ms-win-core-processthreads-l1-1-2", SetLastError = true)]
         public static extern int ResumeThread(SafeHandle hThread);
