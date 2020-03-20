@@ -8,5 +8,7 @@ namespace Spfx.Serialization
         byte[] SerializeToBytes<T>(T msg, bool lengthPrefix);
 
         T Deserialize<T>(Stream s);
+
+        T DeepClone<T>(T obj);
     }
 }

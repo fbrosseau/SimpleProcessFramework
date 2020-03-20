@@ -108,6 +108,12 @@ namespace Spfx.Serialization
             }
         }
 
+        public T DeepClone<T>(T obj)
+        {
+            using var stream = Serialize(obj, false);
+            return Deserialize<T>(stream);
+        }
+
         internal static void Serialize(SerializerSession bw, object graph, Type expectedType)
         {
             if (graph is null)
