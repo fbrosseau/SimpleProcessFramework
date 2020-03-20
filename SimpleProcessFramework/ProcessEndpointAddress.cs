@@ -107,6 +107,9 @@ namespace Spfx
             return CreateFromString(addr, needParse: true, checkCache: true);
         }
 
+        public static ProcessEndpointAddress Create(EndPoint ep) => Create(ep, null);
+        public static ProcessEndpointAddress Create(EndPoint ep, string targetProcess) => Create(ep, targetProcess, null);
+        public static ProcessEndpointAddress Create(EndPoint ep, string targetProcess, string targetEndpoint) => Create(EndpointHelper.EndpointToString(ep), targetProcess, targetEndpoint);
         public static ProcessEndpointAddress Create(string hostAuthority) => Create(hostAuthority, null);
         public static ProcessEndpointAddress Create(string hostAuthority, string targetProcess) => Create(hostAuthority, targetProcess, null);
         public static ProcessEndpointAddress Create(string hostAuthority, string targetProcess, string targetEndpoint)
@@ -236,7 +239,7 @@ namespace Spfx
             var code = StringComparer.GetHashCode(m_originalString);
             return code == 0 ? -1 : code;
         }
-
+        
         public class RelativeAddressEqualityComparer : IEqualityComparer<ProcessEndpointAddress>
         {
             public static RelativeAddressEqualityComparer Instance { get; } = new RelativeAddressEqualityComparer();

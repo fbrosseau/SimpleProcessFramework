@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Net.Sockets;
 
 namespace Spfx.Utilities
 {
@@ -17,6 +18,25 @@ namespace Spfx.Utilities
             }
 
             return new DnsEndPoint(uri.DnsSafeHost, port);
+        }
+
+        internal static string EndpointToString(EndPoint ep)
+        {
+            if (ep is IPEndPoint ipep)
+            {
+                if (ipep.AddressFamily == AddressFamily.InterNetwork)
+                    return $"{ipep.Address}:{ipep.Port}";
+                if (ipep.AddressFamily == AddressFamily.InterNetwork)
+                    return $"[{ipep.Address}]:{ipep.Port}";
+            }
+
+            if (ep is DnsEndPoint dns)
+                return $"{dns.Host}:{dns.Port}";
+
+            if (ep is UnixDomainSocketEndPoint)
+                return ep.ToString();
+
+            throw new ArgumentException("Endpoint is not supported: " + ep.GetType().FullName);
         }
     }
 }
