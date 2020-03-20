@@ -14,9 +14,10 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Client.Eventing
 {
-    internal class EventSubscriptionManager
+    internal class EventSubscriptionManager : AsyncDestroyable
     {
         private readonly AsyncThread m_subscriptionThread;
+        private readonly AsyncThread m_eventRaisingThread;
         private readonly IInterprocessConnection m_connection;
         private readonly ITypeResolver m_typeResolver;
 
@@ -69,8 +70,9 @@ namespace Spfx.Runtime.Client.Eventing
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: remoteAddress.ToString());
             m_connection = parent;
             m_typeResolver = typeResolver;
-            m_subscriptionThread = new AsyncThread();
+            m_subscriptionThread = new AsyncThread(allowSyncCompletion: true);
             m_root = new EndpointEventSubscriptionState(null, RemoteAddress.ClusterAddress);
+            m_eventRaisingThread = new AsyncThread(allowSyncCompletion: false);
 
             m_knownEndpoints = new Dictionary<ProcessEndpointAddress, EndpointEventSubscriptionState>(ProcessEndpointAddress.RelativeAddressComparer)
             {
@@ -78,9 +80,23 @@ namespace Spfx.Runtime.Client.Eventing
             };
         }
 
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
+        {
+            await m_subscriptionThread.TeardownAsync(ct).ConfigureAwait(false);
+            await m_eventRaisingThread.TeardownAsync(ct).ConfigureAwait(false);
+            await base.OnTeardownAsync(ct);
+        }
+
+        protected override void OnDispose()
+        {
+            m_subscriptionThread.Dispose();
+            m_eventRaisingThread.Dispose();
+            base.OnDispose();
+        }
+
         internal ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req)
         {
-            return m_subscriptionThread.ExecuteAsync(() => ChangeEventSubscriptionInternal(req));
+            return m_subscriptionThread.ExecuteTaskAsync(() => ChangeEventSubscriptionInternal(req));
         }
 
         private async Task ChangeEventSubscriptionInternal(EventSubscriptionChangeRequest req)
@@ -216,9 +232,12 @@ namespace Spfx.Runtime.Client.Eventing
                     return;
             }
 
-            CriticalTryCatch.Run(m_typeResolver,
-                (handle: h, e: evtReceived),
-                (state) => state.handle.Invoke(state.e.EventArgs));
+            m_eventRaisingThread.QueueAction(state =>
+            {
+                CriticalTryCatch.Run(m_typeResolver,
+                    (state.h, state.evtReceived),
+                    state2 => state2.h.Invoke(state.evtReceived.EventArgs));
+            }, (m_typeResolver, h, evtReceived));
         }
 
         private void HandleEndpointLost(EndpointLostMessage epLost)
@@ -235,10 +254,8 @@ namespace Spfx.Runtime.Client.Eventing
         {
             AssertIsLocked();
 
-            if (!m_knownEndpoints.TryGetValue(ep, out var s))
+            if (!m_knownEndpoints.Remove(ep, out var s))
                 return;
-
-            m_knownEndpoints.Remove(ep);
 
             s.RaiseLostEvent();
 

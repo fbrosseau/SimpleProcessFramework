@@ -23,10 +23,10 @@ namespace Spfx.Utilities
         private readonly Action m_func;
 
         public static ActionDelegateInvoker Create(Action a) => new ActionDelegateInvoker(a);
-        public static ActionDelegateInvoker<T1> Create<T1>(Action<T1> a, T1 arg1) => new ActionDelegateInvoker<T1>(a, arg1);
+        public static ActionDelegateInvoker<T1> Create<T1>(Action<T1> a, in T1 arg1) => new ActionDelegateInvoker<T1>(a, arg1);
 
         public static FuncDelegateInvoker<TReturn> Create<TReturn>(Func<TReturn> a) => FuncDelegateInvoker<TReturn>.Create(a);
-        public static FuncDelegateInvoker<T1, TReturn> Create<T1, TReturn>(Func<T1, TReturn> a, T1 arg1) => FuncDelegateInvoker<TReturn>.Create(a, arg1);
+        public static FuncDelegateInvoker<T1, TReturn> Create<T1, TReturn>(Func<T1, TReturn> a, in T1 arg1) => FuncDelegateInvoker<TReturn>.Create(a, arg1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ActionDelegateInvoker(Action a)
@@ -67,7 +67,7 @@ namespace Spfx.Utilities
         private readonly Func<TReturn> m_func;
 
         public static FuncDelegateInvoker<TReturn> Create(Func<TReturn> a) => new FuncDelegateInvoker<TReturn>(a);
-        public static FuncDelegateInvoker<T1, TReturn> Create<T1>(Func<T1, TReturn> a, T1 arg1) => new FuncDelegateInvoker<T1, TReturn>(a, arg1);
+        public static FuncDelegateInvoker<T1, TReturn> Create<T1>(Func<T1, TReturn> a, in T1 arg1) => new FuncDelegateInvoker<T1, TReturn>(a, arg1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FuncDelegateInvoker(Func<TReturn> a)
@@ -95,7 +95,7 @@ namespace Spfx.Utilities
         private readonly T1 m_arg1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public FuncDelegateInvoker(Func<T1, TReturn> a, T1 arg1)
+        public FuncDelegateInvoker(Func<T1, TReturn> a, in T1 arg1)
         {
             Guard.ArgumentNotNull(a, nameof(a));
             m_func = a;

@@ -20,7 +20,7 @@ namespace Spfx.Diagnostics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Run(ITypeResolver typeResolver, Action func) => Run(typeResolver, ActionDelegateInvoker.Create(func));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Run<TState>(ITypeResolver typeResolver, TState state, Action<TState> func) => Run(typeResolver, ActionDelegateInvoker.Create(func, state));
+        public static void Run<TState>(ITypeResolver typeResolver, in TState state, Action<TState> func) => Run(typeResolver, ActionDelegateInvoker.Create(func, state));
 
         public static void Run<TDelegateInvoker>(ITypeResolver typeResolver, in TDelegateInvoker delegateInvoker)
             where TDelegateInvoker : IDelegateInvoker

@@ -10,7 +10,7 @@ namespace System.Text
         {
             AppendJoin(sb, separator, (IEnumerable<T>)values);
         }
-        public static void AppendJoin<T>(StringBuilder sb, char separator, IEnumerable<T> values)
+        public static void AppendJoin<T>(this StringBuilder sb, char separator, IEnumerable<T> values)
         {
             bool first = true;
             foreach (var v in values)
