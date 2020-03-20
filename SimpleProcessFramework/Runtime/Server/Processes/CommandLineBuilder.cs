@@ -3,16 +3,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Server.Processes.Windows;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
 
 namespace Spfx.Runtime.Server.Processes
 {
-    internal class CommandLineBuilder : Disposable
+    public class CommandLineBuilder : Disposable
     {
         private readonly ILogger m_logger;
         private readonly ProcessClusterConfiguration m_config;
@@ -21,18 +23,18 @@ namespace Spfx.Runtime.Server.Processes
         private readonly List<string> m_dotNetExeArguments = new List<string>();
         private readonly ProcessKind m_processKind;
 
-        public bool ManuallyRedirectConsoleOutput { get; }
-        public bool RedirectConsoleInput { get; }
-        public string WorkingDirectory { get; private set; }
-        public Dictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>();
-        public List<string> CommandLineArguments { get; } = new List<string>();
-        public string UserExecutableName { get; private set; }
-        public string PrimaryExecutableName { get; }
+        internal bool ManuallyRedirectConsoleOutput { get; }
+        internal bool RedirectConsoleInput { get; }
+        internal string WorkingDirectory { get; private set; }
+        internal Dictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>();
+        internal List<string> CommandLineArguments { get; } = new List<string>();
+        internal string UserExecutableName { get; private set; }
+        internal string PrimaryExecutableName { get; }
 
-        public string GetAllFormattedArguments() => ProcessUtilities.FormatCommandLine(CommandLineArguments);
-        public string GetFullCommandLineWithExecutable() => ProcessUtilities.FormatCommandLine(new[] { PrimaryExecutableName }.Concat(CommandLineArguments));
+        internal string GetAllFormattedArguments() => FormatCommandLine(CommandLineArguments);
+        internal string GetFullCommandLineWithExecutable() => FormatCommandLine(new[] { PrimaryExecutableName }.Concat(CommandLineArguments));
 
-        public CommandLineBuilder(ITypeResolver typeResolver, ProcessClusterConfiguration config, ProcessCreationInfo processCreationInfo, bool redirectStdIn, IEnumerable<StringKeyValuePair> extraEnvironmentVariables = null)
+        internal CommandLineBuilder(ITypeResolver typeResolver, ProcessClusterConfiguration config, ProcessCreationInfo processCreationInfo, bool redirectStdIn, IEnumerable<StringKeyValuePair> extraEnvironmentVariables = null)
         {
             m_logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: $"{processCreationInfo.ProcessUniqueId} ({processCreationInfo.ProcessName},{processCreationInfo.TargetFramework})");
 
@@ -267,6 +269,78 @@ namespace Spfx.Runtime.Server.Processes
             }
 
             return info;
+        }
+
+        public static string[] DeconstructCommandLine(string cmdLine)
+        {
+            return Win32Interop.CommandLineToArgs(cmdLine);
+        }
+
+        public static string FormatCommandLine(IEnumerable<string> args)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var a in args)
+            {
+                FormatCommandLineArgument(sb, a);
+                sb.Append(' ');
+            }
+
+            if (sb.Length > 0)
+                --sb.Length;
+            return sb.ToString();
+        }
+
+        public static string FormatCommandLineArgument(string arg)
+        {
+            var sb = new StringBuilder();
+            FormatCommandLineArgument(sb, arg);
+            return sb.ToString();
+        }
+
+        private static readonly char[] s_specialCommandLineCharacters = " \t\n\v\"\\".ToCharArray();
+
+        public static void FormatCommandLineArgument(StringBuilder sb, string arg)
+        {
+            // Adapted from https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/
+
+            Guard.ArgumentNotNull(arg, nameof(arg));
+
+            if (arg.Length > 0 && arg.IndexOfAny(s_specialCommandLineCharacters) == -1)
+            {
+                sb.Append(arg);
+                return;
+            }
+
+            sb.Append('"');
+            for (int i = 0; ; ++i)
+            {
+                int slashes = 0;
+                while (i < arg.Length && arg[i] == '\\')
+                {
+                    ++slashes;
+                    ++i;
+                }
+
+                if (i == arg.Length)
+                {
+                    sb.Append('\\', slashes * 2);
+                    break;
+                }
+
+                if (arg[i] == '"')
+                {
+                    sb.Append('\\', slashes * 2 + 1);
+                }
+                else
+                {
+                    sb.Append('\\', slashes);
+                }
+
+                sb.Append(arg[i]);
+            }
+
+            sb.Append('"');
         }
     }
 }

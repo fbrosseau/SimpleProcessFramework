@@ -1,4 +1,5 @@
-﻿using Spfx.Utilities.Threading;
+﻿using Spfx.Runtime.Server.Processes;
+using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Net.Sockets;
@@ -35,7 +36,7 @@ namespace Spfx.Utilities.Runtime
         {
             bool isDir = fullName.EndsWith("\\");
 
-            var output = ExecuteWslExeAsync($"{WellKnownUtilities.WslPathUtility} {ProcessUtilities.FormatCommandLineArgument(Path.GetFullPath(fullName))}")
+            var output = ExecuteWslExeAsync($"{WellKnownUtilities.WslPathUtility} {CommandLineBuilder.FormatCommandLineArgument(Path.GetFullPath(fullName))}")
                 .GetResultOrRethrow();
 
             output = output.Trim(' ', '\r', '\t', '\n');
@@ -112,7 +113,7 @@ namespace Spfx.Utilities.Runtime
             internal override Task<string> RunDotNetExeAsync(string command)
             {
                 return ExecuteWslExeAsync(
-                    $"{ProcessUtilities.FormatCommandLineArgument(NetCoreHostPath)} {command}");
+                    $"{CommandLineBuilder.FormatCommandLineArgument(NetCoreHostPath)} {command}");
             }
         }
     }

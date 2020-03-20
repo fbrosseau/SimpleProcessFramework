@@ -1,4 +1,5 @@
-﻿using Spfx.Utilities.Threading;
+﻿using Spfx.Runtime.Server.Processes;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,76 +33,9 @@ namespace Spfx.Utilities
 #if NETCOREAPP || NETSTANDARD2_1_PLUS
             info.ArgumentList.AddRange(args);
 #else
-            info.Arguments = FormatCommandLine(args);
+            info.Arguments = CommandLineBuilder.FormatCommandLine(args);
 #endif
-        }
-
-        public static string FormatCommandLine(IEnumerable<string> args)
-        {
-            var sb = new StringBuilder();
-
-            foreach(var a in args)
-            {
-                FormatCommandLineArgument(sb, a);
-                sb.Append(' ');
-            }
-
-            if (sb.Length > 0)
-                --sb.Length;
-            return sb.ToString();
-        }
-
-        public static string FormatCommandLineArgument(string arg)
-        {
-            var sb = new StringBuilder();
-            FormatCommandLineArgument(sb, arg);
-            return sb.ToString();
-        }
-
-        private static readonly char[] s_specialCommandLineCharacters = " \t\n\v\"\\".ToCharArray();
-
-        public static void FormatCommandLineArgument(StringBuilder sb, string arg)
-        {
-            // Adapted from https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/
-
-            Guard.ArgumentNotNull(arg, nameof(arg));
-
-            if (arg.Length > 0 && arg.IndexOfAny(s_specialCommandLineCharacters) == -1)
-            {
-                sb.Append(arg);
-                return;
-            }
-
-            sb.Append('"');
-            for (int i = 0; ; ++i)
-            {
-                int slashes = 0;
-                while (i < arg.Length && arg[i] == '\\')
-                {
-                    ++slashes;
-                    ++i;
-                }
-
-                if (i == arg.Length)
-                {
-                    sb.Append('\\', slashes * 2);
-                    break;
-                }
-
-                if (arg[i] == '"')
-                {
-                    sb.Append('\\', slashes * 2 + 1);
-                }
-                else
-                {
-                    sb.Append('\\', slashes);
-                }
-
-                sb.Append(arg[i]);
-            }
-
-            sb.Append('"');
-        }
+        }      
 
         internal static void SetCommandLine(this ProcessStartInfo startInfo, string executable, string cmdLine)
         {
