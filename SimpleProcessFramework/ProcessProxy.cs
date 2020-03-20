@@ -72,6 +72,7 @@ namespace Spfx
     public class ProcessProxy
     {
         private readonly IClientConnectionFactory m_connectionFactory;
+        public ITypeResolver TypeResolver { get; }
 
         public ProcessProxy()
             : this(true)
@@ -95,8 +96,8 @@ namespace Spfx
 
         public ProcessProxy(ITypeResolver resolver)
         {
-            var typeResolver = resolver.CreateNewScope();
-            m_connectionFactory = typeResolver.CreateSingleton<IClientConnectionFactory>();
+            TypeResolver = resolver.CreateNewScope();
+            m_connectionFactory = TypeResolver.CreateSingleton<IClientConnectionFactory>();
         }
 
         public static Task DestroyEndpoint(object endpointInstance)
