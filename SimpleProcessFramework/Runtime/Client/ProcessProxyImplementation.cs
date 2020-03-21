@@ -93,8 +93,7 @@ namespace Spfx.Runtime.Client
                 //callReq.MethodId = (await m_connection.GetRemoteMethodDescriptor(m_remoteAddress, calledMethod)).MethodId;
             }
 
-            var compl = m_connection.SerializeAndSendMessage(remoteCallRequest, ct);
-            return TaskEx.ContinueWithCast<object, T>(compl);
+            return m_connection.SerializeAndSendMessage<T>(remoteCallRequest, ct);
         }
 
         protected void AddEventSubscription(Delegate handler, ProcessProxyEventSubscriptionInfo eventInfo)

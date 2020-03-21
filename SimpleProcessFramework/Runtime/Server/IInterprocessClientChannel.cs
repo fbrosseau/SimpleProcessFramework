@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Spfx.Runtime.Messages;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {
@@ -26,7 +27,7 @@ namespace Spfx.Runtime.Server
         void SendMessage(IInterprocessMessage msg);
     }
 
-    public interface IInterprocessClientChannel
+    public interface IInterprocessClientChannel : IAsyncDestroyable
     {
         string UniqueId { get; }
 

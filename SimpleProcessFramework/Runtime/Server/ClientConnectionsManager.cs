@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Server.Listeners;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
@@ -20,12 +24,57 @@ namespace Spfx.Runtime.Server
             m_typeResolver = typeResolver;
         }
 
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
+        {
+            var disposables = new List<IAsyncDestroyable>();
+
+            lock (m_listeners)
+            {
+                disposables.AddRange(m_listeners);
+                m_listeners.Clear();
+            }
+
+            lock(m_activeChannels)
+            {
+                disposables.AddRange(m_activeChannels.Values);
+                m_activeChannels.Clear();
+            }
+
+            await TeardownAll(disposables, ct).ConfigureAwait(false);
+
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
+        }
+
+        protected override void OnDispose()
+        {
+            var disposables = new List<IDisposable>();
+
+            lock (m_listeners)
+            {
+                disposables.AddRange(m_listeners);
+                m_listeners.Clear();
+            }
+
+            lock (m_activeChannels)
+            {
+                disposables.AddRange(m_activeChannels.Values);
+                m_activeChannels.Clear();
+            }
+
+            foreach (var d in disposables)
+            {
+                d.Dispose();
+            }
+
+            base.OnDispose();
+        }
+
         public void AddListener(IConnectionListener listener)
         {
             lock (m_listeners)
             {
                 if (!m_listeners.Add(listener))
-                    throw new InvalidOperationException("This listener was added twice");
+                    BadCodeAssert.ThrowInvalidOperation("This listener was added twice");
             }
 
             if (m_messagesHandler is null)
@@ -85,7 +134,7 @@ namespace Spfx.Runtime.Server
             }
 
             if (c is null && mustExist)
-                throw new InvalidOperationException("This connection no longer exists");
+                throw new UnknownChannelException($"Channel {connectionId} does not exist");
 
             return c;
         }

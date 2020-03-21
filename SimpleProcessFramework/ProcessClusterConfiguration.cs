@@ -97,8 +97,9 @@ namespace Spfx
 
         public TimeSpan DestroyEndpointTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-        [DataMember]
         public StringKeyValuePair[] ExtraEnvironmentVariables { get; set; }
+
+        public TimeSpan ReceiveConnectionTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         public ProcessClusterConfiguration Clone(bool makeReadonly = false)
         {

@@ -20,13 +20,8 @@ namespace Spfx.Runtime.Server
         private IIncomingClientMessagesHandler m_messagesHandler;
         private static readonly SimpleUniqueIdFactory<IInterprocessClientChannel> s_idFactory = new SimpleUniqueIdFactory<IInterprocessClientChannel>();
 
-        public ServerInterprocessChannel(ITypeResolver typeResolver, Stream duplexStream, string localEndpoint, string remoteEndpoint)
-            : this(typeResolver, duplexStream, duplexStream, localEndpoint, remoteEndpoint)
-        {
-        }
-
         public ServerInterprocessChannel(ITypeResolver typeResolver, Stream readStream, Stream writeStream, string localEndpoint, string remoteEndpoint)
-            : base(typeResolver)
+            : base(typeResolver, remoteEndpoint)
         {
             UniqueId = InterprocessConnectionId.ExternalConnectionIdPrefix + "/ " + s_idFactory.GetNextId(this) + "/" + remoteEndpoint;
             m_readStream = readStream;
@@ -50,6 +45,7 @@ namespace Spfx.Runtime.Server
 
         protected override void ProcessReceivedMessage(IInterprocessMessage msg)
         {
+            Logger.Debug?.Trace($"ProcessReceivedMessage: {msg.GetTinySummaryString()}");
             switch (msg)
             {
                 case WrappedInterprocessMessage wrapper:

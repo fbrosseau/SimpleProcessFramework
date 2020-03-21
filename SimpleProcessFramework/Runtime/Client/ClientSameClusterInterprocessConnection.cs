@@ -88,7 +88,7 @@ namespace Spfx.Runtime.Client
                 base.ProcessReceivedMessage(msg);
         }
 
-        protected override ValueTask ExecuteWrite(PendingOperation op)
+        protected override ValueTask ExecuteWrite(IPendingOperation op)
         {
             var msg = op.Message;
 

@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using System.Collections.Generic;
+using Spfx.Utilities.Threading;
+using Spfx.Tests.Utilities;
 
 namespace Spfx.Tests.Integration
 {
@@ -325,7 +327,7 @@ namespace Spfx.Tests.Integration
             }
         }
 
-        internal static void DisposeTestProcess(TestInterfaceWrapper testInterface)
+        internal static async Task DisposeTestProcess(TestInterfaceWrapper testInterface, CancellationToken ct)
         {
             var svc = testInterface.TestInterface;
             var proc = testInterface.ProcessInfo;
@@ -335,19 +337,19 @@ namespace Spfx.Tests.Integration
             var processName = addr.ProcessId;
 
             Log("Invoking DestroyEndpoint for " + addr.EndpointId);
-            Unwrap(testInterface.Cluster.PrimaryProxy.DestroyEndpoint(addr));
+            await testInterface.Cluster.PrimaryProxy.DestroyEndpoint(addr);
 
             Log("Invoking DestroyProcess for " + processName);
-            Unwrap(testInterface.Cluster.ProcessBroker.DestroyProcess(processName));
+            await testInterface.Cluster.ProcessBroker.DestroyProcess(processName);
 
             if (pid != Process.GetCurrentProcess().Id)
             {
                 Log("Waiting for real exit of process" + pid);
-                proc.WaitForExit(DefaultTestTimeout);
+                await proc.WaitForExitAsync(DefaultTestTimeoutTimespan, ct);
             }
         }
 
-        public class TestInterfaceWrapper : IDisposable
+        public class TestInterfaceWrapper : AsyncDestroyable
         {
             public ITestInterface TestInterface { get; }
             public Process ProcessInfo { get; }
@@ -380,13 +382,36 @@ namespace Spfx.Tests.Integration
                 }
             }
 
-            public void Dispose()
+            protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
+            {
+                static async ValueTask DisposeAsync(IDisposable d)
+                {
+                    if (d is IAsyncDisposable a)
+                        await a.DisposeAsync().ConfigureAwait(false);
+                    else
+                        d.Dispose();
+                }
+
+                foreach (var f in m_objectsToDisposeFirst)
+                {
+                    await DisposeAsync(f);
+                }
+                await DisposeTestProcess(this, ct);
+                foreach (var l in m_objectsToDisposeLast)
+                {
+                    await DisposeAsync(l);
+                }
+
+                await base.OnTeardownAsync(ct);
+            }
+
+            protected override void OnDispose()
             {
                 foreach(var f in m_objectsToDisposeFirst)
                 {
                     f.Dispose();
                 }
-                DisposeTestProcess(this);
+                Unwrap(DisposeTestProcess(this, default));
                 foreach(var l in m_objectsToDisposeLast)
                 {
                     l.Dispose();

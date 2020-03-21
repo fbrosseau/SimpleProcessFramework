@@ -28,6 +28,8 @@ namespace Spfx.Tests
         public const int DefaultTestTimeout = 30000;
 #endif
 
+        public static readonly TimeSpan DefaultTestTimeoutTimespan = TimeSpan.FromMilliseconds(DefaultTestTimeout);
+
         private static readonly Lazy<ILogger> s_logger = new Lazy<ILogger>(() => DefaultTypeResolverFactory.DefaultTypeResolver.CreateSingleton<ILoggerFactory>().GetLogger(typeof(CommonTestClass)));
 
         protected static void Log(string msg)
@@ -106,7 +108,7 @@ namespace Spfx.Tests
             Exception caughtEx = null;
             try
             {
-                await callback();
+                await callback().WithTimeout(DefaultTestTimeoutTimespan);
             }
             catch (Exception ex)
             {
@@ -182,7 +184,7 @@ namespace Spfx.Tests
             Assert.AreEqual(TaskStatus.Faulted, task.Status);
             var ex = task.ExtractException();
             if (!expectedExceptionType.IsInstanceOfType(ex))
-                Assert.Fail("Expected an exception of type " + expectedExceptionType.FullName + ", got " + ex.GetType().FullName);
+                Assert.Fail("Expected an exception of type " + expectedExceptionType.FullName + ", got " + ex.GetType().FullName + ".\r\nException:" + ex);
 
             if (!string.IsNullOrWhiteSpace(expectedText))
             {

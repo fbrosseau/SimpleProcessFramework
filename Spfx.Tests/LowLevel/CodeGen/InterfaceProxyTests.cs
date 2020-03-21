@@ -1,4 +1,5 @@
 ﻿using System;
+using Spfx.Utilities.Threading;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -61,6 +62,12 @@ namespace Spfx.Tests.LowLevel.CodeGen
             public Task<object> SerializeAndSendMessage(IInterprocessMessage req, CancellationToken ct = default)
             {
                 return m_messageHandler(req, ct);
+            }
+
+            public async Task<T> SerializeAndSendMessage<T>(IInterprocessMessage req, CancellationToken ct = default)
+            {
+                var raw = await SerializeAndSendMessage(req, ct);
+                return (T)raw;
             }
 
             public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)

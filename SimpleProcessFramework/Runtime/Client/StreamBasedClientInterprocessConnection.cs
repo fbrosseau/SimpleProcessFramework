@@ -1,7 +1,10 @@
-﻿using Spfx.Reflection;
+﻿using Spfx.Io;
+using Spfx.Reflection;
 using Spfx.Runtime.Client.Eventing;
 using Spfx.Runtime.Common;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Listeners;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
@@ -35,10 +38,31 @@ namespace Spfx.Runtime.Client
         private readonly EventSubscriptionManager m_eventManager;
 
         protected StreamBasedClientInterprocessConnection(ProcessEndpointAddress destination, ITypeResolver typeResolver)
-            : base(typeResolver)
+            : base(typeResolver, destination.ToString())
         {
             Destination = destination;
             m_eventManager = new EventSubscriptionManager(typeResolver, this, Destination);
+        }
+
+        protected async Task Authenticate(Stream dataStream)
+        {
+            await dataStream.WriteAsync(
+                StreamInterprocessConnectionListener.MagicStartCodeBytes,
+                0,
+                StreamInterprocessConnectionListener.MagicStartCodeBytes.Length);
+
+            using (var hello = BinarySerializer.Serialize<object>(new RemoteClientConnectionRequest(), lengthPrefix: true))
+            {
+                await hello.CopyToAsync(dataStream).ConfigureAwait(false);
+            }
+
+            using var responseStream = await dataStream.ReadLengthPrefixedBlockAsync();
+            var response = (RemoteClientConnectionResponse)BinarySerializer.Deserialize<object>(responseStream);
+
+            if (response.Success)
+                return;
+
+            throw new ProxyConnectionAuthenticationFailedException(string.IsNullOrWhiteSpace(response.Error) ? "The connection was refused by the remote host" : response.Error);
         }
 
         protected override void ProcessReceivedMessage(IInterprocessMessage msg)
@@ -49,7 +73,7 @@ namespace Spfx.Runtime.Client
                 base.ProcessReceivedMessage(msg);
         }
 
-        protected override async ValueTask DoWrite(PendingOperation op, Stream dataStream)
+        protected override async ValueTask DoWrite(IPendingOperation op, Stream dataStream)
         {
             bool expectResponse = false;
 
@@ -59,10 +83,12 @@ namespace Spfx.Runtime.Client
                 {
                     expectResponse = true;
 
-                    op.Task.ContinueWith(t =>
+                    op.Task.ContinueWith((t, s) =>
                     {
-                        DiscardPendingRequest(req.CallId);
-                    }).FireAndForget();
+                        var innerOp = (IPendingOperation)s;
+                        var innerThis = (StreamBasedClientInterprocessConnection)innerOp.Owner;
+                        innerThis.DiscardPendingRequest(((IInterprocessRequest)innerOp.Message).CallId);
+                    }, op).FireAndForget();
                 }
 
                 await base.DoWrite(op, dataStream).ConfigureAwait(false);

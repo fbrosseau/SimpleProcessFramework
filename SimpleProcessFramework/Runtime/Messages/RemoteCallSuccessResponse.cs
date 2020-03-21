@@ -19,7 +19,7 @@ namespace Spfx.Runtime.Messages
             Result = res;
         }
 
-        internal override void ForwardResult(TaskCompletionSource<object> completion)
+        internal override void ForwardResult(IInvocationResponseHandler completion)
         {
             completion?.TrySetResult(Result);
         }

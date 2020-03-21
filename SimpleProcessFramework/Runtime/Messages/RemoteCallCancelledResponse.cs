@@ -11,7 +11,7 @@ namespace Spfx.Runtime.Messages
         {
         }
 
-        internal override void ForwardResult(TaskCompletionSource<object> completion)
+        internal override void ForwardResult(IInvocationResponseHandler completion)
         {
             completion.TrySetCanceled();
         }

@@ -9,6 +9,7 @@ using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -81,17 +82,13 @@ namespace Spfx.Runtime.Server.Processes
                 => Enumerable.Empty<SubprocessShutdownEvent>();
         }
 
-        private class FakeSubprocessConnector : ISubprocessConnector
+        private class FakeSubprocessConnector : AsyncDestroyable, ISubprocessConnector
         {
             private readonly SameProcessFakeHandle m_owner;
 
             public FakeSubprocessConnector(SameProcessFakeHandle owner)
             {
                 m_owner = owner;
-            }
-
-            public void Dispose()
-            {
             }
 
             public ValueTask<IInterprocessClientChannel> GetClientInfo(string uniqueId)
@@ -107,8 +104,6 @@ namespace Spfx.Runtime.Server.Processes
             }
 
             public Task InitializeAsync(CancellationToken ct)
-                => Task.CompletedTask;
-            public Task TeardownAsync(CancellationToken ct = default)
                 => Task.CompletedTask;
         }
     }

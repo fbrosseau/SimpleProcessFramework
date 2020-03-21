@@ -11,6 +11,13 @@ namespace Spfx.Io
 {
     internal static class StreamExtensions
     {
+        public static async ValueTask<int> ReadLittleEndian32BitInt(this Stream stream, CancellationToken ct = default)
+        {
+            var buf = new byte[4];
+            await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf), ct);
+            return BinaryPrimitives.ReadInt32LittleEndian(buf);
+        }
+
         /// <summary>
         /// Expects either a little-endian 32-bit size followed by that amount of bytes, or a zero-or-negative little-endian 32-bit code.
         /// </summary>
@@ -62,7 +69,7 @@ namespace Spfx.Io
             if (res.Code == 0)
                 return Stream.Null;
             if (res.Code != null)
-                throw new InvalidOperationException("Expected to receive data");
+                BadCodeAssert.ThrowInvalidOperation("Expected to receive data");
             return res.Data;
         }
 
@@ -137,7 +144,7 @@ namespace Spfx.Io
             if (res.Code == 0)
                 return Stream.Null;
             if (res.Code != null)
-                throw new InvalidOperationException("Expected to receive data");
+                BadCodeAssert.ThrowInvalidOperation("Expected to receive data");
             return res.Data;
         }
 

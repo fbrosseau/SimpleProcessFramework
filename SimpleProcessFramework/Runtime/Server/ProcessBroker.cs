@@ -79,17 +79,8 @@ namespace Spfx.Runtime.Server
                 processes = m_subprocesses.Values.ToList();
             }
 
-            var teardownTasks = new List<Task>();
-
             m_logger.Info?.Trace($"Starting teardown of {processes.Count} processes");
-
-            foreach (var p in processes)
-            {
-                teardownTasks.Add(p.TeardownAsync(ct));
-            }
-
-            await Task.WhenAll(teardownTasks);
-
+            await TeardownAll(processes, ct);
             m_logger.Info?.Trace("Teardown of processes completed");
 
             await m_masterProcess.TeardownAsync(ct);
@@ -119,7 +110,7 @@ namespace Spfx.Runtime.Server
             m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}");
 
             if (ProcessEndpointAddress.StringComparer.Equals(info.ProcessUniqueId, ProcessCore.MasterProcessUniqueId))
-                throw new InvalidOperationException("The master process cannot be created this way");
+                BadCodeAssert.ThrowInvalidOperation("The master process cannot be created this way");
 
             req.EnsureIsValid();
 
@@ -238,7 +229,7 @@ namespace Spfx.Runtime.Server
             m_logger.Info?.Trace($"DestroyProcess {processUniqueId}");
 
             if (ProcessEndpointAddress.StringComparer.Equals(processUniqueId, ProcessCore.MasterProcessUniqueId))
-                throw new InvalidOperationException("The master process cannot be destroyed this way");
+                BadCodeAssert.ThrowInvalidOperation("The master process cannot be destroyed this way");
 
             using (var target = GetSubprocess(processUniqueId, throwIfMissing: false))
             {

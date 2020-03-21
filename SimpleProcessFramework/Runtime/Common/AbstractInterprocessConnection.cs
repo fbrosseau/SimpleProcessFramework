@@ -9,23 +9,23 @@ using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Common
 {
-    internal abstract class AbstractInterprocessConnection : Disposable, IInterprocessConnection
+    internal abstract class AbstractInterprocessConnection : AsyncDestroyable, IInterprocessConnection
     {
         public event EventHandler ConnectionLost;
 
         private Task m_writeTask;
-        private readonly AsyncQueue<PendingOperation> m_pendingWrites;
-        private bool m_raisedConnectionLost;
-        private readonly SimpleUniqueIdFactory<PendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<PendingOperation>();
+        private readonly AsyncQueue<IPendingOperation> m_pendingWrites;
+        private Exception m_caughtException;
+        private readonly SimpleUniqueIdFactory<IPendingOperation> m_pendingRequests = new SimpleUniqueIdFactory<IPendingOperation>();
         protected ILogger Logger { get; }
         protected ITypeResolver TypeResolver { get; }
 
-        protected AbstractInterprocessConnection(ITypeResolver typeResolver)
+        protected AbstractInterprocessConnection(ITypeResolver typeResolver, string friendlyName = null)
         {
-            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true);
+            Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName);
             TypeResolver = typeResolver;
             
-            m_pendingWrites = new AsyncQueue<PendingOperation>
+            m_pendingWrites = new AsyncQueue<IPendingOperation>
             {
                 DisposeIgnoredItems = true
             };
@@ -34,7 +34,20 @@ namespace Spfx.Runtime.Common
         protected override void OnDispose()
         {
             Logger.Info?.Trace("AbstractInterprocessConnection::OnDispose");
-            m_pendingWrites.Dispose();
+            
+            var ex = m_caughtException;
+            m_pendingWrites.Dispose(ex);
+
+            var reqs = m_pendingRequests.DisposeAndGetAllValues();
+            Logger.Info?.Trace($"Aborting {reqs.Length} ongoing requests");
+            foreach (var r in reqs)
+            {
+                r.Abort(ex);
+            }
+
+            ConnectionLost?.Invoke(this, EventArgs.Empty);
+
+            m_pendingWrites.Dispose(ex);
             m_writeTask?.FireAndForget();
             base.OnDispose();
             Logger.Dispose();
@@ -45,25 +58,28 @@ namespace Spfx.Runtime.Common
         protected void BeginWrites()
         {
             Logger.Info?.Trace("BeginWrites");
-            m_writeTask = m_pendingWrites.ForEachAsync(ExecuteWrite);
+            m_writeTask = DoWrites();
         }
 
-        protected abstract ValueTask ExecuteWrite(PendingOperation op);
+        private async Task DoWrites()
+        {
+            try
+            {
+                await m_pendingWrites.ForEachAsync(ExecuteWrite);
+            }
+            catch (Exception ex)
+            {
+                HandleFailure(ex);
+            }
+        }
+
+        protected abstract ValueTask ExecuteWrite(IPendingOperation op);
 
         protected void HandleFailure(Exception ex)
         {
             Logger.Debug?.Trace(ex, "HandleFailure");
-
-            m_pendingWrites.Dispose(ex);
-
-            lock (this)
-            {
-                if (m_raisedConnectionLost)
-                    return;
-                m_raisedConnectionLost = true;
-            }
-
-            ConnectionLost?.Invoke(this, EventArgs.Empty);
+            m_caughtException = ex;
+            Dispose();
         }
 
         protected virtual void ProcessReceivedMessage(IInterprocessMessage msg)
@@ -77,7 +93,8 @@ namespace Spfx.Runtime.Common
                     }
                     break;
                 default:
-                    throw new InvalidOperationException("Message of type " + msg.GetType().FullName + " is not handled");
+                    BadCodeAssert.ThrowInvalidOperation("Message of type " + msg.GetType().FullName + " is not handled");
+                    break;
             }
         }
 
@@ -85,18 +102,25 @@ namespace Spfx.Runtime.Common
         {
             m_pendingRequests.RemoveById(callId)?.Dispose();
         }
-        
+
         public Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
-            return EnqueueOperation(CreatePendingOperation(msg, ct));
+            return SerializeAndSendMessage<object>(msg, ct);
         }
 
-        protected virtual PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
+        public Task<TResult> SerializeAndSendMessage<TResult>(IInterprocessMessage msg, CancellationToken ct = default)
         {
-            return new PendingOperation(this, msg, ct);
+            var op = CreatePendingOperation<TResult>(msg, ct);
+            EnqueueOperation(op);
+            return (Task<TResult>)op.Task;
         }
 
-        protected Task<object> EnqueueOperation(PendingOperation op)
+        protected virtual IPendingOperation CreatePendingOperation<TResult>(IInterprocessMessage msg, CancellationToken ct)
+        {
+            return new PendingOperation<TResult>(this, msg, ct);
+        }
+
+        protected void EnqueueOperation(IPendingOperation op)
         {
             if (op.Message is IInterprocessRequest req && req.ExpectResponse)
             {
@@ -105,23 +129,35 @@ namespace Spfx.Runtime.Common
 
             Logger.Debug?.Trace("EnqueueOperation " + op.Message.GetTinySummaryString());
             m_pendingWrites.Enqueue(op);
-            return op.ExecuteToCompletion();
         }
 
-        protected class PendingOperation : TaskCompletionSource<object>, IAbortableItem
+        protected interface IPendingOperation : IAbortableItem, IInvocationResponseHandler
+        {
+            IInterprocessMessage Message { get; }
+            Task Task { get; }
+            AbstractInterprocessConnection Owner { get; }
+        }
+
+        protected class PendingOperation<TResult> : TaskCompletionSource<TResult>, IPendingOperation
         {
             public IInterprocessMessage Message { get; }
             public AbstractInterprocessConnection Owner { get; }
             public CancellationToken CancellationToken { get; }
             private readonly ProcessEndpointAddress m_originalAddress;
+            private readonly CancellationTokenRegistration m_cancellationTokenRegistration;
+
+            Task IPendingOperation.Task => Task;
 
             public PendingOperation(AbstractInterprocessConnection owner, IInterprocessMessage req, CancellationToken ct)
-                : base(TaskCreationOptions.RunContinuationsAsynchronously)
+                : base(req, TaskCreationOptions.RunContinuationsAsynchronously)
             {
                 CancellationToken = ct;
                 Message = req;
                 Owner = owner;
                 m_originalAddress = req.Destination;
+
+                if (CancellationToken.CanBeCanceled && (Message is IInterprocessRequest))
+                    m_cancellationTokenRegistration = CancellationToken.Register(s => ((PendingOperation<TResult>)s).OnCancellationRequested(), this, false);
             }
 
             protected PendingOperation()
@@ -130,25 +166,17 @@ namespace Spfx.Runtime.Common
 
             public void Abort(Exception ex)
             {
-                TrySetException(ex);
+                if (ex != null)
+                    TrySetException(ex);
+                else
+                    TrySetCanceled();
+
+                _ = m_cancellationTokenRegistration.DisposeAsync();
             }
 
             public void Dispose()
             {
-                TrySetCanceled();
-            }
-
-            internal Task<object> ExecuteToCompletion()
-            {
-                if (!CancellationToken.CanBeCanceled || !(Message is IInterprocessRequest))
-                    return Task;
-                return AwaitOperationWithCancellation();
-            }
-
-            private async Task<object> AwaitOperationWithCancellation()
-            {
-                using var ctRegistration = CancellationToken.Register(s => ((PendingOperation)s).OnCancellationRequested(), this, false);
-                return await Task.ConfigureAwait(false);
+                Abort(null);
             }
 
             private void OnCancellationRequested()
@@ -168,6 +196,18 @@ namespace Spfx.Runtime.Common
             }
 
             public override string ToString() => GetTinySummaryString();
+
+            public bool TrySetResult(object result)
+            {
+                try
+                {
+                    return base.TrySetResult((TResult)result);
+                }
+                catch(Exception ex)
+                {
+                    return TrySetException(ex);
+                }
+            }
         }
     }
 }

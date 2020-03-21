@@ -1,6 +1,5 @@
 ﻿using Spfx.Serialization;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Messages
 {
@@ -10,7 +9,7 @@ namespace Spfx.Runtime.Messages
         [DataMember]
         public IRemoteExceptionInfo Error { get; set; }
 
-        internal override void ForwardResult(TaskCompletionSource<object> completion)
+        internal override void ForwardResult(IInvocationResponseHandler completion)
         {
             completion?.TrySetException(Error.RecreateException());
         }

@@ -24,7 +24,12 @@ namespace Spfx.Runtime.Common
 
         protected virtual TimeSpan KeepAliveInterval { get; }
 
-        protected class PendingStreamOperation : PendingOperation
+        protected interface IPendingStreamOperation : IPendingOperation
+        {
+            Stream CreateMessageStream(IBinarySerializer serializer);
+        }
+
+        protected class PendingStreamOperation<TResult> : PendingOperation<TResult>, IPendingStreamOperation
         {
             private readonly ConnectionCodes? m_code;
 
@@ -38,7 +43,7 @@ namespace Spfx.Runtime.Common
                 m_code = code;
             }
 
-            internal virtual Stream CreateMessageStream(IBinarySerializer serializer)
+            public virtual Stream CreateMessageStream(IBinarySerializer serializer)
             {
                 if (Message != null)
                     return serializer.Serialize<IInterprocessMessage>(WrappedInterprocessMessage.Wrap(Message, serializer), lengthPrefix: true);
@@ -63,8 +68,8 @@ namespace Spfx.Runtime.Common
             }
         }
 
-        public StreamBasedInterprocessConnection(ITypeResolver typeResolver)
-            : base(typeResolver)
+        public StreamBasedInterprocessConnection(ITypeResolver typeResolver, string friendlyName = null)
+            : base(typeResolver, friendlyName)
         {
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
 
@@ -72,18 +77,44 @@ namespace Spfx.Runtime.Common
             KeepAliveInterval = config.IpcConnectionKeepAliveInterval;
         }
 
-        protected override PendingOperation CreatePendingOperation(IInterprocessMessage msg, CancellationToken ct)
+        protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
         {
-            return new PendingStreamOperation(this, msg, ct);
+            Logger.Info?.Trace($"{nameof(StreamBasedInterprocessConnection)}::OnTeardownAsync");
+
+            if (ReadStream != null && WriteStream != null)
+            {
+                await Task.WhenAll(
+                    ReadStream.DisposeAsync().AsTask(),
+                    WriteStream.DisposeAsync().AsTask())
+                    .ConfigureAwait(false);
+            }
+
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
-        protected override async ValueTask ExecuteWrite(PendingOperation op)
+        protected override void OnDispose()
+        {
+            Logger.Info?.Trace($"{nameof(StreamBasedInterprocessConnection)}::OnDispose");
+
+            ReadStream?.Dispose();
+            WriteStream?.Dispose();
+            m_readTask?.FireAndForget();
+            m_keepAliveTask?.FireAndForget();
+            base.OnDispose();
+        }
+        
+        protected override IPendingOperation CreatePendingOperation<TResult>(IInterprocessMessage msg, CancellationToken ct)
+        {
+            return new PendingStreamOperation<TResult>(this, msg, ct);
+        }
+
+        protected override async ValueTask ExecuteWrite(IPendingOperation op)
         {
             try
             {
                 try
                 {
-                    using var serializedData = ((PendingStreamOperation)op).CreateMessageStream(BinarySerializer);
+                    using var serializedData = ((IPendingStreamOperation)op).CreateMessageStream(BinarySerializer);
                     Logger.Debug?.Trace($"ExecuteWrite: {op.Message.GetTinySummaryString()} ({serializedData.Length} bytes)");
                     await DoWrite(op, serializedData).ConfigureAwait(false);
                 }
@@ -102,20 +133,9 @@ namespace Spfx.Runtime.Common
             }
         }
 
-        protected virtual ValueTask DoWrite(PendingOperation op, Stream dataStream)
+        protected virtual ValueTask DoWrite(IPendingOperation op, Stream dataStream)
         {
             return new ValueTask(dataStream.CopyToAsync(WriteStream));
-        }
-
-        protected override void OnDispose()
-        {
-            Logger.Info?.Trace($"{nameof(StreamBasedInterprocessConnection)}::OnDispose");
-
-            ReadStream?.Dispose();
-            WriteStream?.Dispose();
-            m_readTask?.FireAndForget();
-            m_keepAliveTask?.FireAndForget();
-            base.OnDispose();
         }
 
         public override void Initialize()

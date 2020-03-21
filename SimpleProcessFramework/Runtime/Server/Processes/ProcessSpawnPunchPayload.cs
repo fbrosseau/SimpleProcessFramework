@@ -67,7 +67,7 @@ namespace Spfx.Runtime.Server.Processes
                 TypeResolverFactory = reader.ReadLine()
             };
 
-            timeoutTimer.Dispose();
+            _ = timeoutTimer.DisposeAsync();
             Interlocked.Exchange(ref timedOut, 0);
 
             return output;

@@ -62,21 +62,5 @@ namespace Spfx.Runtime.Client
         {
             return Task.FromResult(ns);
         }
-
-        private async Task Authenticate(Stream tlsStream)
-        {
-            using (var hello = BinarySerializer.Serialize<object>(new RemoteClientConnectionRequest(), lengthPrefix: true))
-            {
-                await hello.CopyToAsync(tlsStream).ConfigureAwait(false);
-            }
-
-            using var responseStream = await tlsStream.ReadLengthPrefixedBlockAsync();
-            var response = (RemoteClientConnectionResponse)BinarySerializer.Deserialize<object>(responseStream);
-
-            if (response.Success)
-                return;
-
-            throw new ProxyConnectionAuthenticationFailedException(string.IsNullOrWhiteSpace(response.Error) ? "The connection was refused by the remote host" : response.Error);
-        }
     }
 }

@@ -181,15 +181,7 @@ namespace Spfx.Runtime.Server
             }
 
             m_logger.Info?.Trace($"OnTeardownAsync of {endpoints.Count} endpoints");
-
-            var disposeTasks = new List<Task>();
-            foreach (var ep in endpoints)
-            {
-                disposeTasks.Add(ep.TeardownAsync(ct));
-            }
-
-            await Task.WhenAll(disposeTasks);
-
+            await TeardownAll(endpoints, ct).ConfigureAwait(false);
             m_logger.Info?.Trace("OnTeardownAsync of endpoints completed");
 
             await base.OnTeardownAsync(ct);
