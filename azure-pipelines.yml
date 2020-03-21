@@ -44,13 +44,6 @@ steps:
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
 - task: UseDotNet@2
-  displayName: 'Install .net core 3.0'
-  inputs:
-    packageType: sdk
-    version: 3.0.x
-    installationPath: $(Agent.ToolsDirectory)/dotnet
-
-- task: UseDotNet@2
   displayName: 'Install .net core 3.1'
   inputs:
     packageType: sdk
@@ -84,11 +77,6 @@ steps:
   inputs:
     filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
     arguments: '-Version 2.1 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86'
-- task: PowerShell@2
-  displayName: 'Netcore 3.0 x86'
-  inputs:
-    filePath: '$(Build.SourcesDirectory)/ManualInstallDotnet.ps1'
-    arguments: '-Version 3.0 -CliPath $(Agent.ToolsDirectory)/dotnet32 -Arch x86 -NoDownloadScript'
 - task: PowerShell@2
   displayName: 'Netcore 3.1 x86'
   inputs:

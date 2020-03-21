@@ -6,7 +6,7 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>762</MinorVersion>
+    <MinorVersion>763</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
@@ -38,7 +38,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(NetCore3Versions)'==''">
-    <NetCore3Versions>netcoreapp3.1;netcoreapp3.0</NetCore3Versions>
+    <NetCore3Versions>netcoreapp3.1</NetCore3Versions>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(NetCore2Versions)'==''">
