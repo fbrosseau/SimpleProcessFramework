@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Spfx.Runtime.Server.Processes;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +10,10 @@ namespace Spfx.Utilities.Threading
     [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IAsyncDestroyable : IDisposable
     {
+        bool HasAsyncTeardownStarted { get; }
+        bool HasTeardownStarted { get; }
+
+        ValueTask DisposeAsync();
         Task TeardownAsync(CancellationToken ct = default);
     }
 
@@ -46,7 +52,16 @@ namespace Spfx.Utilities.Threading
             lock (DisposeLock)
             {
                 if (!HasTeardownStarted)
-                    m_teardownTask = OnTeardownAsync(ct).AsTask();
+                {
+                    try
+                    {
+                        m_teardownTask = OnTeardownAsync(ct).AsTask();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_teardownTask = Task.FromException(ex);
+                    }
+                }
             }
 
             return EnsureHasShutdownTask();
@@ -62,7 +77,7 @@ namespace Spfx.Utilities.Threading
             Interlocked.CompareExchange(ref m_teardownTask, m_teardownTaskCompletion.Task, null);
             return m_teardownTask;
         }
-        
+
         protected override void ThrowIfDisposing()
         {
             base.ThrowIfDisposing();
@@ -78,6 +93,18 @@ namespace Spfx.Utilities.Threading
         public ValueTask DisposeAsync()
         {
             return new ValueTask(TeardownAsync());
+        }
+
+        public static async ValueTask TeardownAll(IEnumerable<IAsyncDestroyable> instances, CancellationToken ct = default)
+        {
+            var teardownTasks = new List<Task>();
+
+            foreach (var i in instances)
+            {
+                teardownTasks.Add(i.TeardownAsync(ct));
+            }
+
+            await Task.WhenAll(teardownTasks).ConfigureAwait(false);
         }
     }
 }
