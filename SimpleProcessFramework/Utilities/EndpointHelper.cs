@@ -26,7 +26,7 @@ namespace Spfx.Utilities
             {
                 if (ipep.AddressFamily == AddressFamily.InterNetwork)
                     return $"{ipep.Address}:{ipep.Port}";
-                if (ipep.AddressFamily == AddressFamily.InterNetwork)
+                if (ipep.AddressFamily == AddressFamily.InterNetworkV6)
                     return $"[{ipep.Address}]:{ipep.Port}";
             }
 
@@ -36,7 +36,7 @@ namespace Spfx.Utilities
             if (ep is UnixDomainSocketEndPoint)
                 return ep.ToString();
 
-            throw new ArgumentException("Endpoint is not supported: " + ep.GetType().FullName);
+            throw new ArgumentException("Endpoint is not supported: " + ep.AddressFamily);
         }
     }
 }
