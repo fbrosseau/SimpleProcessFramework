@@ -5,6 +5,7 @@
     <version>$verString$</version>
     <description>A library to easily spawn subprocesses across multiple machines, multiple .Net frameworks and multiple operating systems</description>
     <authors>francis@malagauche.com</authors>
+    <repository type="git" url="https://github.com/fbrosseau/SimpleProcessFramework" />
     <dependencies>
       <group targetFramework=".NETFramework4.8">
         <dependency id="System.Memory" version="4.5.3" />
