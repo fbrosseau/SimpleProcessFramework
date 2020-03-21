@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Spfx.Utilities
@@ -9,33 +10,20 @@ namespace Spfx.Utilities
         public const long InvalidId = 0;
     }
 
-    internal class SimpleUniqueIdFactory<TValue>
+    internal class SimpleUniqueIdFactory<TValue> : Disposable
     {
         private readonly Dictionary<long, TValue> m_values = new Dictionary<long, TValue>();
         private long m_nextId;
 
         public long GetNextId(TValue val)
         {
-            try
-            {
-                lock (m_values)
-                {
-                    var id = GetRawNextId();
-                    m_values.Add(id, val);
-                    return id;
-                }
-            }
-            catch (ArgumentException)
+            lock (m_values)
             {
                 while (true)
                 {
-                    lock (m_values)
-                    {
-                        var id = GetRawNextId();
-                        if (!m_values.ContainsKey(id))
-                            m_values.Add(id, val);
+                    var id = GetRawNextId();
+                    if (m_values.TryAdd(id, val))
                         return id;
-                    }
                 }
             }
         }
@@ -64,6 +52,22 @@ namespace Spfx.Utilities
         private long GetRawNextId()
         {
             return Interlocked.Increment(ref m_nextId);
+        }
+
+        protected override void OnDispose()
+        {
+            base.OnDispose();
+        }
+
+        public TValue[] DisposeAndGetAllValues()
+        {
+            lock(m_values)
+            {
+                Dispose();
+                var vals = m_values.Values.ToArray();
+                m_values.Clear();
+                return vals;
+            }
         }
     }
 }

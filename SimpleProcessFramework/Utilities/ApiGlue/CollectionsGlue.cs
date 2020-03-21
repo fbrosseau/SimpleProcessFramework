@@ -24,6 +24,25 @@ namespace System.Collections.Generic
         }
 #endif
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETFRAMEWORK && !NETSTANDARD2_0
+        public static bool TryAdd<TKey, TValue>(Dictionary<TKey, TValue> dict, TKey key, TValue val)
+        {
+            return dict.TryAdd(key, val);
+        }
+#else
+        public static bool TryAdd<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue val)
+        {
+            if(!dict.ContainsKey(key))
+            {
+                dict[key] = val;
+                return true;
+            }
+
+            return false;
+        }
+#endif
+
 #if NETFRAMEWORK || NETSTANDARD2_0
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EnsureCapacity<TKey,TValue>(this Dictionary<TKey, TValue> dict, int cap)
