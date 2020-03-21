@@ -71,13 +71,14 @@ namespace Spfx.Runtime.Server
         
         private void CancelAllCalls()
         {
-            m_logger.Info?.Trace("CancelAllCalls");
             List<IInterprocessRequestContext> requests;
             lock (m_pendingCalls)
             {
                 requests = m_pendingCalls.Values.ToList();
                 m_pendingCalls.Clear();
             }
+
+            m_logger.Info?.Trace($"CancelAllCalls aborting {requests.Count} requests");
 
             foreach (var pending in requests)
             {

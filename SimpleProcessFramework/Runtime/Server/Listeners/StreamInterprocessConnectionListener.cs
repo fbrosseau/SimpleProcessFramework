@@ -67,7 +67,7 @@ namespace Spfx.Runtime.Server.Listeners
                 if (code != MagicStartCode)
                 {
                     string details = null;
-                    if ((code & 0xFF) == 0x16 && (code & 0xFF00) >> 8 == 0x3)
+                    if ((code & 0xFFFF) == 0x0316)
                     {
                         details = "The data received appears to be TLS handshake data. This may indicate that the client is configured to connect over TLS, while the server is configured for unencrypted traffic.";
                     }

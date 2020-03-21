@@ -35,7 +35,9 @@ namespace Spfx.Io
 
             try
             {
-                await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf, 0, 4), ct).ConfigureAwait(false);
+                bool success = await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf, 0, 4), ct, allowEof: true).ConfigureAwait(false);
+                if (!success)
+                    return StreamOrCode.CreateEof();
 
                 int size = BinaryPrimitives.ReadInt32LittleEndian(buf);
                 if (size > maximumSize)
@@ -73,7 +75,7 @@ namespace Spfx.Io
             return res.Data;
         }
 
-        public static async ValueTask ReadAllBytesAsync(this Stream stream, ArraySegment<byte> buf, CancellationToken ct = default)
+        public static async ValueTask<bool> ReadAllBytesAsync(this Stream stream, ArraySegment<byte> buf, CancellationToken ct = default, bool allowEof = false)
         {
             int count = buf.Count;
             int ofs = 0;
@@ -86,11 +88,18 @@ namespace Spfx.Io
                 int read = await stream.ReadAsync(buf.Array, buf.Offset + ofs, count, ct).ConfigureAwait(false);
 #endif
                 if (read < 1)
+                {
+                    if (read == 0 && allowEof)
+                        return false;
+
                     throw new EndOfStreamException();
+                }
 
                 ofs += read;
                 count -= read;
             }
+
+            return true;
         }
 
         /// <summary>

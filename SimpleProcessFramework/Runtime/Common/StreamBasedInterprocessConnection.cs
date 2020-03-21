@@ -8,6 +8,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,10 +84,23 @@ namespace Spfx.Runtime.Common
 
             if (ReadStream != null && WriteStream != null)
             {
-                await Task.WhenAll(
-                    ReadStream.DisposeAsync().AsTask(),
-                    WriteStream.DisposeAsync().AsTask())
-                    .ConfigureAwait(false);
+                var tasks = new List<Task>();
+
+                async Task DisposeStream(Stream s)
+                {
+                    if (s is SslStream ssl)
+                    {
+                        await ssl.ShutdownAsync();
+                    }
+
+                    await s.DisposeAsync();
+                }
+
+                tasks.Add(DisposeStream(ReadStream));
+                if (!ReferenceEquals(ReadStream, WriteStream))
+                    tasks.Add(DisposeStream(WriteStream));
+
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
 
             await base.OnTeardownAsync(ct).ConfigureAwait(false);
@@ -169,8 +183,14 @@ namespace Spfx.Runtime.Common
                 while (true)
                 {
                     using var frame = await ReadStream.ReadCodeOrLengthPrefixedBlockAsync().ConfigureAwait(false);
-                    if (frame.Code != null)
+                    if (!frame.HasData)
                     {
+                        if (frame.IsEof)
+                        {
+                            HandleFailure(new EndOfStreamException("The remote stream has been closed"));
+                            break;
+                        }
+
                         continue;
                     }
 

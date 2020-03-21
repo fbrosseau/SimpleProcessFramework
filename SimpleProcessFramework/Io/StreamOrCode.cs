@@ -1,6 +1,7 @@
 ﻿using Spfx.Utilities;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Spfx.Io
 {
@@ -9,14 +10,18 @@ namespace Spfx.Io
     /// </summary>
     public struct StreamOrCode : IDisposable
     {
+        private const int m_eofSpecialCode = unchecked((int)0xDEADDEAD);
         private readonly int m_code;
         private Stream m_data;
+
+        public bool HasData => m_data != null;
+        public bool IsEof => !HasData && Code == m_eofSpecialCode;
 
         public Stream Data
         {
             get
             {
-                if (m_data is null)
+                if (!HasData)
                     BadCodeAssert.ThrowInvalidOperation("The frame did not contain data");
                 return m_data;
             }
@@ -26,7 +31,7 @@ namespace Spfx.Io
         {
             get
             {
-                if (m_data is null)
+                if (!HasData)
                     return m_code;
                 return null;
             }
@@ -42,6 +47,11 @@ namespace Spfx.Io
         public static StreamOrCode CreateFromRentedArray(byte[] bytes, int count)
         {
             return new StreamOrCode(RentedMemoryStream.CreateFromRentedArray(bytes, count, false));
+        }
+
+        internal static StreamOrCode CreateEof()
+        {
+            return new StreamOrCode(m_eofSpecialCode);
         }
 
         public StreamOrCode(int code)
