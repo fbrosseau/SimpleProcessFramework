@@ -17,7 +17,7 @@ namespace Spfx.Io
             get
             {
                 if (m_data is null)
-                    throw new InvalidOperationException("The frame did not contain data");
+                    BadCodeAssert.ThrowInvalidOperation("The frame did not contain data");
                 return m_data;
             }
         }

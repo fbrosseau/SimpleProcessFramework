@@ -18,9 +18,8 @@ namespace Spfx.Runtime.Client
         {
             try
             {
-                var tlsStream = new SslStream(ns, false, delegate { return true; });
-                await tlsStream.AuthenticateAsClientAsync("unused", null, SslProtocols.None, false).ConfigureAwait(false);
-                return tlsStream;
+                var tlsAuthenticator = TypeResolver.CreateSingleton<IClientSslStreamFactory>();
+                return await tlsAuthenticator.CreateStreamAndAuthenticateAsync(ns, "<Todo>");
             }
             catch (AuthenticationException ex)
             {

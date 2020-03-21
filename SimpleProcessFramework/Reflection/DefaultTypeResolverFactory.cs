@@ -5,6 +5,7 @@ using Spfx.Serialization;
 using Spfx.Diagnostics.Logging;
 using System;
 using Spfx.Diagnostics;
+using Spfx.Runtime.Server.Listeners;
 
 namespace Spfx.Reflection
 {
@@ -31,6 +32,8 @@ namespace Spfx.Reflection
             resolver.RegisterFactory(r => ProcessClusterConfiguration.Default);
             resolver.RegisterFactory(r => new SubProcessConfiguration());
             resolver.RegisterFactory<IFailureCallResponsesFactory>(r => new DefaultFailureCallResponsesFactory());
+            resolver.RegisterFactory<IClientSslStreamFactory>(r => new DangerousTrustEverythingClientSslStreamFactory());
+            resolver.RegisterFactory<IServerSslStreamFactory>(r => new DefaultServerSslStreamFactory());
             DefaultTypeResolver = resolver;
         }
 

@@ -1,10 +1,9 @@
 ﻿using Spfx.Utilities;
 using System.IO;
 using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Listeners
@@ -12,6 +11,9 @@ namespace Spfx.Runtime.Server.Listeners
     public class TlsInterprocessConnectionListener : TcpInterprocessConnectionListener
     {
         private X509Certificate2 m_certificate;
+        private IServerSslStreamFactory m_sslStreamFactory;
+
+        public override string FriendlyName => "TCP+TLS @ " + ListenEndpoint;
 
         public TlsInterprocessConnectionListener(X509Certificate2 cert, int port)
           : this(cert, TcpListener.Create(port))
@@ -35,21 +37,12 @@ namespace Spfx.Runtime.Server.Listeners
             m_certificate = cert;
         }
 
-        protected override async ValueTask<Stream> CreateFinalStream(NetworkStream ns)
+        protected override ValueTask<Stream> CreateFinalStream(Stream ns, CancellationToken ct)
         {
-            var ssl = new SslStream(ns);
+            if (m_sslStreamFactory is null)
+                m_sslStreamFactory = TypeResolver.CreateSingleton<IServerSslStreamFactory>();
 
-            try
-            {
-                await ssl.AuthenticateAsServerAsync(m_certificate, false, SslProtocols.None, false);
-            }
-            catch
-            {
-                ssl.Dispose();
-                throw;
-            }
-
-            return ssl;
+            return new ValueTask<Stream>(m_sslStreamFactory.CreateSslStreamAndAuthenticate(ns, m_certificate, ct));
         }
     }
 }
