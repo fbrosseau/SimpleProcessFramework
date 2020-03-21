@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -91,7 +92,7 @@ namespace Spfx.Diagnostics.Logging
             }
 
             if (valueCallbacks.Count == 0)
-                throw new InvalidOperationException("Expected at least 1 replacement %MSG% !");
+                BadCodeAssert.ThrowInvalidOperation("Expected at least 1 replacement %MSG% !");
 
             var vals = valueCallbacks.ToArray();
 

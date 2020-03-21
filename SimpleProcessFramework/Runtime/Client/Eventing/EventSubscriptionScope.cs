@@ -117,7 +117,7 @@ namespace Spfx.Runtime.Client.Eventing
 
         private static void ThrowMissingScope()
         {
-            throw new InvalidOperationException("Event Handlers may only be subscribed from within ProcessProxy.SubscribeEventsAsync");
+            BadCodeAssert.ThrowInvalidOperation("Event Handlers may only be subscribed from within ProcessProxy.SubscribeEventsAsync");
         }
 
         private static EventSubscriptionScope GetCurrent()
@@ -131,7 +131,7 @@ namespace Spfx.Runtime.Client.Eventing
         private static EventSubscriptionScope Create()
         {
             if (IsInScope)
-                throw new InvalidOperationException("Calls to ProcessProxy.SubscribeEventsAsync cannot be nested");
+                BadCodeAssert.ThrowInvalidOperation("Calls to ProcessProxy.SubscribeEventsAsync cannot be nested");
             return t_current = new EventSubscriptionScope();
         }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
 using System.Runtime.Serialization;
 
 namespace Spfx.Interfaces
@@ -15,7 +16,7 @@ namespace Spfx.Interfaces
         internal void EnsureIsValid()
         {
             if (ProcessInfo is null)
-                throw new InvalidOperationException("ProcessInfo cannot be null");
+                BadCodeAssert.ThrowInvalidOperation("ProcessInfo cannot be null");
 
             ProcessInfo.EnsureIsValid();
         }

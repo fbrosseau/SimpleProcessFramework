@@ -199,7 +199,7 @@ namespace Spfx
         private ProcessEndpointAddress CreateProcessAddress()
         {
             if (ProcessId is null)
-                throw new InvalidOperationException("This address does not contain a TargetProcess");
+                BadCodeAssert.ThrowInvalidOperation("This address does not contain a TargetProcess");
             if (EndpointId is null)
                 return this;
             return ClusterAddress.Combine(ProcessId);

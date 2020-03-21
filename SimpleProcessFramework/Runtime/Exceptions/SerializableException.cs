@@ -39,9 +39,13 @@ namespace Spfx.Runtime.Exceptions
             get
             {
                 if (m_remoteStackTrace is null && TrackRemoteStackTrace)
-                    m_remoteStackTrace = StackTrace ?? "";
+                    RemoteStackTrace = StackTrace ?? "";
 
                 return m_remoteStackTrace;
+            }
+            private set /* used by serialization */
+            {
+                m_remoteStackTrace = value;
             }
         }
 

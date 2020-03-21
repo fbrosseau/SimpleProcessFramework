@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
 
 namespace Spfx.Runtime.Exceptions
 {
@@ -7,6 +8,7 @@ namespace Spfx.Runtime.Exceptions
         public CodeGenerationFailedException(string message, Exception innerEx)
             : base(message, innerEx)
         {
+            BadCodeAssert.Assert(message);
         }
     }
 }

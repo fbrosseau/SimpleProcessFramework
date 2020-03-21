@@ -105,7 +105,7 @@ namespace Spfx.Runtime.Server
         private void CompleteWithTask<T>(Task t)
         {
             if (t is null)
-                throw new InvalidOperationException("Methods cannot return null Tasks");
+                BadCodeAssert.ThrowInvalidOperation("Methods cannot return null Tasks");
 
             m_tcs.CompleteWith<T>(t);
         }

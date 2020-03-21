@@ -91,7 +91,7 @@ namespace Spfx.Utilities.Threading
         public static void CompleteWithTaskResult<TTaskResult, TTcs>(TaskCompletionSource<TTcs> tcs, Task task)
         {
             if (!task.IsCompleted)
-                throw new InvalidOperationException("The task must be completed first");
+                BadCodeAssert.ThrowInvalidOperation("The task must be completed first");
 
             if (task.IsCompletedSuccessfully())
             {
@@ -131,8 +131,6 @@ namespace Spfx.Utilities.Threading
             {
                 if (t.IsCompletedSuccessfully())
                     return TaskCache.FromResult((TOut)(object)t.Result);
-                else if (t.IsCanceled)
-                    return Task.FromCanceled<TOut>(default);
                 else
                     return Task.FromException<TOut>(t.GetExceptionOrCancel());
             }
@@ -186,7 +184,7 @@ namespace Spfx.Utilities.Threading
             if (t.IsCanceled)
                 return new TaskCanceledException(t);
 
-            throw new InvalidOperationException("This task is not fauled or canceled");
+            throw BadCodeAssert.ThrowInvalidOperation("This task is not fauled or canceled");
         }
 
         public static Exception GetExceptionOrCancel(this ValueTask t)
@@ -196,7 +194,7 @@ namespace Spfx.Utilities.Threading
             if (t.IsCanceled)
                 return new TaskCanceledException(t.AsTask());
 
-            throw new InvalidOperationException("This task is not fauled or canceled");
+            throw BadCodeAssert.ThrowInvalidOperation("This task is not fauled or canceled");
         }
 
         public static Exception GetExceptionOrCancel<T>(this ValueTask<T> t)
@@ -206,7 +204,7 @@ namespace Spfx.Utilities.Threading
             if (t.IsCanceled)
                 return new TaskCanceledException(t.AsTask());
 
-            throw new InvalidOperationException("This task is not fauled or canceled");
+            throw BadCodeAssert.ThrowInvalidOperation("This task is not fauled or canceled");
         }
 
         public static void RethrowException(this Task t)
@@ -389,19 +387,19 @@ namespace Spfx.Utilities.Threading
         public static void ExpectAlreadyCompleted(this Task t)
         {
             if (!t.IsCompleted)
-                throw new InvalidOperationException("This task was supposed to be already completed");
+                BadCodeAssert.ThrowInvalidOperation("This task was supposed to be already completed");
         }
 
         public static void ExpectAlreadyCompleted(this ValueTask t)
         {
             if (!t.IsCompleted)
-                throw new InvalidOperationException("This task was supposed to be already completed");
+                BadCodeAssert.ThrowInvalidOperation("This task was supposed to be already completed");
         }
 
         public static void ExpectAlreadyCompleted<T>(this ValueTask<T> t)
         {
             if (!t.IsCompleted)
-                throw new InvalidOperationException("This task was supposed to be already completed");
+                BadCodeAssert.ThrowInvalidOperation("This task was supposed to be already completed");
         }
 
         public static Exception ExtractException(this Task t)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Serialization.Serializers;
 
 namespace Spfx.Serialization.DataContracts
@@ -64,7 +65,7 @@ namespace Spfx.Serialization.DataContracts
             public object GetFinalObject()
             {
                 if (!m_graphInitialized)
-                    throw new InvalidOperationException("The serialized object did not contain the required DataMember");
+                    throw new BadDataContractException("The serialized object did not contain the required DataMember");
 
                 return m_graph;
             }

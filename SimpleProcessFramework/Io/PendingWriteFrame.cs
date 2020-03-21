@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
 using System.IO;
 
 namespace Spfx.Io
@@ -14,7 +15,7 @@ namespace Spfx.Io
             get
             {
                 if (IsCodeFrame)
-                    throw new InvalidOperationException("This frame does not contain data");
+                    BadCodeAssert.ThrowInvalidOperation("This frame does not contain data");
                 return m_stream;
             }
         }

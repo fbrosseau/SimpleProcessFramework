@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spfx.Utilities;
+using System;
 using System.Runtime.Serialization;
 
 namespace Spfx.Interfaces
@@ -33,9 +34,9 @@ namespace Spfx.Interfaces
         public void EnsureIsValid()
         {
             if (string.IsNullOrWhiteSpace(ProcessUniqueId))
-                throw new InvalidOperationException(nameof(ProcessUniqueId) + " is mandatory");
+                BadCodeAssert.ThrowInvalidOperation(nameof(ProcessUniqueId) + " is mandatory");
             if (TargetFramework is null)
-                throw new InvalidOperationException(nameof(TargetFramework) + " is mandatory");
+                BadCodeAssert.ThrowInvalidOperation(nameof(TargetFramework) + " is mandatory");
         }
     }
 

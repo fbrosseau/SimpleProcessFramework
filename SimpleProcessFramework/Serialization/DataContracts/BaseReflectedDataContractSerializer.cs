@@ -1,4 +1,5 @@
-﻿using Spfx.Serialization.Serializers;
+﻿using Spfx.Runtime.Exceptions;
+using Spfx.Serialization.Serializers;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -107,7 +108,7 @@ namespace Spfx.Serialization.DataContracts
 
                     var getter = pi.GetGetMethod(true);
                     if (getter is null)
-                        throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} has no getter");
+                        throw new BadDataContractException($"Property {declaringType.FullName}::{pi.Name} has no getter");
 
                     member.GetAccessor = o => getter.Invoke(o, null);
 
@@ -118,9 +119,9 @@ namespace Spfx.Serialization.DataContracts
                         if (autoBackingField is null)
                         {
                             if (declaringType == actualType)
-                                throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} has no setter");
+                                throw new BadDataContractException($"Property {declaringType.FullName}::{pi.Name} has no setter");
                             else
-                                throw new InvalidOperationException($"Property {declaringType.FullName}::{pi.Name} (in {actualType.FullName}) has no setter");
+                                throw new BadDataContractException($"Property {declaringType.FullName}::{pi.Name} (in {actualType.FullName}) has no setter");
                         }
                         member.SetAccessor = (o, v) => autoBackingField.SetValue(o, v);
                     }

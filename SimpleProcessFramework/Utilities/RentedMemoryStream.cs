@@ -252,7 +252,10 @@ namespace Spfx.Utilities
         {
             EnsureNotDisposed();
             if (!CanWrite)
+            {
+                BadCodeAssert.Assert("This stream is read-only");
                 throw new InvalidOperationException("This stream is read-only");
+            }
         }
 
         private void EnsureNotDisposed()

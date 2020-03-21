@@ -23,7 +23,7 @@ namespace Spfx.Utilities.Threading
 
         private class DummyWorkItem : IThreadPoolWorkItem
         {
-            public void Execute() => throw new InvalidOperationException(nameof(DummyWorkItem));
+            public void Execute() => BadCodeAssert.ThrowInvalidOperation(nameof(DummyWorkItem));
         }
 
         public ThreadPoolInvoker(TCallbackInvoker invoker, IThreadPoolWorkItem boxedCallback = null)
@@ -36,7 +36,7 @@ namespace Spfx.Utilities.Threading
         private IThreadPoolWorkItem GetBoxedCallback()
         {
             if (m_realCallback is null)
-                throw new InvalidOperationException("This instance was not initialized");
+                BadCodeAssert.ThrowInvalidOperation("This instance was not initialized");
             if (ReferenceEquals(s_uninitializedSentinel, m_boxedCallback))
                 m_boxedCallback = m_realCallback;
             return m_boxedCallback;
