@@ -1,7 +1,7 @@
 ﻿using Spfx.Reflection;
 using System;
 
-namespace Spfx.Runtime.Client.Eventing
+namespace Spfx.Runtime.Client.Events
 {
     public class ProcessProxyEventSubscriptionInfo
     {

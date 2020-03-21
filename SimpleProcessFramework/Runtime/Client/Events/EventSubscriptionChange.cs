@@ -1,4 +1,4 @@
-﻿namespace Spfx.Runtime.Client.Eventing
+﻿namespace Spfx.Runtime.Client.Events
 {
     public delegate void RawEventDelegate(object eventValue);
 

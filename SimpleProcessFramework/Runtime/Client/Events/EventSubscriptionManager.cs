@@ -12,7 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Spfx.Runtime.Client.Eventing
+namespace Spfx.Runtime.Client.Events
 {
     internal class EventSubscriptionManager : AsyncDestroyable
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Spfx.Runtime.Client.Eventing
+namespace Spfx.Runtime.Client.Events
 {
     public class EventSubscriptionChangeRequest
     {

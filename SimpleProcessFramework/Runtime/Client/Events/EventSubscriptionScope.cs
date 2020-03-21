@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace Spfx.Runtime.Client.Eventing
+namespace Spfx.Runtime.Client.Events
 {
     internal class EventSubscriptionScope : Disposable
     {

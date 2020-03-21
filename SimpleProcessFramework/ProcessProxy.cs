@@ -1,7 +1,7 @@
 ﻿using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
-using Spfx.Runtime.Client.Eventing;
+using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;

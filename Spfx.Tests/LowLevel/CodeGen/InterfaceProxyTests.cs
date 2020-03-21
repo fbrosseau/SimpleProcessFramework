@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
-using Spfx.Runtime.Client.Eventing;
+using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Messages;
 
 namespace Spfx.Tests.LowLevel.CodeGen

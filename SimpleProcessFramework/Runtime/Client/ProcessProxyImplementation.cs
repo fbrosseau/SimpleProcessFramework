@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Spfx.Utilities.Threading;
 using Spfx.Utilities;
-using Spfx.Runtime.Client.Eventing;
+using Spfx.Runtime.Client.Events;
 
 namespace Spfx.Runtime.Client
 {

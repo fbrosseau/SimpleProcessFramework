@@ -1,6 +1,6 @@
 ﻿using Spfx.Io;
 using Spfx.Reflection;
-using Spfx.Runtime.Client.Eventing;
+using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Common;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
