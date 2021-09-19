@@ -149,9 +149,12 @@ namespace Spfx.Runtime.Server.Processes
             FileInfo GetFileInCodebase(string file)
                 => new FileInfo(Path.Combine(codebase, file));
 
+            var testedFiles = new List<string>();
+
             bool TestFileExists(string file)
             {
                 var fileInfo = GetFileInCodebase(file);
+                testedFiles.Add(fileInfo.FullName);
                 if (!fileInfo.Exists)
                     return false;
 
@@ -244,6 +247,9 @@ namespace Spfx.Runtime.Server.Processes
                         return;
                 }
             }
+
+            m_logger.Warn?.Trace("The target executable does not exist. Checked paths:\r\n"
+                + string.Join("\r\n", testedFiles.Distinct().OrderBy(s => s).Select(s => " - " + s)));
 
             throw new MissingSubprocessExecutableException(m_processCreationInfo.ProcessName);
         }

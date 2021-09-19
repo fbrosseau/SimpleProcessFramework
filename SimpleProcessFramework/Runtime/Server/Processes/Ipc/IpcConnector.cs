@@ -56,7 +56,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         protected override void OnDispose()
         {
-            Logger.Info?.Trace("OnDispose");
+            Logger.Info?.Trace("IpcConnector::OnDispose");
             ReadPipe.Dispose();
             WritePipe.WriteException -= OnWriterExceptionCaught;
             WritePipe.Dispose();
@@ -158,10 +158,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         public void ForwardMessage(IInterprocessMessage msg)
         {
-            if (!(msg is WrappedInterprocessMessage wrapped))
-            {
-                wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
-            }
+            var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
 
             var stream = BinarySerializer.Serialize(wrapped, lengthPrefix: true);
             Logger.Debug?.Trace($"Sending out {msg.GetTinySummaryString()} ({stream.Length} bytes)");

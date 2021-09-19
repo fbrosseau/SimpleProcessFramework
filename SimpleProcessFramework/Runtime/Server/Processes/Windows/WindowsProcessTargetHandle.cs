@@ -20,7 +20,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 {
     internal partial class WindowsProcessTargetHandle : AbstractExternalProcessTargetHandle
     {
-        private UnicodeEncoding s_unicodeEncoding = new UnicodeEncoding(false, false, true);
+        private static UnicodeEncoding s_unicodeEncoding = new UnicodeEncoding(false, false, true);
 
         public WindowsProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)

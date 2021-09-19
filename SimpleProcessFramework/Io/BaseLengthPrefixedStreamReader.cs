@@ -50,7 +50,14 @@ namespace Spfx.Io
                 while (true)
                 {
                     var frame = await ReceiveNextFrame();
-                    m_readQueue.Enqueue(frame);
+                    if (frame.IsEof)
+                    {
+                        m_readQueue.CompleteAdding().FireAndForget();
+                    }
+                    else
+                    {
+                        m_readQueue.Enqueue(frame);
+                    }
                 }
             }
             catch (Exception ex)

@@ -18,17 +18,21 @@ namespace Spfx.Runtime.Server.Processes
         public TargetFramework TargetFramework => ProcessCreationInfo.TargetFramework;
         public string ProcessUniqueId => ProcessCreationInfo.ProcessUniqueId;
         public ProcessCreationInfo ProcessCreationInfo { get; }
+        public ProcessInformation ProcessInfo { get; private set; }
+        public event EventHandler ProcessExited;
+
         protected ITypeResolver TypeResolver { get; }
         protected ProcessClusterConfiguration Config { get; }
-        public ProcessInformation ProcessInfo { get; private set; }
-        private readonly IIncomingClientMessagesHandler m_processBroker;
+        protected IIncomingClientMessagesHandler ProcessBroker { get; }
         protected ILogger Logger { get; }
+        protected IBinarySerializer BinarySerializer { get; }
+
+        protected Task<string> ProcessExitEvent => m_processExitEvent.Task;
+        private readonly TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private readonly AsyncManualResetEvent m_initEvent = new AsyncManualResetEvent();
         private Exception m_firstCaughtException;
         private CancellationTokenSource m_createProcessCancellation;
-
-        protected IBinarySerializer BinarySerializer { get; }
 
         protected GenericProcessHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
         {
@@ -36,7 +40,7 @@ namespace Spfx.Runtime.Server.Processes
             TypeResolver = typeResolver;
             Config = typeResolver.GetSingleton<ProcessClusterConfiguration>();
             BinarySerializer = typeResolver.CreateSingleton<IBinarySerializer>();
-            m_processBroker = typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
+            ProcessBroker = typeResolver.GetSingleton<IIncomingClientMessagesHandler>();
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: info.ProcessUniqueId);
         }
 
@@ -78,24 +82,39 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override void OnDispose()
         {
+            OnProcessLost("Dispose");
+
             Logger.Info?.Trace("OnDispose");
             m_initEvent.Dispose();
             base.OnDispose();
             Logger.Dispose();
         }
 
+        protected void OnProcessLost(string reason, Exception ex = null)
+        {
+            ex = ex is SubprocessLostException ? ex : new SubprocessLostException(reason, ex);
+            ReportFatalException(ex);
+
+            Logger.Info?.Trace(ex, "The process was lost: " + reason);
+
+            if (m_processExitEvent.TrySetResult(reason))
+            {
+                ProcessExited?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
         protected abstract Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct);
 
         void IProcessHandle.HandleMessage(string connectionId, WrappedInterprocessMessage wrappedMessage)
         {
-            _ = PrepareTransferToRemote(connectionId, wrappedMessage);
+            PrepareTransferToRemote(connectionId, wrappedMessage).FireAndForget();
         }
 
         public void HandleMessage(string connectionId, IInterprocessMessage msg)
         {
             var wrapped = WrappedInterprocessMessage.Wrap(msg, BinarySerializer);
             wrapped.SourceConnectionId = connectionId;
-            _ = PrepareTransferToRemote(connectionId, wrapped);
+            PrepareTransferToRemote(connectionId, wrapped).FireAndForget();
         }
 
         private async ValueTask PrepareTransferToRemote(string connectionId, WrappedInterprocessMessage wrappedMessage)
@@ -126,7 +145,7 @@ namespace Spfx.Runtime.Server.Processes
 
         private void DispatchMessageBackToMaster(WrappedInterprocessMessage msg)
         {
-            m_processBroker.ForwardMessage(new ShallowConnectionProxy(this, msg.SourceConnectionId), msg);
+            ProcessBroker.ForwardMessage(new ShallowConnectionProxy(this, msg.SourceConnectionId), msg);
         }
 
         ValueTask<IInterprocessClientChannel> IMessageCallbackChannel.GetClientInfo(string uniqueId)
@@ -146,7 +165,8 @@ namespace Spfx.Runtime.Server.Processes
 
         protected bool ReportFatalException(Exception ex)
         {
-            m_createProcessCancellation?.SafeCancelAsync();
+            m_createProcessCancellation?.SafeCancelAndDisposeAsync();
+            m_createProcessCancellation = null;
             return null == Interlocked.CompareExchange(ref m_firstCaughtException, ex, null);
         }
 

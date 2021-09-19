@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Spfx.Tests.Utilities
 {
-    internal static class ProcessUtilities
+    internal static class TestProcessExtensions
     {
         public static Task WaitForExitAsync(this Process proc)
         {

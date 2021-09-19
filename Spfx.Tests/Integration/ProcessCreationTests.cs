@@ -16,7 +16,7 @@ namespace Spfx.Tests.Integration
             protected override async ValueTask InitializeAsync()
             {
                 await Task.Delay(1000);
-                await base.InitializeAsync();
+                await base.InitializeAsync().WT();
             }
         }
 
@@ -150,10 +150,10 @@ namespace Spfx.Tests.Integration
                         EndpointId = endpointId,
                         EndpointType = typeof(ITestInterface),
                         ImplementationType = typeof(LongInitEndpoint)
-                    });
+                    }).WT();
 
                     var ep = CreateProxyInterface<ITestInterface>(proxy, cluster, processId, endpointId);
-                    Assert.AreEqual(innerI, await ep.Echo(innerI));
+                    Assert.AreEqual(innerI, await ep.Echo(innerI).WT());
 
                     return result;
                 }).Wrap());

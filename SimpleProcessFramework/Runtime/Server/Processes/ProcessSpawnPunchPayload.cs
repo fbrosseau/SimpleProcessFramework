@@ -3,6 +3,7 @@ using System.IO;
 using Spfx.Interfaces;
 using System.Threading;
 using Spfx.Subprocess;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -67,7 +68,7 @@ namespace Spfx.Runtime.Server.Processes
                 TypeResolverFactory = reader.ReadLine()
             };
 
-            _ = timeoutTimer.DisposeAsync();
+            timeoutTimer.DisposeAsync().FireAndForget();
             Interlocked.Exchange(ref timedOut, 0);
 
             return output;

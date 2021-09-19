@@ -18,8 +18,8 @@ namespace Spfx.Tests
         internal static NetcoreTargetFramework LatestNetcore32 = NetcoreTargetFramework.Create(ProcessKind.Netcore32, LatestNetcore.TargetRuntime);
 
         internal static readonly NetcoreTargetFramework[] AllNetcore = {
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "2.1"),
-            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1")
+            NetcoreTargetFramework.Create(ProcessKind.Netcore, "3.1"),
+            NetcoreTargetFramework.Create(ProcessKind.Netcore, "6.0"),
         };
 
         internal static readonly TargetFramework[] Netfx_AllArchs = { TargetFramework.Create(ProcessKind.Netfx), TargetFramework.Create(ProcessKind.Netfx32) };

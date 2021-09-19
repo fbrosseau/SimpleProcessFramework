@@ -5,6 +5,7 @@ using Spfx.Serialization.DataContracts;
 using Spfx.Serialization.Serializers;
 using Spfx.Utilities;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
 namespace Spfx.Serialization
@@ -196,9 +198,27 @@ namespace Spfx.Serialization
             AddGeneric((bw, o) => { }, br => EventArgs.Empty);
             AddGeneric(WriteIPAddress, ReadIPAddress, discoverAllImplementations: true);
             AddGeneric(WriteVersion, ReadVersion);
+            AddGeneric(WriteCertificate, ReadCertificate);
+            AddGeneric(WriteCertificate2, ReadCertificate2);
 
             AddSerializer(typeof(bool), BoolSerializer.Serializer);
             AddSerializer(typeof(bool?), BoolSerializer.NullableSerializer);
+        }
+
+        private static void WriteCertificate2(SerializerSession session, X509Certificate2 cert) => WriteCertificate(session, cert);
+        private static X509Certificate ReadCertificate(DeserializerSession session) => ReadCertificate2(session);
+
+        private static X509Certificate2 ReadCertificate2(DeserializerSession session)
+        {
+            var len = checked((int)session.Reader.ReadEncodedUInt32());
+            return new X509Certificate2(session.Reader.ReadBytes(len));
+        }
+
+        private static void WriteCertificate(SerializerSession session, X509Certificate cert)
+        {
+            var bytes = cert.GetRawCertData();
+            session.Writer.WriteEncodedUInt32((uint)bytes.Length);
+            session.Writer.Write(bytes);
         }
 
         private static void WriteVersion(SerializerSession session, Version val)

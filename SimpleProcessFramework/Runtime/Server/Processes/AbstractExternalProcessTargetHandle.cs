@@ -35,7 +35,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override void OnDispose()
         {
-            if(ExternalProcess != null)
+            if (ExternalProcess != null)
             {
                 ExternalProcess.EnableRaisingEvents = false;
                 ExternalProcess.Exited -= OnProcessExited;
@@ -59,7 +59,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected override async Task<Exception> GetInitFailureException()
         {
-            if (ExternalProcess != null && ExternalProcess.Id != Process.GetCurrentProcess().Id)
+            if (ExternalProcess != null && ExternalProcess.Id != ProcessUtilities.CurrentProcessId)
                 ExternalProcess?.TryKill();
 
             var caughtException = await base.GetInitFailureException();
@@ -74,7 +74,7 @@ namespace Spfx.Runtime.Server.Processes
             {
                 var outputsClosedTask = Task.WhenAll(m_errStreamClosed.WaitAsync().AsTask(), m_outStreamClosed.WaitAsync().AsTask());
 
-                if (!await outputsClosedTask.WaitAsync(TimeSpan.FromMilliseconds(500)))
+                if (!await outputsClosedTask.TryWaitAsync(TimeSpan.FromMilliseconds(500)))
                 {
                     lock (procOutput)
                     {

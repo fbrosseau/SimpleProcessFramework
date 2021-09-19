@@ -2,6 +2,7 @@
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using Spfx.Diagnostics;
 using System;
 using System.Threading.Tasks;
@@ -56,7 +57,7 @@ namespace Spfx.Tests.Integration
             {
                 var addr = $"/{ProcessCore.MasterProcessUniqueId}/{ExceptionReportingEndpoint.EndpointId}";
                 var ep = m_localProcess.ClusterProxy.CreateInterface<IExceptionReportingEndpoint>(addr);
-                _ = ep.ReportException(RemoteExceptionInfo.Create(ex, exposeRemoteCallstacks: true));
+                ep.ReportException(RemoteExceptionInfo.Create(ex, exposeRemoteCallstacks: true)).FireAndForget();
             }
             catch
             {

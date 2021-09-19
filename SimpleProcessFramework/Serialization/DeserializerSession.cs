@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Spfx.Serialization
 {
-    internal class DeserializerSession
+    public class DeserializerSession
     {
         public Stream Stream { get; }
         public SerializerBinaryReader Reader { get; }

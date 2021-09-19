@@ -1,4 +1,5 @@
-﻿using Spfx.Utilities.Runtime;
+﻿using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
@@ -12,12 +13,10 @@ namespace Spfx.Runtime.Server.Processes.Windows
 {
     internal class NamelessNamedPipePair
     {
-        private static readonly int s_currentProcessId = Process.GetCurrentProcess().Id;
-
         public PipeStream LocalPipe { get; }
         public SafeHandle RemoteProcessPipe { get; }
 
-        public NamelessNamedPipePair(PipeStream serverConnect, SafeHandle clientConnect)
+        private NamelessNamedPipePair(PipeStream serverConnect, SafeHandle clientConnect)
         {
             LocalPipe = serverConnect;
             RemoteProcessPipe = clientConnect;
@@ -25,7 +24,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         public static async Task<NamelessNamedPipePair> CreatePair(FileAccess localAccess = FileAccess.ReadWrite, FileAccess remoteAccess = FileAccess.ReadWrite, bool remoteIsAsync = true)
         {
-            var pipename = $"Spfx_IpcPrivatePipe_{s_currentProcessId}_{Guid.NewGuid():N}";
+            var pipename = $"Spfx_IpcPrivatePipe_{ProcessUtilities.CurrentProcessId}_{Guid.NewGuid():N}";
             var fullname = @"\\.\pipe\" + pipename;
             var serverStream = CreateAsyncServerStream(pipename, localAccess);
             using var cts = new CancellationTokenSource();
@@ -58,7 +57,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
                 var combinedConnect = TaskEx.WhenAllOrRethrow(serverConnect, clientConnect).AsTask();
 
-                if (!await combinedConnect.WaitAsync(TimeSpan.FromSeconds(10)))
+                if (!await combinedConnect.TryWaitAsync(TimeSpan.FromSeconds(10)))
                     throw new TimeoutException("Loopback connection should have been instantaneous!");
 
                 return new NamelessNamedPipePair(serverStream, remotePipe);

@@ -24,5 +24,7 @@ namespace Spfx.Runtime.Server.Listeners
         {
             m_connectionManager.RegisterClientChannel(client);
         }
+
+        public override string ToString() => FriendlyName;
     }
 }

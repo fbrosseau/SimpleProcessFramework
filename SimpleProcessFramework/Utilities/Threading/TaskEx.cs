@@ -40,21 +40,33 @@ namespace Spfx.Utilities.Threading
             return t.ContinueWith(inner => inner, ct, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).Unwrap();
         }
 
-        public static void SafeCancel(this CancellationTokenSource cts)
+        public static bool SafeCancel(this CancellationTokenSource cts)
         {
             try
             {
                 cts.Cancel();
+                return true;
             }
             catch
             {
                 // objectdisposedexception etc
+                return false;
             }
         }
 
         public static void SafeCancelAsync(this CancellationTokenSource cts)
         {
-            ThreadPool.QueueUserWorkItem(s => ((CancellationTokenSource)s).SafeCancel(), cts);
+            ThreadPool.UnsafeQueueUserWorkItem(s => ((CancellationTokenSource)s).SafeCancel(), cts);
+        }
+
+        public static void SafeCancelAndDisposeAsync(this CancellationTokenSource cts)
+        {
+            ThreadPool.QueueUserWorkItem(s =>
+            {
+                var innerCts = (CancellationTokenSource)s;
+                if (innerCts.SafeCancel())
+                    innerCts.Dispose();
+            }, cts);
         }
 
         public static void CompleteWith<T>(this TaskCompletionSource<T> tcs, Task task)
@@ -224,12 +236,23 @@ namespace Spfx.Utilities.Threading
             t.GetExceptionOrCancel().Rethrow();
         }
 
+        public static void FireAndForget(this ValueTask t)
+        {
+            t.AsTask().FireAndForget();
+        }
+
+        public static void FireAndForget<T>(this ValueTask<T> t)
+        {
+            t.AsTask().FireAndForget();
+        }
+
         public static void FireAndForget(this Task t)
         {
             // empty on purpose
+            _ = t;
         }
 
-        public static Task<bool> WaitAsync(this Task t, TimeSpan timeout)
+        public static Task<bool> TryWaitAsync(this Task t, TimeSpan timeout)
         {
             if (t.IsCompleted)
                 return TaskCache.TrueTask;
@@ -332,7 +355,7 @@ namespace Spfx.Utilities.Threading
             if (t.IsCompleted)
                 return t;
 
-            return t.WaitAsync(timeout).ContinueWith((t, s) =>
+            return t.TryWaitAsync(timeout).ContinueWith((t, s) =>
             {
                 var innerT = (Task<T>)s;
                 if (t.Result)
@@ -347,7 +370,7 @@ namespace Spfx.Utilities.Threading
             if (t.IsCompleted)
                 return t;
 
-            return t.WaitAsync(timeout).ContinueWith((t, s) =>
+            return t.TryWaitAsync(timeout).ContinueWith((t, s) =>
             {
                 var innerT = (Task)s;
                 if (t.Result)
@@ -420,16 +443,16 @@ namespace Spfx.Utilities.Threading
             return t.AsTask().ExtractException();
         }
 
+        public static bool TryComplete(this TaskCompletionSource<VoidType> tcs)
+        {
+            return tcs.TrySetResult(default);
+        }
+
         public static ValueTask WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrowInternal(new List<Task> { t1, t2 });
         public static ValueTask WhenAllOrRethrow(Task t1, Task t2, Task t3) => WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
         public static ValueTask WhenAllOrRethrow(IEnumerable<Task> tasks) => WhenAllOrRethrowInternal(tasks.ToList());
         public static ValueTask WhenAllOrRethrow(IReadOnlyCollection<Task> tasks) => tasks.Count == 0 ? default : WhenAllOrRethrowInternal(tasks.ToList());
         public static ValueTask WhenAllOrRethrow(params Task[] tasks) => WhenAllOrRethrow((IReadOnlyCollection<Task>)tasks);
-
-        public static bool TryComplete(this TaskCompletionSource<VoidType> tcs)
-        {
-            return tcs.TrySetResult(default);
-        }
 
         private static async ValueTask WhenAllOrRethrowInternal(List<Task> remaining)
         {

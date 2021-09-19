@@ -36,7 +36,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             m_processCore?.Dispose();
             m_connector?.Dispose();
             base.OnDispose();
-            m_logger.Dispose();
+            //m_logger.Dispose();
             m_gcHandleToThis?.Dispose();
         }
 
@@ -99,9 +99,23 @@ namespace Spfx.Runtime.Server.Processes.Hosting
         [DebuggerStepThrough]
         private void WaitForExit()
         {
-            var tasks = m_shutdownEvents.Select(e => e.WaitTask).ToArray();
-            int res = Task.WaitAny(tasks);
-            m_logger.Info?.Trace("Exiting: " + m_shutdownEvents[res].Description);
+            try
+            {
+                var tasks = m_shutdownEvents.Select(e => e.WaitTask).ToArray();
+                int res = Task.WaitAny(tasks);
+                m_logger.Info?.Trace("Exiting: " + m_shutdownEvents[res].Description);
+            }
+            finally
+            {
+                try
+                {
+                    m_logger.Info?.Trace("Leaving WaitForExit");
+                }
+                catch
+                {
+                    // oh well.
+                }
+            }
         }
 
         void IIpcConnectorListener.OnMessageReceived(WrappedInterprocessMessage msg)

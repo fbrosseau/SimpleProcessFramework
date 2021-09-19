@@ -32,7 +32,7 @@ namespace Spfx.Runtime.Server.Listeners
             {
                 Logger.Debug?.Trace($"Starting CreateChannelFromStream for {remoteEndpoint}->{localEndpoint}");
                 var clientHandshakeTask = DoHandshake(s);
-                if (!await clientHandshakeTask.WaitAsync(TimeSpan.FromSeconds(30)))
+                if (!await clientHandshakeTask.TryWaitAsync(TimeSpan.FromSeconds(30)))
                     return;
 
                 var finalStream = await clientHandshakeTask;
@@ -59,7 +59,7 @@ namespace Spfx.Runtime.Server.Listeners
                 using var cts = new CancellationTokenSource(m_receiveConnectionTimeout);
                 var ct = cts.Token;
 
-                using var ctr = ct.Register(() => { _ = rawStream.DisposeAsync(); });
+                using var ctr = ct.Register(() => { rawStream.DisposeAsync().FireAndForget(); });
 
                 clientStream = await CreateFinalStream(rawStream, ct);
 

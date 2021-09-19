@@ -21,6 +21,7 @@ namespace Spfx.Runtime.Client
         private readonly EventSubscriptionManager m_eventManager;
 
         public string UniqueId { get; }
+        ProcessEndpointAddress IClientInterprocessConnection.Destination => ProcessEndpointAddress.RelativeClusterAddress;
 
         public IInterprocessClientProxy GetWrapperProxy() => m_proxyToThis;
         
@@ -43,14 +44,14 @@ namespace Spfx.Runtime.Client
             base.OnDispose();
         }
 
-        ValueTask IClientInterprocessConnection.SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+        ValueTask IClientInterprocessConnection.SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
         {
-            return m_eventManager.SubscribeEndpointLost(address, handler);
+            return m_eventManager.SubscribeEndpointLost(address, handler, state);
         }
 
-        void IClientInterprocessConnection.UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+        void IClientInterprocessConnection.UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
         {
-            m_eventManager.UnsubscribeEndpointLost(address, handler);
+            m_eventManager.UnsubscribeEndpointLost(address, handler, state);
         }
 
         ValueTask IClientInterprocessConnection.ChangeEventSubscription(EventSubscriptionChangeRequest req)

@@ -106,6 +106,14 @@ namespace Spfx.Runtime.Client
             EventSubscriptionScope.RemoveEventSubscription(RemoteAddress, m_connection, handler, eventInfo);
         }
 
+        internal ValueTask PingAsync()
+        {
+            return new ValueTask(m_connection.SerializeAndSendMessage(new PingRequest
+            {
+                Destination = RemoteAddress,
+            }));
+        }
+
         internal static ProcessProxyImplementation Unwrap(object endpointInstance)
         {
             Guard.ArgumentNotNull(endpointInstance, nameof(endpointInstance));

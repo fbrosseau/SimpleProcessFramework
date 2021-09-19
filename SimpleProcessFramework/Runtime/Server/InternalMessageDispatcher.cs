@@ -1,4 +1,5 @@
 ﻿using Spfx.Runtime.Messages;
+using System;
 
 namespace Spfx.Runtime.Server
 {
@@ -13,6 +14,16 @@ namespace Spfx.Runtime.Server
 
             m_processBroker = cluster.TypeResolver.GetSingleton<IInternalProcessBroker>();
             m_externalConnectionsManager = cluster.TypeResolver.GetSingleton<IClientConnectionManager>();
+        }
+
+        void IIncomingClientMessagesHandler.AddProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+            m_processBroker.AddProcessLostHandler(processId, onProcessLost);
+        }
+
+        void IIncomingClientMessagesHandler.RemoveProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+            m_processBroker.RemoveProcessLostHandler(processId, onProcessLost);
         }
 
         public void ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)

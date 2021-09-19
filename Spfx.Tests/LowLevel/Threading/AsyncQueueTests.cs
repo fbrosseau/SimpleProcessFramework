@@ -80,7 +80,7 @@ namespace Spfx.Tests.LowLevel.Threading
                 ongoingDequeue = q.DequeueAsync().AsTask();
             }
 
-            (await ongoingDequeue.WaitAsync(OperationsTimeout)).Should().BeTrue();
+            (await ongoingDequeue.TryWaitAsync(OperationsTimeout)).Should().BeTrue();
 
             ongoingDequeue.IsCompletedSuccessfully().Should().BeFalse();
             //AssertThrows<ObjectDisposedException>(() => ongoingDequeue.WaitOrRethrow());

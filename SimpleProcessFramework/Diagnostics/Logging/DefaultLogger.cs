@@ -1,8 +1,10 @@
 ﻿using Spfx.Utilities;
 using System;
+using System.Diagnostics;
 
 namespace Spfx.Diagnostics.Logging
 {
+    [DebuggerDisplay("{LoggerName,nq}")]
     internal class DefaultLogger : ILogger
     {
         private readonly ILogListener m_listener;

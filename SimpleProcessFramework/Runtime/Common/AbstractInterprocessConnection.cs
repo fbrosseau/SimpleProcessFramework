@@ -75,7 +75,7 @@ namespace Spfx.Runtime.Common
 
         protected abstract ValueTask ExecuteWrite(IPendingOperation op);
 
-        protected void HandleFailure(Exception ex)
+        protected virtual void HandleFailure(Exception ex)
         {
             Logger.Debug?.Trace(ex, "HandleFailure");
             m_caughtException = ex;
@@ -143,7 +143,7 @@ namespace Spfx.Runtime.Common
             public IInterprocessMessage Message { get; }
             public AbstractInterprocessConnection Owner { get; }
             public CancellationToken CancellationToken { get; }
-            private readonly ProcessEndpointAddress m_originalAddress;
+            public ProcessEndpointAddress MessageDestination { get; }
             private readonly CancellationTokenRegistration m_cancellationTokenRegistration;
 
             Task IPendingOperation.Task => Task;
@@ -154,14 +154,10 @@ namespace Spfx.Runtime.Common
                 CancellationToken = ct;
                 Message = req;
                 Owner = owner;
-                m_originalAddress = req.Destination;
+                MessageDestination = req.Destination;
 
                 if (CancellationToken.CanBeCanceled && (Message is IInterprocessRequest))
                     m_cancellationTokenRegistration = CancellationToken.Register(s => ((PendingOperation<TResult>)s).OnCancellationRequested(), this, false);
-            }
-
-            protected PendingOperation()
-            {
             }
 
             public void Abort(Exception ex)
@@ -171,10 +167,10 @@ namespace Spfx.Runtime.Common
                 else
                     TrySetCanceled();
 
-                _ = m_cancellationTokenRegistration.DisposeAsync();
+                m_cancellationTokenRegistration.DisposeAsync().FireAndForget();
             }
 
-            public void Dispose()
+            public virtual void Dispose()
             {
                 Abort(null);
             }
@@ -186,7 +182,7 @@ namespace Spfx.Runtime.Common
                 Owner.SerializeAndSendMessage(new RemoteCallCancellationRequest
                 {
                     CallId = req.CallId,
-                    Destination = m_originalAddress
+                    Destination = MessageDestination
                 }).FireAndForget();
             }
 

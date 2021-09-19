@@ -23,7 +23,6 @@ namespace Spfx.Runtime.Server.Processes
         public string ProcessName => ProcessCreationInfo.ProcessName;
         public ProcessSpawnPunchPayload RemotePunchPayload { get; private set; }
 
-        private readonly TaskCompletionSource<string> m_processExitEvent = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private MasterProcessIpcConnector m_ipcConnector;
 
         protected GenericRemoteTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
@@ -47,12 +46,12 @@ namespace Spfx.Runtime.Server.Processes
 
             try
             {
-                await Task.Run(async () => 
+                await Task.Run(async () =>
                 {
                     await remoteProcessHandles.InitializeAsync(RemotePunchPayload, ct).ConfigureAwait(false);
                     m_targetProcess = await SpawnProcess(remoteProcessHandles, ct);
                     await remoteProcessHandles.CompleteHandshakeAsync();
-                }).WithCancellation(ct);
+                }, ct).WithCancellation(ct);
             }
             catch (Exception ex)
             {
@@ -72,7 +71,7 @@ namespace Spfx.Runtime.Server.Processes
             disposeBag.Add(m_ipcConnector);
 
             var initTask = m_ipcConnector.InitializeAsync(ct).WithCancellation(ct);
-            var failureTask = m_processExitEvent.Task;
+            var failureTask = ProcessExitEvent;
             var winnerTask = await Task.WhenAny(initTask, failureTask);
             if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
             {
@@ -111,7 +110,7 @@ namespace Spfx.Runtime.Server.Processes
             var exitCode = process.SafeGetExitCode(defaultValue: (int)SubprocessExitCodes.Unknown);
             OnProcessLost(exitCode);
         }
-        
+
         protected void OnProcessLost(int exitCodeNumber)
         {
             var exitCode = (SubprocessExitCodes)exitCodeNumber;
@@ -120,15 +119,6 @@ namespace Spfx.Runtime.Server.Processes
 
             var msg = $"The process has exited with code {exitCode} ({exitCodeNumber})";
             OnProcessLost(msg, new SubprocessLostException(msg) { ExitCode = exitCode, ExitCodeNumber = exitCodeNumber });
-        }
-
-        protected void OnProcessLost(string reason, Exception ex = null)
-        {
-            ex = ex is SubprocessLostException ? ex : new SubprocessLostException(reason, ex);
-            ReportFatalException(ex);
-
-            Logger.Info?.Trace(ex, "The process was lost: " + reason);
-            m_processExitEvent.TrySetResult(reason);
         }
 
         protected override async ValueTask OnTeardownAsync(CancellationToken ct)

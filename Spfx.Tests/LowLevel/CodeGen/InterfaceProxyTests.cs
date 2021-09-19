@@ -39,6 +39,10 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 m_messageHandler = messageHandler;
             }
 
+            public ProcessEndpointAddress Destination => throw new NotImplementedException();
+
+            public event EventHandler ConnectionLost { add { } remove { } }
+
             public ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req)
             {
                 throw new NotImplementedException();
@@ -70,12 +74,12 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 return (T)raw;
             }
 
-            public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+            public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
             {
                 throw new NotImplementedException();
             }
 
-            public void UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+            public void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
             {
                 throw new NotImplementedException();
             }

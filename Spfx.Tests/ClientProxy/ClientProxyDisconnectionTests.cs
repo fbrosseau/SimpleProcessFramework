@@ -8,6 +8,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Spfx.Interfaces;
+using System.Diagnostics;
 
 namespace Spfx.Tests.ClientProxy
 {
@@ -19,8 +21,31 @@ namespace Spfx.Tests.ClientProxy
         {
         }
 
+        public enum ProcessDestroyMethods
+        {
+            SelfDispose,
+            RemoteDestroy,
+            CluserDispose,
+            SavageProcessExit,
+            SelfEnvironmentExit
+        }
+
         [Test]
-        public async ValueTask ClientProxy_OngoingCall_ClusterDispose()
+        public ValueTask ClientProxy_OngoingCall_ClusterDispose() => TestCallAbort(ProcessDestroyMethods.CluserDispose);
+
+        [Test]
+        public ValueTask ClientProxy_OngoingCall_EndpointSelfDispose() => TestCallAbort(ProcessDestroyMethods.SelfDispose);
+
+        [Test]
+        public ValueTask ClientProxy_OngoingCall_EndpointRemoteDestroyEndpoint() => TestCallAbort(ProcessDestroyMethods.RemoteDestroy);
+
+        [Test]
+        public ValueTask ClientProxy_OngoingCall_SavageProcessExit() => TestCallAbort(ProcessDestroyMethods.SavageProcessExit);
+
+        [Test]
+        public ValueTask ClientProxy_OngoingCall_SelfEnvironmentExit() => TestCallAbort(ProcessDestroyMethods.SelfEnvironmentExit);
+
+        private async ValueTask TestCallAbort(ProcessDestroyMethods method)
         {
             await using var cluster = CreateTestCluster();
             await using var iface = CreateSuccessfulSubprocess(cluster);
@@ -28,19 +53,36 @@ namespace Spfx.Tests.ClientProxy
             var addr = ProcessProxy.GetEndpointAddress(iface.TestInterface);
 
             var prox = new ProcessProxy(encryptConnections: false);
-            var ifaceProxy = prox.CreateInterface<ITestInterface>(ProcessEndpointAddress.Create(new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)cluster.GetListenEndpoints().First()).Port), addr.ProcessId, addr.EndpointId));
+            var ifaceProxy = prox.CreateInterface<ITestInterface>(ProcessEndpointAddress.Create(cluster.GetConnectEndpoints().First(), addr.ProcessId, addr.EndpointId));
 
             // complete a dummy call to ensure the connection is already established
-            await ifaceProxy.GetProcessId();
+            await ifaceProxy.GetProcessId().WT();
 
             var dummyCall = ifaceProxy.GetDummyValue(delay: TimeSpan.FromDays(1));
 
-            await iface.DisposeAsync();
-            await cluster.DisposeAsync();
+            switch(method)
+            {
+                case ProcessDestroyMethods.CluserDispose:
+                    await iface.DisposeAsync().WT();
+                    await cluster.DisposeAsync().WT();
+                    break;
+                case ProcessDestroyMethods.SelfDispose:
+                    await iface.TestInterface.SelfDispose().Wrap().WT(); // this may fail
+                    break;
+                case ProcessDestroyMethods.RemoteDestroy:
+                    await ProcessProxy.DestroyEndpoint(iface.TestInterface).WT();
+                    break;
+                case ProcessDestroyMethods.SelfEnvironmentExit:
+                    await iface.TestInterface.EnvironmentExit().Wrap().WT(); // this may fail
+                    break;
+                case ProcessDestroyMethods.SavageProcessExit:
+                    await iface.TestInterface.SavageExitOwnProcess().Wrap().WT(); // this may fail
+                    break;
+            }
 
-            (await dummyCall.Wrap().WaitAsync(TimeSpan.FromSeconds(10))).Should().Be(true);
+            (await dummyCall.Wrap().TryWaitAsync(TimeSpan.FromSeconds(10))).Should().Be(true);
 
-            await AssertThrowsAsync(() => dummyCall);
+            await AssertThrowsAsync(() => dummyCall).WT();
         }
     }
 }

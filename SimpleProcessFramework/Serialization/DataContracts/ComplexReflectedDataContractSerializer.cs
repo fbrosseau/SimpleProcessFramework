@@ -43,10 +43,15 @@ namespace Spfx.Serialization.DataContracts
             }
         }
 
-        public override object ReadObject(DeserializerSession reader)
+        public override object ReadObject(DeserializerSession session)
         {
-            var handler = new ComplexDataContractDeserializationHandler(m_constructor());
-            return ReadObject(ref handler, reader);
+            var obj = m_constructor();
+
+            if (IsSerializationAware)
+                ((ISerializationAwareObject)obj).OnBeforeDeserialize(session);
+
+            var handler = new ComplexDataContractDeserializationHandler(obj);
+            return ReadObject(ref handler, session);
         }
     }
 }

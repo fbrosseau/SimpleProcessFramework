@@ -66,7 +66,8 @@ namespace Spfx.Serialization
                 typeof(MarshalledRemoteExceptionInfo),
                 typeof(EndpointCreationRequest),
                 typeof(ProcessAndEndpointCreationOutcome),
-                typeof(ProcessEndpointAddress)
+                typeof(ProcessEndpointAddress),
+                typeof(PingRequest)
             };
 
             var memberNames = new HashSet<string>();

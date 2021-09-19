@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
 using Spfx.Tests.Integration;
 using System.Runtime.Serialization;
@@ -41,6 +42,10 @@ namespace Spfx.Tests
 
         Task<bool> IsSubscribedToEvent();
         event EventHandler<TestEventArgs> TestEvent;
+
+        Task SelfDispose();
+        Task SavageExitOwnProcess();
+        Task EnvironmentExit();
     }
 
     internal class TestInterface : AbstractProcessEndpoint, ITestInterface
@@ -97,6 +102,24 @@ namespace Spfx.Tests
             return Task.FromResult(NetcoreInfo.CurrentProcessNetcoreVersion);
         }
 
+        public Task SelfDispose()
+        {
+            _ = Task.Run(Dispose);
+            return Task.CompletedTask;
+        }
+
+        public Task SavageExitOwnProcess()
+        {
+            Process.GetCurrentProcess().Kill();
+            return Task.CompletedTask;
+        }
+
+        public Task EnvironmentExit()
+        {
+            Environment.Exit(1);
+            return Task.CompletedTask;
+        }
+
         public async Task<TestReturnValue> GetDummyValue(ReflectedTypeInfo exceptionToThrow, TimeSpan delay, CancellationToken ct, string exceptionText = null)
         {
             try
@@ -145,7 +168,7 @@ namespace Spfx.Tests
         public Task<OsKind> GetOsKind() => Task.FromResult(HostFeaturesHelper.LocalMachineOsKind);
         public Task<int> GetPointerSize() => Task.FromResult(IntPtr.Size);
         public Task<ProcessKind> GetRealProcessKind() => Task.FromResult(HostFeaturesHelper.LocalProcessKind);
-        public Task<int> GetProcessId() => Task.FromResult(Process.GetCurrentProcess().Id);
+        public Task<int> GetProcessId() => Task.FromResult(ProcessUtilities.CurrentProcessId);
         public Task<bool> IsWsl() => Task.FromResult(HostFeaturesHelper.IsInsideWsl);
         public Task<string> GetLongFormFrameworkDescription() => Task.FromResult(RuntimeInformation.FrameworkDescription);
 

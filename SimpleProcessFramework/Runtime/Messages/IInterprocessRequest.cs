@@ -25,11 +25,21 @@ namespace Spfx.Runtime.Messages
             return WrappedInterprocessMessage.Unwrap(msg, serializer);
         }
 
+        public static bool HasValidCallId(this IStatefulInterprocessMessage msg)
+        {
+            return IsValidCallId(msg.CallId);
+        }
+
+        public static bool IsValidCallId(long id)
+        {
+            return id != SimpleUniqueIdFactory.InvalidId;
+        }
+
         public static long GetValidCallId(this IStatefulInterprocessMessage msg)
         {
             Guard.ArgumentNotNull(msg, nameof(msg));
             var id = msg.CallId;
-            Debug.Assert(id != SimpleUniqueIdFactory.InvalidId, "Invalid call ID!");
+            Debug.Assert(IsValidCallId(id), "Invalid call ID!");
             return id;
         }
     }

@@ -160,7 +160,6 @@ namespace Spfx.Runtime.Server.Processes.Windows
             [Out] out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("ms-win-downlevel-shell32-l1-1-0", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
         private static unsafe extern IntPtr CommandLineToArgvW(string cmdline, out int numArgs);
 
         [DllImport("api-ms-win-core-heap-l2-1-0")]
@@ -169,7 +168,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
         public static unsafe string[] CommandLineToArgs(string cmdline)
         {
             var res = CommandLineToArgvW(cmdline, out int count);
-            if (res == null)
+            if (res == IntPtr.Zero)
                 throw new Win32Exception();
 
             var results = new string[count];

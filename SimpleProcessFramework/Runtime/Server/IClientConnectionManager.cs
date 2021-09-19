@@ -13,5 +13,6 @@ namespace Spfx.Runtime.Server
         IInterprocessClientChannel GetClientChannel(string connectionId, bool mustExist);
 
         List<EndPoint> GetListenEndpoints();
+        List<EndPoint> GetConnectEndpoints();
     }
 }

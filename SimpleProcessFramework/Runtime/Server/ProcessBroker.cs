@@ -19,11 +19,20 @@ namespace Spfx.Runtime.Server
     {
         IProcess MasterProcess { get; }
         void ForwardMessageToProcess(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage);
+
+        void AddProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost);
+        void RemoveProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost);
     }
 
     internal class ProcessBroker : AbstractProcessEndpoint, IInternalProcessBroker, IInternalMessageDispatcher
     {
-        private readonly Dictionary<string, IProcessHandle> m_subprocesses = new Dictionary<string, IProcessHandle>(ProcessEndpointAddress.StringComparer);
+        private class ProcessHandleInfo
+        {
+            public IProcessHandle Handle;
+            public HashSet<Action<EndpointLostEventArgs>> EndpointLostListeners = new HashSet<Action<EndpointLostEventArgs>>();
+        }
+
+        private readonly Dictionary<string, ProcessHandleInfo> m_subprocesses = new Dictionary<string, ProcessHandleInfo>(ProcessEndpointAddress.StringComparer);
         private readonly ITypeResolver m_typeResolver;
         private readonly ProcessClusterConfiguration m_config;
         private readonly ILogger m_logger;
@@ -52,7 +61,7 @@ namespace Spfx.Runtime.Server
         {
             m_logger.Info?.Trace(nameof(OnDispose));
 
-            List<IProcessHandle> processes;
+            List<ProcessHandleInfo> processes;
             lock (m_subprocesses)
             {
                 processes = m_subprocesses.Values.ToList();
@@ -61,7 +70,7 @@ namespace Spfx.Runtime.Server
 
             foreach (var p in processes)
             {
-                p.Dispose();
+                p.Handle.Dispose();
             }
 
             m_masterProcess.Dispose();
@@ -73,14 +82,14 @@ namespace Spfx.Runtime.Server
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
 
-            List<IProcessHandle> processes;
+            List<ProcessHandleInfo> processes;
             lock (m_subprocesses)
             {
                 processes = m_subprocesses.Values.ToList();
             }
 
             m_logger.Info?.Trace($"Starting teardown of {processes.Count} processes");
-            await TeardownAll(processes, ct);
+            await TeardownAll(processes.Select(h => h.Handle), ct);
             m_logger.Info?.Trace("Teardown of processes completed");
 
             await m_masterProcess.TeardownAsync(ct);
@@ -92,14 +101,14 @@ namespace Spfx.Runtime.Server
 
         private IProcessHandle GetSubprocess(string targetProcess, bool throwIfMissing)
         {
-            IProcessHandle target;
+            ProcessHandleInfo target;
             lock (m_subprocesses)
             {
                 m_subprocesses.TryGetValue(targetProcess, out target);
             }
 
             if (target != null || !throwIfMissing)
-                return target;
+                return target?.Handle;
 
             throw new ProcessNotFoundException(targetProcess);
         }
@@ -118,7 +127,7 @@ namespace Spfx.Runtime.Server
 
             try
             {
-                IProcessHandle existingHandle;
+                ProcessHandleInfo existingHandle;
                 lock (m_subprocesses)
                 {
                     ThrowIfDisposing();
@@ -132,17 +141,19 @@ namespace Spfx.Runtime.Server
                     }
                     else
                     {
-                        m_subprocesses.Add(info.ProcessUniqueId, handle);
+                        m_subprocesses.Add(info.ProcessUniqueId, new ProcessHandleInfo { Handle = handle });
                     }
                 }
 
                 if (existingHandle != null)
                 {
                     m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}: Already exists");
-                    await existingHandle.WaitForInitializationComplete();
+                    await existingHandle.Handle.WaitForInitializationComplete();
                     m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Process init complete");
                     return ProcessCreationResults.AlreadyExists;
                 }
+
+                handle.ProcessExited += OnProcessExited;
 
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
                 await handle.CreateProcess();
@@ -150,22 +161,22 @@ namespace Spfx.Runtime.Server
 
                 return ProcessCreationResults.CreatedNew;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 m_logger.Warn?.Trace(ex, $"CreateProcess {info.ProcessUniqueId} failed: " + ex.Message);
-                lock (m_subprocesses)
-                {
-                    if (m_subprocesses.TryGetValue(info.ProcessUniqueId, out var knownHandle) && ReferenceEquals(knownHandle, handle))
-                    {
-                        m_subprocesses.Remove(info.ProcessUniqueId);
-                    }
-                }
-
-                m_logger.Debug?.Trace($"CreateProcess teardown failed process {info.ProcessUniqueId}");
-                await handle.TeardownAsync(TimeSpan.FromSeconds(5));
+                await DestroyHandleAsync(info.ProcessUniqueId, handle);
                 m_logger.Debug?.Trace($"CreateProcess teardown complete of failed process {info.ProcessUniqueId}");
                 throw;
             }
+        }
+
+        private void OnProcessExited(object sender, EventArgs e)
+        {
+            var proc = (IProcessHandle)sender;
+
+            m_logger.Info?.Trace("OnProcessExited: " + proc.ProcessUniqueId);
+
+            DestroyProcess(proc.ProcessUniqueId).FireAndForget();
         }
 
         public async Task<ProcessAndEndpointCreationOutcome> CreateProcessAndEndpoint(ProcessCreationRequest processReq, EndpointCreationRequest endpointReq)
@@ -245,6 +256,10 @@ namespace Spfx.Runtime.Server
                 {
                     m_logger.Warn?.Trace(ex, $"DestroyProcess failed for {processUniqueId}: " + ex.Message);
                 }
+                finally
+                {
+                    await DestroyHandleAsync(processUniqueId);
+                }
             }
 
             return true;
@@ -288,9 +303,95 @@ namespace Spfx.Runtime.Server
             }
             else
             {
-                IProcessHandle target = GetSubprocess(targetProcess, throwIfMissing: true);
-                target.HandleMessage(source.UniqueId, wrappedMessage);
+                Exception failureBackToSource;
+                try
+                {
+                    IProcessHandle target = GetSubprocess(targetProcess, throwIfMissing: false);
+                    if (target is null)
+                    {
+                        m_logger.Debug?.Trace($"Received request for non-existant process {targetProcess}: {wrappedMessage.GetTinySummaryString()}");
+                        failureBackToSource = new ProcessNotFoundException(targetProcess);
+                    }
+                    else
+                    {
+                        target.HandleMessage(source.UniqueId, wrappedMessage);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failureBackToSource = ex;
+                    m_logger.Warn?.Trace(failureBackToSource, $"Failed to process request to process {targetProcess} from {source}: ({wrappedMessage.GetTinySummaryString()}");
+                }
+
+                if (wrappedMessage.IsRequest && StatefulInterprocessMessageExtensions.IsValidCallId(wrappedMessage.CallId))
+                {
+                    var resp = m_typeResolver.CreateSingleton<IFailureCallResponsesFactory>().Create(wrappedMessage.CallId, failureBackToSource);
+                    source.SendMessage(resp);
+                }
             }
+        }
+
+        void IInternalProcessBroker.AddProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+            lock (m_subprocesses)
+            {
+                if (m_subprocesses.TryGetValue(processId, out var info))
+                    info.EndpointLostListeners.Add(onProcessLost);
+            }
+        }
+
+        void IInternalProcessBroker.RemoveProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+            lock (m_subprocesses)
+            {
+                if (m_subprocesses.TryGetValue(processId, out var info))
+                    info.EndpointLostListeners.Remove(onProcessLost);
+            }
+        }
+
+        private async Task DestroyHandleAsync(string processUniqueId, IProcessHandle expectedHandle = null)
+        {
+            m_logger.Debug?.Trace("DestroyHandle: " + processUniqueId);
+
+            ProcessHandleInfo knownProcess;
+            bool raiseProcessLost = false;
+            lock (m_subprocesses)
+            {
+                if (m_subprocesses.TryGetValue(processUniqueId, out knownProcess))
+                {
+                    if (expectedHandle != null && knownProcess.Handle != expectedHandle)
+                    {
+                        m_logger.Debug?.Trace("DestroyHandle: Unexpected handle, not disposing " + processUniqueId);
+                    }
+                    else
+                    {
+                        m_subprocesses.Remove(processUniqueId);
+                        raiseProcessLost = true;
+                    }
+                }
+                else
+                {
+                    m_logger.Debug?.Trace("DestroyHandle: Handle unknown for " + processUniqueId);
+                    return;
+                }
+            }
+
+            knownProcess.Handle.ProcessExited -= OnProcessExited;
+
+            if (raiseProcessLost && knownProcess.EndpointLostListeners?.Count > 0)
+            {
+                m_logger.Debug?.Trace("DestroyHandle: Raising EndpointLost for " + processUniqueId);
+
+                var e = new EndpointLostEventArgs(ProcessEndpointAddress.RelativeClusterAddress.Combine(processUniqueId), EndpointLostReason.Destroyed);
+                foreach (var handler in knownProcess.EndpointLostListeners)
+                {
+                    handler(e);
+                }
+            }
+
+            await knownProcess.Handle.TeardownAsync(TimeSpan.FromSeconds(5));
+            m_logger.Debug?.Trace("DestroyHandle: Completed for " + processUniqueId);
         }
 
         Task<ProcessClusterHostInformation> IProcessBroker.GetHostInformation()
@@ -302,7 +403,7 @@ namespace Spfx.Runtime.Server
         {
             lock (m_subprocesses)
             {
-                return Task.FromResult(m_subprocesses.Values.Select(p => p.ProcessInfo).ToList());
+                return Task.FromResult(m_subprocesses.Values.Select(p => p.Handle.ProcessInfo).ToList());
             }
         }
 

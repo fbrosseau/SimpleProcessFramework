@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Spfx.Serialization
 {
-    internal class SerializerSession
+    public class SerializerSession
     {
         public Stream Stream { get; }
         public SerializerBinaryWriter Writer { get; }

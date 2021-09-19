@@ -31,14 +31,14 @@ namespace Spfx.Tests.Integration
 
         public override async ValueTask ClassSetUp()
         {
-            await base.ClassSetUp();
+            await base.ClassSetUp().WT();
 
             try
             {
-                await NetcoreInfo.InitializeInstalledVersionsAsync();
+                await NetcoreInfo.InitializeInstalledVersionsAsync().WT();
                 // this is just to run those constructors first
                 if (NetcoreInfo.X86.IsSupported)
-                    await NetcoreInfo.InitializeInstalledVersionsAsync(x86: true);
+                    await NetcoreInfo.InitializeInstalledVersionsAsync(x86: true).WT();
             }
             catch
             {
@@ -51,7 +51,7 @@ namespace Spfx.Tests.Integration
             CreateSuccessfulSubprocess(cluster, requestCustomization).Dispose();
         }
 
-        protected ProcessCluster CreateTestCluster(ClusterCustomizationDelegate customConfig = null)
+        protected ProcessCluster CreateTestCluster(ClusterCustomizationDelegate customConfig = null, bool withTcp = false)
         {
             var config = new ProcessClusterConfiguration
             {
@@ -67,7 +67,7 @@ namespace Spfx.Tests.Integration
 
             var cluster = new ProcessCluster(config);
 
-            if ((m_options & SanityTestOptions.Tcp) != 0)
+            if ((m_options & SanityTestOptions.Tcp) != 0 || withTcp)
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 
             var exceptionHandler = new ExceptionReportingEndpoint();
@@ -336,16 +336,30 @@ namespace Spfx.Tests.Integration
             var addr = ProcessProxy.GetEndpointAddress(svc);
             var processName = addr.ProcessId;
 
-            Log("Invoking DestroyEndpoint for " + addr.EndpointId);
-            await testInterface.Cluster.PrimaryProxy.DestroyEndpoint(addr);
+            try
+            {
+                Log("Invoking DestroyEndpoint for " + addr.EndpointId);
+                await testInterface.Cluster.PrimaryProxy.DestroyEndpoint(addr).WT();
+            }
+            catch (Exception ex)
+            {
+                Log("DestroyEndpoint failed: " + ex.Message);
+            }
 
-            Log("Invoking DestroyProcess for " + processName);
-            await testInterface.Cluster.ProcessBroker.DestroyProcess(processName);
+            try
+            {
+                Log("Invoking DestroyProcess for " + processName);
+                await testInterface.Cluster.ProcessBroker.DestroyProcess(processName).WT();
+            }
+            catch (Exception ex)
+            {
+                Log("DestroyProcess failed: " + ex.Message);
+            }
 
-            if (pid != Process.GetCurrentProcess().Id)
+            if (pid != ProcessUtilities.CurrentProcessId)
             {
                 Log("Waiting for real exit of process" + pid);
-                await proc.WaitForExitAsync(DefaultTestTimeoutTimespan, ct);
+                await proc.WaitForExitAsync(DefaultTestTimeoutTimespan, ct).WT();
             }
         }
 
@@ -387,22 +401,22 @@ namespace Spfx.Tests.Integration
                 static async ValueTask DisposeAsync(IDisposable d)
                 {
                     if (d is IAsyncDisposable a)
-                        await a.DisposeAsync().ConfigureAwait(false);
+                        await a.DisposeAsync().WT();
                     else
                         d.Dispose();
                 }
 
                 foreach (var f in m_objectsToDisposeFirst)
                 {
-                    await DisposeAsync(f);
+                    await DisposeAsync(f).WT();
                 }
-                await DisposeTestProcess(this, ct);
+                await DisposeTestProcess(this, ct).WT();
                 foreach (var l in m_objectsToDisposeLast)
                 {
-                    await DisposeAsync(l);
+                    await DisposeAsync(l).WT();
                 }
 
-                await base.OnTeardownAsync(ct);
+                await base.OnTeardownAsync(ct).WT();
             }
 
             protected override void OnDispose()

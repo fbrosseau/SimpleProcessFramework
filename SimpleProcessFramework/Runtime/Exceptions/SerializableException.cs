@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Spfx.Serialization;
+using Spfx.Serialization.DataContracts;
+using System;
 using System.Runtime.Serialization;
 
 namespace Spfx.Runtime.Exceptions
@@ -24,9 +26,10 @@ namespace Spfx.Runtime.Exceptions
     }
 
     [DataContract]
-    public class SerializableException : Exception
+    public class SerializableException : Exception, ISerializationAwareObject
     {
         private string m_remoteStackTrace;
+        private bool m_wasDeserialized;
 
         [DataMember]
         public override string Message { get; }
@@ -38,7 +41,7 @@ namespace Spfx.Runtime.Exceptions
         {
             get
             {
-                if (m_remoteStackTrace is null && TrackRemoteStackTrace)
+                if (m_remoteStackTrace is null && (m_wasDeserialized || TrackRemoteStackTrace))
                     RemoteStackTrace = StackTrace ?? "";
 
                 return m_remoteStackTrace;
@@ -64,6 +67,23 @@ namespace Spfx.Runtime.Exceptions
             : base(message, innerEx)
         {
             Message = base.Message;
+        }
+
+        void ISerializationAwareObject.OnBeforeSerialize(SerializerSession session)
+        {
+        }
+
+        void ISerializationAwareObject.OnAfterSerialize(SerializerSession session)
+        {
+        }
+
+        void ISerializationAwareObject.OnBeforeDeserialize(DeserializerSession session)
+        {
+            m_wasDeserialized = true;
+        }
+
+        void ISerializationAwareObject.OnAfterDeserialize(DeserializerSession session)
+        {
         }
     }
 }

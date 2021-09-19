@@ -9,3 +9,4 @@
 *.csproj.user
 /nuspec/netstandard2.0
 *.user
+**/launchSettings.json

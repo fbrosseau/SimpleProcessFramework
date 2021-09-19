@@ -64,6 +64,11 @@ namespace Spfx
             return m_connectionsManager.GetListenEndpoints();
         }
 
+        public List<EndPoint> GetConnectEndpoints()
+        {
+            return m_connectionsManager.GetConnectEndpoints();
+        }
+
         protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
         {
             m_logger.Info?.Trace(nameof(OnTeardownAsync));

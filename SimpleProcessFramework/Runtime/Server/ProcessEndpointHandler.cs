@@ -27,11 +27,13 @@ namespace Spfx.Runtime.Server
         private readonly ILogger m_logger;
 
         private ProcessEndpointAddress EndpointAddress { get; }
-        private IProcess ParentProcess { get; }
+        private IProcessInternal ParentProcess { get; }
+        public string EndpointId { get; }
 
-        protected ProcessEndpointHandler(IProcess parentProcess, string endpointId, object realTarget, ProcessEndpointDescriptor descriptor)
+        internal ProcessEndpointHandler(IProcessInternal parentProcess, string endpointId, object realTarget, ProcessEndpointDescriptor descriptor)
         {
             ParentProcess = parentProcess;
+            EndpointId = endpointId;
             EndpointAddress = parentProcess.UniqueAddress.Combine(endpointId);
             ImplementationObject = realTarget;
             m_realTargetAsEndpoint = ImplementationObject as IProcessEndpoint;
@@ -45,7 +47,22 @@ namespace Spfx.Runtime.Server
         {
             m_logger.Info?.Trace("OnDispose");
 
-            CancelAllCalls();
+            List<IInterprocessRequestContext> requests;
+            lock (m_pendingCalls)
+            {
+                requests = m_pendingCalls.Values.ToList();
+                m_pendingCalls.Clear();
+            }
+
+            m_logger.Info?.Trace($"OnDispose aborting {requests.Count} requests");
+
+            foreach (var pending in requests)
+            {
+                FailForShutdown(pending);
+            }
+
+            ParentProcess.OnEndpointDisposed(EndpointId);
+
             (ImplementationObject as IDisposable)?.Dispose();
             base.OnDispose();
             m_logger.Dispose();
@@ -57,8 +74,10 @@ namespace Spfx.Runtime.Server
 
             if (ImplementationObject is IAsyncDestroyable d)
                 await d.TeardownAsync(ct).ConfigureAwait(false);
+            else if (ImplementationObject is IAsyncDisposable disposable)
+                await disposable.DisposeAsync().ConfigureAwait(false);
 
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         public async ValueTask InitializeAsync()
@@ -67,23 +86,6 @@ namespace Spfx.Runtime.Server
 
             if (m_realTargetAsEndpoint != null)
                 await m_realTargetAsEndpoint.InitializeAsync(ParentProcess, EndpointAddress).ConfigureAwait(false);
-        }
-        
-        private void CancelAllCalls()
-        {
-            List<IInterprocessRequestContext> requests;
-            lock (m_pendingCalls)
-            {
-                requests = m_pendingCalls.Values.ToList();
-                m_pendingCalls.Clear();
-            }
-
-            m_logger.Info?.Trace($"CancelAllCalls aborting {requests.Count} requests");
-
-            foreach (var pending in requests)
-            {
-                pending.Cancel();
-            }
         }
 
         protected void PrepareEvent(ReflectedEventInfo evt)
@@ -95,6 +97,12 @@ namespace Spfx.Runtime.Server
         {
             try
             {
+                if (HasTeardownStarted)
+                {
+                    FailForShutdown(req);
+                    return;
+                }
+
                 if (m_realTargetAsEndpoint?.FilterMessage(req) == false)
                 {
                     m_logger.Debug?.Trace("Request filtered out: " + req.Request.GetTinySummaryString());
@@ -116,6 +124,9 @@ namespace Spfx.Runtime.Server
                         break;
                     case EventRegistrationRequest evt:
                         UpdateEventSubscriptions(req, evt);
+                        break;
+                    case PingRequest _:
+                        req.Respond(null);
                         break;
                     default:
                         req.Fail(new InvalidOperationException("Cannot handle request"));
@@ -172,6 +183,12 @@ namespace Spfx.Runtime.Server
             var key = new PendingCallKey(req);
             lock (m_pendingCalls)
             {
+                if (HasTeardownStarted)
+                {
+                    FailForShutdown(req);
+                    return;
+                }
+
                 m_pendingCalls.Add(key, req);
             }
 
@@ -179,6 +196,11 @@ namespace Spfx.Runtime.Server
                 req.SetupCancellationToken();
 
             DoRemoteCallImpl(req);
+        }
+
+        private void FailForShutdown(IInterprocessRequestContext req)
+        {
+            req.Fail(new EndpointShuttingDownException());
         }
 
         protected class EventSubscriptionInfo

@@ -24,13 +24,13 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        public static IProcessEndpointHandler Create<T>(IProcess parentProcess, string endpointId, T realTarget)
+        public static IProcessEndpointHandler Create<T>(IProcessInternal parentProcess, string endpointId, T realTarget)
         {
             Guard.ArgumentNotNull(realTarget, nameof(realTarget));
             return FactoryStorage<T>.Func(parentProcess, endpointId, realTarget);
         }
 
-        public static IProcessEndpointHandler Create(IProcess parentProcess, string endpointId, object handler, Type interfaceType)
+        public static IProcessEndpointHandler Create(IProcessInternal parentProcess, string endpointId, object handler, Type interfaceType)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace Spfx.Runtime.Server
             }
         }
 
-        private delegate ProcessEndpointHandler ProcessEndpointHandlerFactoryDelegate(IProcess parentProcess, string endpointId, object target);
+        private delegate ProcessEndpointHandler ProcessEndpointHandlerFactoryDelegate(IProcessInternal parentProcess, string endpointId, object target);
         
         private static ProcessEndpointHandlerFactoryDelegate CreateFactory(Type type)
         {
@@ -61,7 +61,7 @@ namespace Spfx.Runtime.Server
                 TypeAttributes.Public,
                 typeof(ProcessEndpointHandler));
 
-            var ctorArgs = new[] { typeof(IProcess), typeof(string), typeof(object) };
+            var ctorArgs = new[] { typeof(IProcessInternal), typeof(string), typeof(object) };
 
             var factoryName = "Type Factory";
             var factoryMethodBuilder = typeBuilder.DefineMethod(factoryName,

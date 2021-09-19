@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Spfx.Interfaces;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities.Threading;
@@ -16,5 +17,7 @@ namespace Spfx.Runtime.Server.Processes
 
         Task CreateProcess();
         ValueTask WaitForInitializationComplete();
+
+        event EventHandler ProcessExited;
     }
 }

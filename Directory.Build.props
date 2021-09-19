@@ -4,9 +4,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LangVersion>8</LangVersion>
+    <LangVersion>preview</LangVersion>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>769</MinorVersion>
+    <MinorVersion>825</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
@@ -22,6 +22,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
+    <DefineConstants>$(DefineConstants);NETCORE31_SUPPORTED</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.StartsWith('Netcore_'))">
@@ -41,16 +42,12 @@
     <NetCore3Versions>netcoreapp3.1</NetCore3Versions>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(NetCore2Versions)'==''">
-    <NetCore2Versions>netcoreapp2.1</NetCore2Versions>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(NetCore3PlusVersions)'==''">
-    <NetCore3PlusVersions>$(NetCore3Versions)</NetCore3PlusVersions>
+    <NetCore3PlusVersions>$(NetCore3Versions);net6.0</NetCore3PlusVersions>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AllNetCoreVersions)'==''">
-    <AllNetCoreVersions>$(NetCore3PlusVersions);$(NetCore2Versions)</AllNetCoreVersions>
+    <AllNetCoreVersions>$(NetCore3PlusVersions)</AllNetCoreVersions>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AllNetStandardVersions)'==''">
@@ -58,11 +55,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="$(NetCore3PlusVersions.Contains($(TargetFramework)))">
-    <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS;NETSTANDARD2_1_PLUS</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
-    <DefineConstants>$(DefineConstants);NETCOREAPP3_1_PLUS</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_0_PLUS;NETCOREAPP3_1_PLUS;NETSTANDARD2_0_PLUS;NETSTANDARD2_1_PLUS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard2.')) AND '$(TargetFramework)'!='netstandard2.0'">

@@ -46,7 +46,8 @@ namespace Spfx.Runtime.Server
 
         public void Cancel()
         {
-            m_cts?.SafeCancelAsync();
+            m_cts?.SafeCancelAndDisposeAsync();
+            m_cts = null;
         }
 
         public void Dispose()

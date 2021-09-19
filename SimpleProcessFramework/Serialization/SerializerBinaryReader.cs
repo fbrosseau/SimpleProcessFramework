@@ -38,7 +38,7 @@ namespace Spfx.Serialization
         public sealed override Guid ReadGuid() => ReadBlittable<Guid>();
     }
 
-    internal class SerializerBinaryReader : BinaryReader
+    public class SerializerBinaryReader : BinaryReader
     {
         protected SerializerBinaryReader(Stream input)
             : base(input)

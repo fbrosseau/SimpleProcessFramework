@@ -157,36 +157,90 @@ namespace Spfx
         public IClusterProxy CreateClusterProxy(ProcessEndpointAddress addr) => CreateClusterProxy(addr.HostAuthority);
         public IClusterProxy CreateClusterProxy(string hostAuthority) => new ClusterProxy(hostAuthority);
 
-        public static ValueTask SubscribeEndpointLost(object proxyObject, EventHandler<EndpointLostEventArgs> handler)
+        public static ValueTask PingAsync(object proxyObject)
         {
             var impl = ProcessProxyImplementation.Unwrap(proxyObject);
-            return impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler);
+            return impl.PingAsync();
         }
 
-        public ValueTask SubscribeEndpointLost(string address, EventHandler<EndpointLostEventArgs> handler)
+        public static ValueTask SubscribeEndpointLost(object proxyObject, Action<EndpointLostEventArgs> handler)
         {
-            return SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler);
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            return SubscribeEndpointLost(proxyObject, handlerWrapper, s);
         }
 
-        public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
-        {
-            return m_connectionFactory.GetConnection(address).SubscribeEndpointLost(address, handler);
-        }
-
-        public static void UnsubscribeEndpointLost(object proxyObject, EventHandler<EndpointLostEventArgs> handler)
+        public static ValueTask SubscribeEndpointLost(object proxyObject, Action<EndpointLostEventArgs, object> handler, object state)
         {
             var impl = ProcessProxyImplementation.Unwrap(proxyObject);
-            impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler);
+            return impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler, state);
         }
 
-        public void UnsubscribeEndpointLost(string address, EventHandler<EndpointLostEventArgs> handler)
+        public ValueTask SubscribeEndpointLost(string address, Action<EndpointLostEventArgs> handler)
         {
-            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler);
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            return SubscribeEndpointLost(address, handlerWrapper, s);
         }
 
-        public void UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+        public ValueTask SubscribeEndpointLost(string address, Action<EndpointLostEventArgs, object> handler, object state)
         {
-            m_connectionFactory.GetConnection(address).UnsubscribeEndpointLost(address, handler);
+            return SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler, state);
+        }
+
+        public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs> handler)
+        {
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            return SubscribeEndpointLost(address, handlerWrapper, s);
+        }
+
+        public ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
+        {
+            return m_connectionFactory.GetConnection(address).SubscribeEndpointLost(address, handler, state);
+        }
+
+        public static void UnsubscribeEndpointLost(object proxyObject, Action<EndpointLostEventArgs> handler)
+        {
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            UnsubscribeEndpointLost(proxyObject, handlerWrapper, s);
+        }
+
+        public static void UnsubscribeEndpointLost(object proxyObject, Action<EndpointLostEventArgs, object> handler, object state)
+        {
+            var impl = ProcessProxyImplementation.Unwrap(proxyObject);
+            impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler, state);
+        }
+
+        public void UnsubscribeEndpointLost(string address, Action<EndpointLostEventArgs> handler)
+        {
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handlerWrapper, s);
+        }
+
+        public void UnsubscribeEndpointLost(string address, Action<EndpointLostEventArgs, object> handler, object state)
+        {
+            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler, state);
+        }
+
+        public void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs> handler)
+        {
+            var (handlerWrapper, s) = WrapSimpleHandler(handler);
+            m_connectionFactory.GetConnection(address).UnsubscribeEndpointLost(address, handlerWrapper, s);
+        }
+
+        public void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
+        {
+            m_connectionFactory.GetConnection(address).UnsubscribeEndpointLost(address, handler, state);
+        }
+
+        private static readonly Action<EndpointLostEventArgs, object> s_simpleHandlerWrapper = EndpointLostHandlerWithoutState;
+
+        private static void EndpointLostHandlerWithoutState(EndpointLostEventArgs e, object state)
+        {
+            ((Action<EndpointLostEventArgs>)state)(e);
+        }
+
+        private static (Action<EndpointLostEventArgs, object> handler, object state) WrapSimpleHandler(Action<EndpointLostEventArgs> handler)
+        {
+            return (s_simpleHandlerWrapper, handler);
         }
     }
 }

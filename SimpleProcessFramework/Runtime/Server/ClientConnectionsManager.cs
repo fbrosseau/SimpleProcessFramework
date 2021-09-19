@@ -98,6 +98,14 @@ namespace Spfx.Runtime.Server
             }
         }
 
+        public List<EndPoint> GetConnectEndpoints()
+        {
+            lock (m_listeners)
+            {
+                return m_listeners.OfType<IExternalConnectionsListener>().Select(l => l.ConnectEndpoint).ToList();
+            }
+        }
+
         public void RemoveListener(IConnectionListener listener)
         {
             lock (m_listeners)

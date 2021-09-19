@@ -205,17 +205,25 @@ namespace Spfx.Utilities.Runtime
 
         private static Version GetCurrentNetcoreVersion()
         {
-            var m = Regex.Match(RuntimeInformation.FrameworkDescription, @"\.NET Core (?<v>[\d\.]+)", RegexOptions.IgnoreCase);
+            var m = Regex.Match(RuntimeInformation.FrameworkDescription, @"^\.NET (?<v>[\d\.]+)", RegexOptions.IgnoreCase);
+            if (m.Success)
+            {
+                return new Version(m.Groups["v"].Value);
+            }
+
+#if NETCORE31_SUPPORTED
+            m = Regex.Match(RuntimeInformation.FrameworkDescription, @"^\.NET Core (?<v>[\d\.]+)", RegexOptions.IgnoreCase);
             if (!m.Success)
-                throw new InvalidOperationException("Could not determine version");
+                throw new InvalidDataException("Could not determine version: " + RuntimeInformation.FrameworkDescription);
 
             var ver = ParseNetcoreVersion(m.Groups["v"].Value);
             if (ver.Major == 4)
             {
                 if (ver.Minor == 6)
                     return new Version(2, 1, 0);
-                throw new InvalidOperationException("Could not determine version");
+                throw new InvalidDataException("Could not determine version");
             }
+#endif
 
             return ver;
         }
@@ -232,7 +240,13 @@ namespace Spfx.Utilities.Runtime
         internal static string GetDefaultNetcoreBinSubfolderName(string runtime)
         {
             var version = ParseRuntimeVersionNumber(runtime);
-            return $"netcoreapp{version.Major}.{version.Minor}";
+
+#if NETCORE31_SUPPORTED
+            if (version.Major < 5)
+                return $"netcoreapp{version.Major}.{version.Minor}";
+#endif
+
+            return $"net{version.Major}.{version.Minor}";
         }
 
         public static Task InitializeInstalledVersionsAsync(bool x86 = false)

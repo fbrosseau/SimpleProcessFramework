@@ -18,6 +18,15 @@ namespace Spfx.Serialization.DataContracts
         IReadOnlyList<ISimpleMemberInfo> GetSerializedMembers();
     }
 
+    public interface ISerializationAwareObject
+    {
+        void OnBeforeSerialize(SerializerSession session);
+        void OnAfterSerialize(SerializerSession session);
+
+        void OnBeforeDeserialize(DeserializerSession session);
+        void OnAfterDeserialize(DeserializerSession session);
+    }
+
     internal abstract class BaseReflectedDataContractSerializer : BaseTypeSerializer, IComplexObjectSerializer
     {
         internal class ReflectedMemberTypeInfo
@@ -67,14 +76,17 @@ namespace Spfx.Serialization.DataContracts
         internal ReflectedDataMember[] Members { get; }
         IReadOnlyList<ISimpleMemberInfo> IComplexObjectSerializer.GetSerializedMembers() => Members;
 
-        protected readonly Type ReflectedType;
-        protected readonly bool IsSerializedByRef;
+        public Type ReflectedType { get; }
+        public bool IsSerializedByRef { get; }
+        public bool IsSerializationAware { get; }
+
         private static readonly Dictionary<Type, ReflectedMemberTypeInfo> s_typeInfos = new Dictionary<Type, ReflectedMemberTypeInfo>();
 
         protected BaseReflectedDataContractSerializer(Type actualType, List<ReflectedDataMember> members)
         {
             ReflectedType = actualType;
             IsSerializedByRef = actualType.GetCustomAttribute<DataContractAttribute>()?.IsReference ?? false;
+            IsSerializationAware = typeof(ISerializationAwareObject).IsAssignableFrom(actualType);
             Members = members.ToArray();
         }
 
@@ -220,10 +232,20 @@ namespace Spfx.Serialization.DataContracts
         {
             using var graphScope = session.CreatePositionDeltaScope();
 
+            ISerializationAwareObject aware = null;
+
+            if (IsSerializationAware)
+            {
+                aware = (ISerializationAwareObject)graph;
+                aware.OnBeforeSerialize(session);
+            }
+
             foreach (var mem in Members)
             {
                 mem.SerializeMember(session, graph);
             }
+
+            aware?.OnAfterSerialize(session);
         }
 
         protected interface IDataContractDeserializationHandler
@@ -233,18 +255,18 @@ namespace Spfx.Serialization.DataContracts
             void HandleMissingMember(ReflectedDataMember expectedMember);
         }
 
-        protected object ReadObject<THandler>(ref THandler handler, DeserializerSession reader)
+        protected object ReadObject<THandler>(ref THandler handler, DeserializerSession session)
             where THandler : IDataContractDeserializationHandler
         {
             int currentMemberIndex = 0;
 
-            var totalGraphBytes = reader.Reader.ReadInt32();
-            var graphEndPosition = reader.Stream.Position + totalGraphBytes;
+            var totalGraphBytes = session.Reader.ReadInt32();
+            var graphEndPosition = session.Stream.Position + totalGraphBytes;
 
-            while (currentMemberIndex < Members.Length && reader.Stream.Position < graphEndPosition)
+            while (currentMemberIndex < Members.Length && session.Stream.Position < graphEndPosition)
             {
-                var memberName = (string)reader.ReadReference(readHeader: true);
-                var memberBytes = reader.Reader.ReadInt32();
+                var memberName = (string)session.ReadReference(readHeader: true);
+                var memberBytes = session.Reader.ReadInt32();
 
                 void ReadMember(ref THandler h)
                 {
@@ -257,16 +279,16 @@ namespace Spfx.Serialization.DataContracts
                     {
                         object value;
                         if (expectedMember.TypeInfo.IsValueType)
-                            value = DefaultBinarySerializer.DeserializeExactType(reader, expectedMember.TypeInfo.MemberType);
+                            value = DefaultBinarySerializer.DeserializeExactType(session, expectedMember.TypeInfo.MemberType);
                         else
-                            value = DefaultBinarySerializer.Deserialize(reader, expectedMember.TypeInfo.MemberType);
+                            value = DefaultBinarySerializer.Deserialize(session, expectedMember.TypeInfo.MemberType);
 
                         h.HandleMember(expectedMember, value);
                         ++currentMemberIndex;
                     }
                     else if (comparison < 0)
                     {
-                        reader.Stream.Position += memberBytes;
+                        session.Stream.Position += memberBytes;
                     }
                     else
                     {
@@ -279,9 +301,16 @@ namespace Spfx.Serialization.DataContracts
                 ReadMember(ref handler);
             }
 
-            reader.Stream.Position = graphEndPosition;
+            session.Stream.Position = graphEndPosition;
 
-            return handler.GetFinalObject();
+            var obj = handler.GetFinalObject();
+            if (IsSerializationAware)
+            {
+                ISerializationAwareObject aware = (ISerializationAwareObject)obj;
+                aware.OnAfterDeserialize(session);
+            }
+
+            return obj;
         }
     }
 }

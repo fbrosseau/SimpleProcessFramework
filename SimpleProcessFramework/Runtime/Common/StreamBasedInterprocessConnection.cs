@@ -39,7 +39,8 @@ namespace Spfx.Runtime.Common
             {
             }
 
-            public PendingStreamOperation(ConnectionCodes code)
+            public PendingStreamOperation(StreamBasedInterprocessConnection owner, ConnectionCodes code)
+                : this(owner, null, default)
             {
                 m_code = code;
             }

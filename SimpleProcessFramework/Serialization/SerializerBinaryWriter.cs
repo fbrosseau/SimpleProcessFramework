@@ -35,7 +35,7 @@ namespace Spfx.Serialization
         public sealed override void Write(Guid val) => WriteBlittable(val);
     }
 
-    internal class SerializerBinaryWriter : BinaryWriter
+    public class SerializerBinaryWriter : BinaryWriter
     {
         protected SerializerBinaryWriter(Stream output)
             : base(output)

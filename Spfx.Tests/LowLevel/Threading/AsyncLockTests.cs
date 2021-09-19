@@ -55,12 +55,12 @@ namespace Spfx.Tests.LowLevel.Threading
 
             session.Dispose();
             theLock.IsLockTaken.Should().BeTrue();
-            var session2 = await sessionTask2.WithTimeout(OperationsTimeout);
+            var session2 = await sessionTask2.WT();
             theLock.IsLockTaken.Should().BeTrue();
 
             session2.Dispose();
             theLock.IsLockTaken.Should().BeTrue();
-            var session3 = await sessionTask3.WithTimeout(OperationsTimeout);
+            var session3 = await sessionTask3.WT();
             theLock.IsLockTaken.Should().BeTrue();
 
             session3.Dispose();

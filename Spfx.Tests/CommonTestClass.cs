@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using Spfx.Utilities.Runtime;
+using Spfx.Tests.ClientProxy;
+using FluentAssertions;
 
 namespace Spfx.Tests
 {
@@ -23,7 +25,7 @@ namespace Spfx.Tests
         public static readonly bool Test32Bit = HostFeaturesHelper.Is32BitSupported;
 
 #if DEBUG
-        public const int DefaultTestTimeout = 30000000;
+        public const int DefaultTestTimeout = 30000;
 #else
         public const int DefaultTestTimeout = 30000;
 #endif
@@ -103,12 +105,22 @@ namespace Spfx.Tests
             exceptionCallback?.Invoke(caughtEx);
         }
 
+        internal static ValueTask AssertThrowsAsync<TException>(Func<Task> callback, Action<TException> exceptionCallback = null)
+            where TException : Exception
+        {
+            return AssertThrowsAsync(callback, ex =>
+            {
+                ex.Should().BeOfType<TException>();
+                exceptionCallback?.Invoke((TException)ex);
+            });
+        }
+
         internal static async ValueTask AssertThrowsAsync(Func<Task> callback, Action<Exception> exceptionCallback = null)
         {
             Exception caughtEx = null;
             try
             {
-                await callback().WithTimeout(DefaultTestTimeoutTimespan);
+                await callback().WT();
             }
             catch (Exception ex)
             {

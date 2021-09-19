@@ -1,4 +1,5 @@
 ﻿using Spfx.Reflection;
+using Spfx.Runtime.Common;
 using System;
 using System.Collections.Generic;
 
@@ -41,9 +42,26 @@ namespace Spfx.Runtime.Client
             var winner = TryRegisterConnection(destination, newConn);
 
             if (ReferenceEquals(winner, newConn))
+            {
+                newConn.ConnectionLost += OnConnectionLost;
                 newConn.Initialize();
+            }
 
             return winner;
+        }
+
+        private void OnConnectionLost(object sender, EventArgs e)
+        {
+            var conn = (IClientInterprocessConnection)sender;
+
+            lock (m_connections)
+            {
+                m_connections.Remove(conn.Destination.HostAuthority);
+            }
+
+            conn.ConnectionLost -= OnConnectionLost;
+
+            conn.Dispose();
         }
 
         protected IClientInterprocessConnection TryRegisterConnection(ProcessEndpointAddress destination, IClientInterprocessConnection newConn)

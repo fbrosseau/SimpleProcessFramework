@@ -86,8 +86,8 @@ namespace Spfx.Utilities.Threading
 
             public void Dispose()
             {
-                _ = m_ctRegistration.DisposeAsync();
-                _ = m_timer?.DisposeAsync();
+                m_ctRegistration.DisposeAsync().FireAndForget();
+                m_timer?.DisposeAsync().FireAndForget();
                 TrySetCanceled();
             }
         }

@@ -1,5 +1,6 @@
 ﻿using Spfx.Diagnostics.Logging;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -33,8 +34,8 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         public void StartReading()
         {
-            _ = RedirectConsole(m_consumer, m_outPair.LocalPipe, StandardConsoleStream.Out);
-            _ = RedirectConsole(m_consumer, m_errPair.LocalPipe, StandardConsoleStream.Error);
+            RedirectConsole(m_consumer, m_outPair.LocalPipe, StandardConsoleStream.Out).FireAndForget();
+            RedirectConsole(m_consumer, m_errPair.LocalPipe, StandardConsoleStream.Error).FireAndForget();
 
             m_outPair.RemoteProcessPipe.SetHandleAsInvalid();
             m_outPair.RemoteProcessPipe.Dispose();
@@ -44,20 +45,26 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         private static async Task RedirectConsole(IConsoleConsumer consumer, Stream stream, StandardConsoleStream streamKind)
         {
+            Exception caughtEx = null;
             try
             {
                 using var reader = new StreamReader(stream, Console.OutputEncoding, true);
                 while (true)
                 {
                     var line = await reader.ReadLineAsync();
-                    consumer.ReportConsoleOutput(streamKind, line);
                     if (line is null)
                         break;
+
+                    consumer.ReportConsoleOutput(streamKind, line);
                 }
             }
             catch (Exception ex)
             {
-                consumer.ReportStreamClosed(streamKind, ex);
+                caughtEx = ex;
+            }
+            finally
+            {
+                consumer.ReportStreamClosed(streamKind, caughtEx);
             }
         }
 

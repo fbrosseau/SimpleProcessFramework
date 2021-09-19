@@ -13,7 +13,9 @@ namespace Spfx.Runtime.Server.Listeners
         private Task m_listenLoop;
 
         public IPEndPoint ListenEndpoint { get; private set; }
+        public IPEndPoint ConnectEndpoint { get; private set; }
         EndPoint IExternalConnectionsListener.ListenEndpoint => ListenEndpoint;
+        EndPoint IExternalConnectionsListener.ConnectEndpoint => ConnectEndpoint;
 
         public override string FriendlyName => "TCP @ " + ListenEndpoint;
 
@@ -44,6 +46,13 @@ namespace Spfx.Runtime.Server.Listeners
             m_listener.Start();
             ListenEndpoint = (IPEndPoint)m_listener.LocalEndpoint;
 
+            if (IPAddress.Any.Equals(ListenEndpoint.Address))
+                ConnectEndpoint = new IPEndPoint(IPAddress.Loopback, ListenEndpoint.Port);
+            else if (IPAddress.IPv6Any.Equals(ListenEndpoint.Address))
+                ConnectEndpoint = new IPEndPoint(IPAddress.IPv6Loopback, ListenEndpoint.Port);
+            else
+                ConnectEndpoint = ListenEndpoint;
+
             base.Start(typeResolver);
 
             m_listenLoop = ListenLoop();
@@ -54,11 +63,11 @@ namespace Spfx.Runtime.Server.Listeners
             while (true)
             {
                 var s = await m_listener.AcceptSocketAsync();
-                _ = Task.Run(() =>
+                Task.Run(() =>
                     CreateChannelFromStream(
                         new NetworkStream(s, ownsSocket: true),
                         EndpointHelper.EndpointToString(s.LocalEndPoint),
-                        EndpointHelper.EndpointToString(s.RemoteEndPoint)));
+                        EndpointHelper.EndpointToString(s.RemoteEndPoint))).FireAndForget();
             }
         }
     }

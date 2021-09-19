@@ -51,6 +51,8 @@ namespace Spfx.Runtime.Server
         ValueTask<LocalProcessCreationResult> InitializeEndpointAsync<T>(string address, Type impl, ProcessCreationOptions options = ProcessCreationOptions.ThrowIfExists);
         ValueTask<bool> DestroyEndpoint(string uniqueId);
 
+        object GetRawEndpointObject(string endpointId);
+
         ValueTask AutoDestroyAsync();
 
         ProcessEndpointAddress CreateRelativeAddress(string endpointAddress = null);
@@ -60,6 +62,7 @@ namespace Spfx.Runtime.Server
     {
         Task InitializeAsync();
         void ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage req);
+        void OnEndpointDisposed(string endpointId);
     }
 
     internal class ProcessCore : AsyncDestroyable, IProcessInternal
@@ -123,7 +126,7 @@ namespace Spfx.Runtime.Server
             DefaultTypeResolver.RegisterSingleton<IProcessInternal>(this);
             DefaultTypeResolver.RegisterSingleton<ILocalConnectionFactory>(new InternalClientConnectionFactory(DefaultTypeResolver));
 
-            m_logger = DefaultTypeResolver.GetLogger(GetType(), uniqueInstance: true);
+            m_logger = DefaultTypeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName: uniqueId);
 
             if (UniqueId != MasterProcessUniqueId) // otherwise ProcessBroker does it
                 DefaultTypeResolver.RegisterSingleton<IIncomingClientMessagesHandler>(this);
@@ -206,7 +209,15 @@ namespace Spfx.Runtime.Server
         {
             ((IProcessInternal)this).ProcessIncomingMessage(source, wrappedMessage);
         }
-               
+
+        void IIncomingClientMessagesHandler.AddProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+        }
+
+        void IIncomingClientMessagesHandler.RemoveProcessLostHandler(string processId, Action<EndpointLostEventArgs> onProcessLost)
+        {
+        }
+
         void IProcessInternal.ProcessIncomingMessage(IInterprocessClientProxy source, IInterprocessMessage msg)
         {
             if (msg is WrappedInterprocessMessage wrappedMessage)
@@ -293,14 +304,12 @@ namespace Spfx.Runtime.Server
                 m_logger.Info?.Trace("InitializeEndpointAsync succeeded");
                 return new LocalProcessCreationResult(ProcessCreationResults.CreatedNew, handler);
             }
-            catch
+            catch(Exception ex)
             {
+                m_logger.Warn?.Trace(ex, $"InitializeEndpoint for {endpointId} failed");
                 if (removeFromEndpoints)
                 {
-                    lock (m_endpointHandlers)
-                    {
-                        m_endpointHandlers.Remove(endpointId);
-                    }
+                    DoRemoveEndpoint(endpointId, raiseEvent: false);
                 }
 
                 wrapper.Dispose();
@@ -310,9 +319,33 @@ namespace Spfx.Runtime.Server
 
         private void InvokeEndpoint(IInterprocessClientProxy source, IInterprocessRequest callReq)
         {
-            var ep = GetEndpoint(callReq.Destination);
-            var requestContext = new InterprocessRequestContext(DefaultTypeResolver, ep, source, callReq);
-            ep.HandleMessage(requestContext);
+            Exception failureBackToSource;
+            try
+            {
+                var ep = TryGetEndpoint(callReq.Destination?.EndpointId ?? "");
+                if (ep is null)
+                {
+                    m_logger.Debug?.Trace($"Received request for non-existant endpoint {callReq.Destination} from {source}");
+                    failureBackToSource = new EndpointNotFoundException(callReq.Destination);
+                }
+                else
+                {
+                    var requestContext = new InterprocessRequestContext(DefaultTypeResolver, ep, source, callReq);
+                    ep.HandleMessage(requestContext);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                failureBackToSource = ex;
+                m_logger.Warn?.Trace(failureBackToSource, $"Failed to process request to endpoint {callReq.Destination} from {source} ({callReq.GetTinySummaryString()}");
+            }
+
+            if (callReq.ExpectResponse && StatefulInterprocessMessageExtensions.IsValidCallId(callReq.CallId))
+            {
+                var resp = DefaultTypeResolver.CreateSingleton<IFailureCallResponsesFactory>().Create(callReq.CallId, failureBackToSource);
+                source.SendMessage(resp);
+            }
         }
 
         private IProcessEndpointHandler GetEndpoint(ProcessEndpointAddress addr)
@@ -321,15 +354,18 @@ namespace Spfx.Runtime.Server
             if (string.IsNullOrEmpty(epId))
                 throw new EndpointNotFoundException(addr);
 
+            return TryGetEndpoint(epId)
+                ?? throw new EndpointNotFoundException(addr);
+        }
+
+        private IProcessEndpointHandler TryGetEndpoint(string epId)
+        {
             IProcessEndpointHandler ep;
             lock (m_endpointHandlers)
             {
                 m_endpointHandlers.TryGetValue(epId, out ep);
+                return ep;
             }
-
-            if (ep is null)
-                throw new EndpointNotFoundException(addr);
-            return ep;
         }
 
         private ProcessEndpointAddress CreateRelativeAddressInternal(string endpointAddress = null)
@@ -357,14 +393,29 @@ namespace Spfx.Runtime.Server
                 }
                 finally
                 {
-                    lock (m_endpointHandlers)
-                    {
-                        m_endpointHandlers.Remove(uniqueId);
-                    }
+                    DoRemoveEndpoint(uniqueId, raiseEvent: true);
                 }
 
                 return true;
             }
+        }
+
+        void IProcessInternal.OnEndpointDisposed(string endpointId)
+        {
+            DoRemoveEndpoint(endpointId, raiseEvent: true);
+        }
+
+        private void DoRemoveEndpoint(string endpointId, bool raiseEvent)
+        {
+            IProcessEndpointHandler h;
+            lock (m_endpointHandlers)
+            {
+                if (!m_endpointHandlers.Remove(endpointId, out h))
+                    return;
+            }
+
+            h.Dispose();
+            m_logger.Info?.Trace("Removed endpoint " + endpointId);
         }
 
         public ValueTask AutoDestroyAsync()
@@ -380,6 +431,12 @@ namespace Spfx.Runtime.Server
 
             cacheField = ClusterProxy.CreateInterface<T>(addr);
             return cacheField;
+        }
+
+        public object GetRawEndpointObject(string endpointId)
+        {
+            return TryGetEndpoint(endpointId)?.ImplementationObject
+                ?? throw new EndpointNotFoundException(endpointId);
         }
     }
 }

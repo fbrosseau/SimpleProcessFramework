@@ -26,32 +26,46 @@ namespace Spfx.Runtime.Client.Events
 
         private class EndpointEventSubscriptionState
         {
+            public EventSubscriptionManager Owner { get; }
             public EndpointEventSubscriptionState Parent { get; }
             public ProcessEndpointAddress Address { get; }
-            public List<EndpointEventSubscriptionState> Children { get; } = new List<EndpointEventSubscriptionState>();
-            public Dictionary<string, RawEventDelegate> CallbackHandlers { get; } = new Dictionary<string, RawEventDelegate>();
+            public List<EndpointEventSubscriptionState> Children { get; } = new ();
+            public Dictionary<string, RawEventDelegate> CallbackHandlers { get; } = new ();
 
-            private Action m_lostHandler;
+            private HashSet<(Action<EndpointLostEventArgs, object>, object)> m_lostHandlers;
 
-            public EndpointEventSubscriptionState(EndpointEventSubscriptionState parent, ProcessEndpointAddress remoteAddress)
+            public EndpointEventSubscriptionState(EventSubscriptionManager owner, EndpointEventSubscriptionState parent, ProcessEndpointAddress remoteAddress)
             {
+                Owner = owner;
                 Parent = parent;
                 Address = remoteAddress;
             }
 
-            public void AddLostHandler(Action a)
+            public void AddLostHandler(Action<EndpointLostEventArgs, object> a, object state)
             {
-                m_lostHandler += a;
+                m_lostHandlers ??= new HashSet<(Action<EndpointLostEventArgs, object>, object)>();
+                m_lostHandlers.Add((a, state));
             }
 
-            public void RemoveLostHandler(Action a)
+            public void RemoveLostHandler(Action<EndpointLostEventArgs, object> a, object state)
             {
-                m_lostHandler -= a;
+                m_lostHandlers?.Remove((a, state));
             }
 
-            internal void RaiseLostEvent()
+            internal void RaiseLostEvent(ProcessEndpointAddress originalAddress, ProcessEndpointAddress currentAddress, EndpointLostReason reason)
             {
-                m_lostHandler?.Invoke();
+                if (m_lostHandlers is null || m_lostHandlers.Count == 0)
+                    return;
+
+                var eventArgs = new EndpointLostEventArgs(originalAddress, currentAddress, reason);
+
+                foreach (var (action, state) in m_lostHandlers)
+                {
+                    CriticalTryCatch.Run(Owner.m_typeResolver, (eventArgs, action, state), s =>
+                    {
+                        s.action(s.eventArgs, s.state);
+                    });
+                }
             }
 
             public override string ToString()
@@ -71,7 +85,7 @@ namespace Spfx.Runtime.Client.Events
             m_connection = parent;
             m_typeResolver = typeResolver;
             m_subscriptionThread = new AsyncThread(allowSyncCompletion: true);
-            m_root = new EndpointEventSubscriptionState(null, RemoteAddress.ClusterAddress);
+            m_root = new EndpointEventSubscriptionState(this, null, RemoteAddress.ClusterAddress);
             m_eventRaisingThread = new AsyncThread(allowSyncCompletion: false);
 
             m_knownEndpoints = new Dictionary<ProcessEndpointAddress, EndpointEventSubscriptionState>(ProcessEndpointAddress.RelativeAddressComparer)
@@ -82,6 +96,7 @@ namespace Spfx.Runtime.Client.Events
 
         protected override async ValueTask OnTeardownAsync(CancellationToken ct = default)
         {
+            RaiseAllEndpointsLost(null);
             await m_subscriptionThread.TeardownAsync(ct).ConfigureAwait(false);
             await m_eventRaisingThread.TeardownAsync(ct).ConfigureAwait(false);
             await base.OnTeardownAsync(ct);
@@ -89,9 +104,15 @@ namespace Spfx.Runtime.Client.Events
 
         protected override void OnDispose()
         {
+            RaiseAllEndpointsLost(null);
             m_subscriptionThread.Dispose();
             m_eventRaisingThread.Dispose();
             base.OnDispose();
+        }
+
+        internal void HandleConnectionFailure(Exception ex)
+        {
+            RaiseAllEndpointsLost(ex);
         }
 
         internal ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req)
@@ -141,10 +162,6 @@ namespace Spfx.Runtime.Client.Events
             await TaskEx.WhenAllOrRethrow(tasks).ConfigureAwait(false);
         }
 
-        internal void UnsubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
-        {
-        }
-
         private bool ApplyNewChange(EventSubscriptionChange change)
         {
             lock (m_knownEndpoints)
@@ -192,17 +209,40 @@ namespace Spfx.Runtime.Client.Events
             if (endpoint.EndpointId != null)
                 parent = GetEntry(endpoint.ProcessAddress, createIfMissing);
 
-            s = new EndpointEventSubscriptionState(parent, endpoint);
+            s = new EndpointEventSubscriptionState(this, parent, endpoint);
             parent.Children.Add(s);
 
             m_knownEndpoints[endpoint] = s;
             return s;
         }
 
-        internal ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, EventHandler<EndpointLostEventArgs> handler)
+        internal ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
         {
+            lock (m_knownEndpoints)
+            {
+                var entry = GetEntry(address, createIfMissing: true);
+                entry.AddLostHandler(handler, state);
+            }
+
             return default;
             //return m_subscriptionThread.ExecuteAsync(() => ChangeEventSubscriptionInternal(req));
+        }
+
+        internal void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
+        {
+            lock(m_knownEndpoints)
+            {
+                var entry = GetEntry(address, createIfMissing: false);
+                entry?.RemoveLostHandler(handler, state);
+            }
+        }
+
+        private void RaiseAllEndpointsLost(Exception ex)
+        {
+            lock (m_knownEndpoints)
+            {
+                DiscardRegistrations(m_root.Address, m_root.Address, EndpointLostReason.RemoteEndpointLost);
+            }
         }
 
         internal bool ProcessIncomingMessage(IInterprocessMessage msg)
@@ -246,24 +286,24 @@ namespace Spfx.Runtime.Client.Events
 
             lock (m_knownEndpoints)
             {
-                DiscardRegistrations(epLost.Endpoint);
+                DiscardRegistrations(epLost.Endpoint, epLost.Endpoint, EndpointLostReason.RemoteEndpointLost);
             }
         }
 
-        private void DiscardRegistrations(ProcessEndpointAddress ep)
+        private void DiscardRegistrations(ProcessEndpointAddress originalAddress, ProcessEndpointAddress currentAddress, EndpointLostReason reason)
         {
             AssertIsLocked();
 
-            if (!m_knownEndpoints.Remove(ep, out var s))
+            if (!m_knownEndpoints.Remove(currentAddress, out var s))
                 return;
 
-            s.RaiseLostEvent();
+            s.RaiseLostEvent(originalAddress, currentAddress, reason);
 
             s.Parent?.Children.Remove(s);
 
-            foreach (var child in s.Children)
+            foreach (var child in s.Children.ToArray())
             {
-                DiscardRegistrations(child.Address);
+                DiscardRegistrations(originalAddress, child.Address, reason);
             }
         }
 

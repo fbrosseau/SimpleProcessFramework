@@ -46,7 +46,9 @@ namespace Spfx.Runtime.Server
         protected override void OnDispose()
         {
             SignalDispose();
-            m_disposeTokenSource?.Dispose();
+
+            (ParentProcess as IProcessInternal)?.OnEndpointDisposed(EndpointAddress.EndpointId);
+
             base.OnDispose();
         }
 
@@ -58,7 +60,10 @@ namespace Spfx.Runtime.Server
 
         private void SignalDispose()
         {
-            m_disposeTokenSource?.SafeCancelAsync();
+            var cts = m_disposeTokenSource;
+            m_disposeTokenSource = null;
+
+            cts?.SafeCancelAndDisposeAsync();
         }
 
         Task IProcessEndpoint.InitializeAsync(IProcess parentProcess, ProcessEndpointAddress endpointAddress)

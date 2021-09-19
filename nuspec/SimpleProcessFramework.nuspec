@@ -64,20 +64,6 @@
     <file src="../bin/$configuration$/net48/Spfx.Process.Netfx.pdb" target="tools/net48" />
     <file src="../bin/$configuration$/net48/Spfx.Process.Netfx32.exe" target="tools/net48" />
     <file src="../bin/$configuration$/net48/Spfx.Process.Netfx32.pdb" target="tools/net48" />
-
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.dll" target="lib/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.pdb" target="lib/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.dll" target="lib/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.pdb" target="lib/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.deps.json" target="lib/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.runtimeconfig.json" target="lib/netcoreapp2.1" />
-
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.dll" target="tools/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.pdb" target="tools/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.dll" target="tools/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.pdb" target="tools/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.deps.json" target="tools/netcoreapp2.1" />
-    <file src="../bin/$configuration$/netcoreapp2.1/Spfx.Process.Netcore.runtimeconfig.json" target="tools/netcoreapp2.1" />
     
     <file src="../bin/$configuration$/netcoreapp3.1/Spfx.dll" target="lib/netcoreapp3.1" />
     <file src="../bin/$configuration$/netcoreapp3.1/Spfx.pdb" target="lib/netcoreapp3.1" />
@@ -98,5 +84,25 @@
     <file src="../bin/$configuration$/netcoreapp3.1/Spfx.Process.Netcore32.pdb" target="tools/netcoreapp3.1" />
     <file src="../bin/$configuration$/netcoreapp3.1/Spfx.Process.Netcore32.deps.json" target="tools/netcoreapp3.1" />
     <file src="../bin/$configuration$/netcoreapp3.1/Spfx.Process.Netcore32.runtimeconfig.json" target="tools/netcoreapp3.1" />
+
+    <file src="../bin/$configuration$/net6.0/Spfx.dll" target="lib/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.pdb" target="lib/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.dll" target="lib/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.pdb" target="lib/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.deps.json" target="lib/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.runtimeconfig.json" target="lib/net6.0" />
+
+    <file src="../bin/$configuration$/net6.0/Spfx.dll" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.pdb" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.exe" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.dll" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.pdb" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.deps.json" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore.runtimeconfig.json" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore32.exe" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore32.dll" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore32.pdb" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore32.deps.json" target="tools/net6.0" />
+    <file src="../bin/$configuration$/net6.0/Spfx.Process.Netcore32.runtimeconfig.json" target="tools/net6.0" />
   </files>
 </package>
