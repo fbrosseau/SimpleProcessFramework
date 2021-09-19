@@ -9,7 +9,7 @@ namespace Spfx.Utilities.Runtime
 {
     internal static class WslUtilities
     {
-        private static readonly ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new ThreadSafeAppendOnlyDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new (StringComparer.OrdinalIgnoreCase);
 
         internal static class WellKnownUtilities
         {
@@ -18,7 +18,7 @@ namespace Spfx.Utilities.Runtime
 
         public static readonly string WslExeFullPath = Path.Combine(PathHelper.RealSystem32Folder, "wsl.exe");
 
-        public static bool IsWslSupported => NetcoreHelper.IsSupported;
+        public static bool IsWslSupported => false;//NetcoreHelper.IsSupported;
 
         public static NetcoreInfo NetcoreHelper { get; } = new WslNetcoreInfo();
 
