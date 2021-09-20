@@ -1,25 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-
-namespace System
-{
-    internal static class StringGlue
-    {
-#if NETCOREAPP3_1_PLUS
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(string str, char c)
-        {
-            return str.Contains(c);
-        }
-#else
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(this string str, char c)
-        {
-            return str.AsSpan().IndexOf(c) != -1;
-        }
-#endif
-    }
-}
 
 namespace System.Text
 {

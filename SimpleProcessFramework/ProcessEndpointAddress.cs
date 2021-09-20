@@ -167,12 +167,12 @@ namespace Spfx
                     return false;
 
                 m_hostAuthority = u.Authority;
-                segments = u.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                segments = u.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             }
             else
             {
                 m_hostAuthority = "";
-                segments = m_originalString.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                segments = m_originalString.Split('/', StringSplitOptions.RemoveEmptyEntries);
             }
 
             if (segments.Length > 0)
