@@ -7,7 +7,7 @@
     <LangVersion>preview</LangVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>828</MinorVersion>
+    <MinorVersion>831</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
@@ -24,6 +24,8 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SimpleProcessFramework/Properties/spfx.snk</AssemblyOriginatorKeyFile>
     <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
     <DefineConstants>$(DefineConstants);NETCORE31_SUPPORTED</DefineConstants>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <DefaultNetcoreVersion>net6.0</DefaultNetcoreVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.StartsWith('Netcore_'))">
