@@ -2,6 +2,7 @@
 using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -69,18 +70,18 @@ namespace Spfx.Runtime.Client
 
         protected Task<T> WrapTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
         {
+            return WrapValueTaskOfTReturn<T>(args, method, ct).AsTask();
+        }
+
+        protected ValueTask<T> WrapValueTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
+        {
             return ExecuteRequest<T>(method, new RemoteCallRequest
             {
                 Arguments = args
             }, ct);
         }
 
-        protected ValueTask<T> WrapValueTaskOfTReturn<T>(object[] args, ReflectedMethodInfo method, CancellationToken ct)
-        {
-            return new ValueTask<T>(WrapTaskOfTReturn<T>(args, method, ct));
-        }
-
-        private Task<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteInvocationRequest remoteCallRequest, CancellationToken ct)
+        private ValueTask<T> ExecuteRequest<T>(ReflectedMethodInfo calledMethod, RemoteInvocationRequest remoteCallRequest, CancellationToken ct)
         {
             remoteCallRequest.Destination = RemoteAddress;
             remoteCallRequest.AbsoluteTimeout = CallTimeout;
@@ -107,10 +108,10 @@ namespace Spfx.Runtime.Client
 
         internal ValueTask PingAsync()
         {
-            return new ValueTask(m_connection.SerializeAndSendMessage(new PingRequest
+            return m_connection.SerializeAndSendMessage(new PingRequest
             {
                 Destination = RemoteAddress,
-            }));
+            }).AsVoidValueTask();
         }
 
         internal static ProcessProxyImplementation Unwrap(object endpointInstance)

@@ -2,6 +2,7 @@
 using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -112,7 +113,7 @@ namespace Spfx.Runtime.Server
 
         public void SendMessageToClient(IInterprocessMessage msg)
         {
-            SerializeAndSendMessage(msg);
+            SerializeAndSendMessage(msg).FireAndForget();
         }
 
         public IInterprocessClientProxy GetWrapperProxy() => m_wrapperProxy;

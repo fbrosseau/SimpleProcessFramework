@@ -10,7 +10,7 @@ namespace Spfx.Runtime.Common
         event EventHandler ConnectionLost;
 
         void Initialize();
-        Task<object> SerializeAndSendMessage(IInterprocessMessage req, CancellationToken ct = default);
-        Task<T> SerializeAndSendMessage<T>(IInterprocessMessage req, CancellationToken ct = default);
+        ValueTask<object> SerializeAndSendMessage(IInterprocessMessage req, CancellationToken ct = default);
+        ValueTask<T> SerializeAndSendMessage<T>(IInterprocessMessage req, CancellationToken ct = default);
     }
 }

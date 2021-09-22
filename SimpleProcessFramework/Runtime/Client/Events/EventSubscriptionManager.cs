@@ -155,7 +155,7 @@ namespace Spfx.Runtime.Client.Events
 
             foreach (var msg in messagesPerDestinationProcess.Values)
             {
-                tasks.Add(m_connection.SerializeAndSendMessage(msg));
+                tasks.Add(m_connection.SerializeAndSendMessage(msg).AsTask());
             }
 
             await TaskEx.WhenAllOrRethrow(tasks).ConfigureAwait(false);

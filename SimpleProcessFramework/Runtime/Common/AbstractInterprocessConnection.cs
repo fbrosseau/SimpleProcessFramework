@@ -103,16 +103,16 @@ namespace Spfx.Runtime.Common
             m_pendingRequests.RemoveById(callId)?.Dispose();
         }
 
-        public Task<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
+        public ValueTask<object> SerializeAndSendMessage(IInterprocessMessage msg, CancellationToken ct = default)
         {
             return SerializeAndSendMessage<object>(msg, ct);
         }
 
-        public Task<TResult> SerializeAndSendMessage<TResult>(IInterprocessMessage msg, CancellationToken ct = default)
+        public ValueTask<TResult> SerializeAndSendMessage<TResult>(IInterprocessMessage msg, CancellationToken ct = default)
         {
             var op = CreatePendingOperation<TResult>(msg, ct);
             EnqueueOperation(op);
-            return (Task<TResult>)op.Task;
+            return new ValueTask<TResult>((Task<TResult>)op.Task);
         }
 
         protected virtual IPendingOperation CreatePendingOperation<TResult>(IInterprocessMessage msg, CancellationToken ct)

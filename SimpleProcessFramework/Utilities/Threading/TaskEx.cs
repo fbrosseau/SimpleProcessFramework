@@ -252,6 +252,14 @@ namespace Spfx.Utilities.Threading
             _ = t;
         }
 
+        public static ValueTask AsVoidValueTask<T>(this ValueTask<T> t)
+        {
+            if (t.IsCompletedSuccessfully)
+                return default;
+
+            return new ValueTask(t.AsTask());
+        }
+
         public static Task<bool> TryWaitAsync(this Task t, TimeSpan timeout)
         {
             if (t.IsCompleted)
@@ -380,6 +388,15 @@ namespace Spfx.Utilities.Threading
             }, t, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
+        private static readonly Task s_badWaitOrRethrow = Task.FromException(new InvalidOperationException("Cannot use ValueTask after WaitOrRethrow"));
+
+        [DebuggerStepThrough, DebuggerHidden]
+        public static void WaitOrRethrow(ref this ValueTask t)
+        {
+            t.AsTask().WaitOrRethrow();
+            t = new ValueTask(s_badWaitOrRethrow);
+        }
+
         [DebuggerStepThrough, DebuggerHidden]
         public static void WaitOrRethrow(this Task t)
         {
@@ -448,8 +465,44 @@ namespace Spfx.Utilities.Threading
             return tcs.TrySetResult(default);
         }
 
-        public static ValueTask WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrowInternal(new List<Task> { t1, t2 });
-        public static ValueTask WhenAllOrRethrow(Task t1, Task t2, Task t3) => WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
+        public static ValueTask WhenAllOrRethrow(Task t1) => WhenAllOrRethrow(t1, null);
+        public static ValueTask WhenAllOrRethrow(Task t1, Task t2) => WhenAllOrRethrow(t1, t2, null);
+        public static ValueTask WhenAllOrRethrow(Task t1, Task t2, Task t3)
+        {
+            int totalPending = 0;
+            int totalIgnored = 0;
+            Task pending = null;
+
+            if (t1 is null || t1.IsCompletedSuccessfully()) ++totalIgnored;
+            else if (t1?.IsCompleted == false)
+            {
+                ++totalPending;
+                pending = t1;
+            }
+
+            if (t2 is null || t2.IsCompletedSuccessfully()) ++totalIgnored;
+            else if (t2?.IsCompleted == false)
+            {
+                ++totalPending;
+                pending = t2;
+            }
+
+            if (t3 is null || t3.IsCompletedSuccessfully()) ++totalIgnored;
+            else if (t3?.IsCompleted == false)
+            {
+                ++totalPending;
+                pending = t3;
+            }
+
+            if (totalIgnored == 3)
+                return default;
+
+            if (totalPending == 1)
+                return new ValueTask(pending);
+
+            return WhenAllOrRethrowInternal(new List<Task> { t1, t2, t3 });
+        }
+
         public static ValueTask WhenAllOrRethrow(IEnumerable<Task> tasks) => WhenAllOrRethrowInternal(tasks.ToList());
         public static ValueTask WhenAllOrRethrow(IReadOnlyCollection<Task> tasks) => tasks.Count == 0 ? default : WhenAllOrRethrowInternal(tasks.ToList());
         public static ValueTask WhenAllOrRethrow(params Task[] tasks) => WhenAllOrRethrow((IReadOnlyCollection<Task>)tasks);

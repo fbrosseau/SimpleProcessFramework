@@ -11,12 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CoreEndpoints/**" />
-    <EmbeddedResource Remove="CoreEndpoints/**" />
-    <None Remove="CoreEndpoints/**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Properties/spfx.snk" />
   </ItemGroup>
 
@@ -35,10 +29,6 @@
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Codegen/" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='test'">

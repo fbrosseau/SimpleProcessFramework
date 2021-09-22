@@ -31,9 +31,9 @@ namespace Spfx.Tests.LowLevel.CodeGen
 
         public class TestConnection : IClientInterprocessConnection
         {
-            private readonly Func<IInterprocessMessage, CancellationToken, Task<object>> m_messageHandler;
+            private readonly Func<IInterprocessMessage, CancellationToken, ValueTask<object>> m_messageHandler;
 
-            public TestConnection(Func<IInterprocessMessage, CancellationToken, Task<object>> messageHandler)
+            public TestConnection(Func<IInterprocessMessage, CancellationToken, ValueTask<object>> messageHandler)
             {
                 m_messageHandler = messageHandler;
             }
@@ -62,12 +62,12 @@ namespace Spfx.Tests.LowLevel.CodeGen
                 throw new NotImplementedException();
             }
 
-            public Task<object> SerializeAndSendMessage(IInterprocessMessage req, CancellationToken ct = default)
+            public ValueTask<object> SerializeAndSendMessage(IInterprocessMessage req, CancellationToken ct = default)
             {
                 return m_messageHandler(req, ct);
             }
 
-            public async Task<T> SerializeAndSendMessage<T>(IInterprocessMessage req, CancellationToken ct = default)
+            public async ValueTask<T> SerializeAndSendMessage<T>(IInterprocessMessage req, CancellationToken ct = default)
             {
                 var raw = await SerializeAndSendMessage(req, ct);
                 return (T)raw;
@@ -96,7 +96,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             {
                 actualAddress = req.Destination;
                 AssertArgsEqual(req, null);
-                return Task.FromResult(expectedResult);
+                return new ValueTask<object>(expectedResult);
             });
 
             var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
@@ -123,7 +123,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             {
                 actualAddress = req.Destination;
                 AssertArgsEqual(req, expectedArgs);
-                return Task.FromResult(expectedResult);
+                return new ValueTask<object>(expectedResult);
             });
 
             var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
@@ -150,7 +150,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             {
                 actualAddress = req.Destination;
                 AssertArgsEqual(req, expectedArgs);
-                return Task.FromResult(expectedResult);
+                return new ValueTask<object>(expectedResult);
             });
 
             var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");
@@ -174,7 +174,7 @@ namespace Spfx.Tests.LowLevel.CodeGen
             {
                 actualAddress = req.Destination;
                 AssertArgsEqual(req, null);
-                return Task.FromResult((object)expectedResult);
+                return new ValueTask<object>(expectedResult);
             });
 
             var expectedAddress = ProcessEndpointAddress.Create("localhost", "test1", "test2");

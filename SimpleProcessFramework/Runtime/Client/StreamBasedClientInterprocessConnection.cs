@@ -94,9 +94,9 @@ namespace Spfx.Runtime.Client
                 base.ProcessReceivedMessage(msg);
         }
 
-        protected class ClientPendingOperation<TResult> : PendingStreamOperation<TResult>
+        protected sealed class ClientPendingOperation<TResult> : PendingStreamOperation<TResult>
         {
-            protected new StreamBasedClientInterprocessConnection Owner => (StreamBasedClientInterprocessConnection)base.Owner;
+            private new StreamBasedClientInterprocessConnection Owner => (StreamBasedClientInterprocessConnection)base.Owner;
 
             private static readonly Action<EndpointLostEventArgs, object> s_endpointLostHandler = OnPendingOperationRemoteEndpointLost;
 
