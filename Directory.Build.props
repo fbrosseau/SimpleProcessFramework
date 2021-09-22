@@ -7,7 +7,7 @@
     <LangVersion>preview</LangVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>831</MinorVersion>
+    <MinorVersion>832</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
