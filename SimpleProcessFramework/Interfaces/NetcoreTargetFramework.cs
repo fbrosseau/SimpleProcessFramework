@@ -98,13 +98,6 @@ namespace Spfx.Interfaces
 
         private static readonly Regex s_versionRegex = new Regex(@"^(?<major>\d+)(\.(?<minor>\d+))?");
         private static readonly Version s_zero = new Version(0, 0);
-        private static readonly Version[][] s_wellKnownVersions =
-        {
-            null,
-            null,
-            new[]{null, new Version(2, 1), new Version(2, 2) },
-            new[]{new Version(3,0), new Version(3,1) }
-        };
 
         private static Version ParseVersion(string stringVersion)
         {
@@ -122,15 +115,7 @@ namespace Spfx.Interfaces
                 minor = int.Parse(m.Groups["minor"].Value);
             }
 
-            T TryGet<T>(T[] arr, int index)
-            {
-                if (arr?.Length > index)
-                    return arr[index];
-                return default;
-            }
-
-            return TryGet(TryGet(s_wellKnownVersions, major), minor)
-                ?? new Version(major, minor);
+            return new Version(major, minor);
         }
     }
 }
