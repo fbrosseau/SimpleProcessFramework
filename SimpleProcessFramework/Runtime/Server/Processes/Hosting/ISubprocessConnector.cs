@@ -1,6 +1,6 @@
-﻿using System.Threading;
+﻿using Spfx.Utilities.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {

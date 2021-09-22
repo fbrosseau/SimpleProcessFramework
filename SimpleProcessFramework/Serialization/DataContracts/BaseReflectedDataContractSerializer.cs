@@ -200,7 +200,7 @@ namespace Spfx.Serialization.DataContracts
 
                 // Nullable<T> is actually a real null when boxed.
                 // Treat that as a regular ref type.
-                if (info.DefaultValueForType != null) 
+                if (info.DefaultValueForType != null)
                 {
                     info.IsDefaultValueForType = o => info.DefaultValueForType.Equals(o);
                 }

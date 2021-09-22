@@ -1,15 +1,15 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Spfx.Interfaces;
+﻿using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Runtime.Server.Processes.Ipc;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -18,7 +18,7 @@ namespace Spfx.Runtime.Server.Processes
         private readonly ProcessContainer m_processContainer;
         private readonly IIpcConnectorListener m_rawProcessContainer;
 
-        public SameProcessFakeHandle(ProcessCreationInfo info, ITypeResolver typeResolver) 
+        public SameProcessFakeHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
             m_processContainer = new FakeProcessContainer(this);

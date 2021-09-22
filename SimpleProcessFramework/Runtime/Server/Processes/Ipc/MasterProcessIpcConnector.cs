@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
-using Spfx.Io;
+﻿using Spfx.Io;
 using Spfx.Reflection;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes.Ipc
 {

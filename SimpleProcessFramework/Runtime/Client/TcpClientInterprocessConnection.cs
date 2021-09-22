@@ -5,7 +5,6 @@ using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -41,7 +40,7 @@ namespace Spfx.Runtime.Client
             {
                 throw new ProxySocketConnectionFailedException(ex);
             }
-            
+
             var ns = disposeBag.Add(new NetworkStream(client));
 
             var finalStream = disposeBag.Add(await CreateFinalStream(ns).ConfigureAwait(false));

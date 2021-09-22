@@ -129,7 +129,7 @@ namespace Spfx
         {
             return CreateFromString(originalString, needParse: false, checkCache: true);
         }
-        
+
         private static ProcessEndpointAddress CreateFromString(string addr, bool needParse, bool checkCache)
         {
             if (checkCache)
@@ -221,7 +221,7 @@ namespace Spfx
 
             return Create(RelativeAuthority, ProcessId, EndpointId);
         }
-        
+
         public static bool Equals(ProcessEndpointAddress a, ProcessEndpointAddress b)
         {
             if (a is null)
@@ -239,7 +239,7 @@ namespace Spfx
             var code = StringComparer.GetHashCode(m_originalString);
             return code == 0 ? -1 : code;
         }
-        
+
         public class RelativeAddressEqualityComparer : IEqualityComparer<ProcessEndpointAddress>
         {
             public static RelativeAddressEqualityComparer Instance { get; } = new RelativeAddressEqualityComparer();

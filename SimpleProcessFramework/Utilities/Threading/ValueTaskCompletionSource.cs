@@ -8,7 +8,7 @@ namespace Spfx.Utilities.Threading
 #if !NETSTANDARD2_1_PLUS
     internal class ValueTaskCompletionSource<TResult> : TaskCompletionSource<TResult>
     {
-           public ValueTask<TResult> ValueTaskOfT => new ValueTask<TResult>(Task);
+        public ValueTask<TResult> ValueTaskOfT => new ValueTask<TResult>(Task);
         public ValueTask ValueTask => new ValueTask(Task);
 
         public ValueTaskCompletionSource(bool completeAsynchronously = false)

@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Pipes;
-using System;
 
 namespace Spfx.Runtime.Server.Processes
 {

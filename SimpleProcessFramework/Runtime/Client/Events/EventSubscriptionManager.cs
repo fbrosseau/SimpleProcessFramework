@@ -8,7 +8,6 @@ using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,8 +28,8 @@ namespace Spfx.Runtime.Client.Events
             public EventSubscriptionManager Owner { get; }
             public EndpointEventSubscriptionState Parent { get; }
             public ProcessEndpointAddress Address { get; }
-            public List<EndpointEventSubscriptionState> Children { get; } = new ();
-            public Dictionary<string, RawEventDelegate> CallbackHandlers { get; } = new ();
+            public List<EndpointEventSubscriptionState> Children { get; } = new();
+            public Dictionary<string, RawEventDelegate> CallbackHandlers { get; } = new();
 
             private HashSet<(Action<EndpointLostEventArgs, object>, object)> m_lostHandlers;
 
@@ -230,7 +229,7 @@ namespace Spfx.Runtime.Client.Events
 
         internal void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state)
         {
-            lock(m_knownEndpoints)
+            lock (m_knownEndpoints)
             {
                 var entry = GetEntry(address, createIfMissing: false);
                 entry?.RemoveLostHandler(handler, state);

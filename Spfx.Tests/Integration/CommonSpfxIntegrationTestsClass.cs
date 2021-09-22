@@ -1,19 +1,19 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Spfx.Interfaces;
 using Spfx.Runtime.Server.Listeners;
+using Spfx.Tests.Utilities;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
+using Spfx.Utilities.Threading;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
-using System.Collections.Generic;
-using Spfx.Utilities.Threading;
-using Spfx.Tests.Utilities;
 
 namespace Spfx.Tests.Integration
 {
@@ -421,12 +421,12 @@ namespace Spfx.Tests.Integration
 
             protected override void OnDispose()
             {
-                foreach(var f in m_objectsToDisposeFirst)
+                foreach (var f in m_objectsToDisposeFirst)
                 {
                     f.Dispose();
                 }
                 Unwrap(DisposeTestProcess(this, default));
-                foreach(var l in m_objectsToDisposeLast)
+                foreach (var l in m_objectsToDisposeLast)
                 {
                     l.Dispose();
                 }

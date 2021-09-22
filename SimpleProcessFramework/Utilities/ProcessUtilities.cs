@@ -39,7 +39,7 @@ namespace Spfx.Utilities
 #else
             info.Arguments = CommandLineBuilder.FormatCommandLine(args);
 #endif
-        }      
+        }
 
         internal static void SetCommandLine(this ProcessStartInfo startInfo, string executable, string cmdLine)
         {

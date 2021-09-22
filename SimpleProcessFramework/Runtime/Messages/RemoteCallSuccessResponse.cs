@@ -1,6 +1,5 @@
 ﻿using Spfx.Utilities;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Messages
 {

@@ -1,5 +1,4 @@
-﻿using Spfx.Reflection;
-using System;
+﻿using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -35,7 +34,7 @@ namespace Spfx.Runtime.Messages
 
         public int ArgsCount => Arguments?.Length ?? 0;
 
-        public override string GetTinySummaryString() 
+        public override string GetTinySummaryString()
             => nameof(RemoteCallRequest) + ":" + MethodName + "(#" + CallId + ")";
 
         internal static class Reflection

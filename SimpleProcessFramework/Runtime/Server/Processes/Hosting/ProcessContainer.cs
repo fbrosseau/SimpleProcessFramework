@@ -1,17 +1,17 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
-using System.Collections.Generic;
-using Spfx.Runtime.Server.Processes.Ipc;
-using Spfx.Reflection;
-using Spfx.Diagnostics.Logging;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {

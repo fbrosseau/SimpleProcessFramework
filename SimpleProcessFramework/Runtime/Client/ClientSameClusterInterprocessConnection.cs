@@ -4,10 +4,7 @@ using Spfx.Runtime.Common;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server;
 using Spfx.Serialization;
-using Spfx.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Client
@@ -24,7 +21,7 @@ namespace Spfx.Runtime.Client
         ProcessEndpointAddress IClientInterprocessConnection.Destination => ProcessEndpointAddress.RelativeClusterAddress;
 
         public IInterprocessClientProxy GetWrapperProxy() => m_proxyToThis;
-        
+
         public ClientSameClusterInterprocessConnection(ITypeResolver typeResolver)
             : base(typeResolver)
         {

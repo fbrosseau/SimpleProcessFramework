@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Spfx.Interfaces;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Spfx.Interfaces;
 
 namespace Spfx.Utilities.Runtime
 {
@@ -229,7 +229,7 @@ namespace Spfx.Utilities.Runtime
             var ver = FileVersionInfo.GetVersionInfo(typeof(HostFeaturesHelper).Assembly.Location).ProductVersion;
 
             sb.AppendLine("The SimpleProcessFramework (Spfx) Version " + ver);
-             
+
             sb.AppendLine("Host information---------");
             sb.AppendLine("OS Kind: " + LocalMachineOsKind);
             sb.AppendLine("Current process: " + LocalProcessKind);

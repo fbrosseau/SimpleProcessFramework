@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Spfx.Diagnostics.Logging;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Server.Processes.Windows;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -54,7 +54,7 @@ namespace Spfx.Runtime.Server.Processes
 
             if (m_needDotNetExe)
             {
-                var dotnetExe = m_processKind == ProcessKind.Wsl 
+                var dotnetExe = m_processKind == ProcessKind.Wsl
                     ? m_config.DefaultWslNetcoreHost
                     : NetcoreInfo.GetNetCoreHostPath(!processCreationInfo.TargetFramework.ProcessKind.Is32Bit());
                 PrimaryExecutableName = dotnetExe;
@@ -205,7 +205,7 @@ namespace Spfx.Runtime.Server.Processes
                 extensionChoices.Add(".dll");
 
             string preferredFilename = providedNameWithoutExt;
-            
+
             if ((m_processCreationInfo.Append32BitSuffix ?? m_config.Append32BitSuffix)
                 && m_processKind.Is32Bit()
                 && !providedNameWithoutExt.EndsWith(m_config.SuffixFor32BitProcesses, StringComparison.OrdinalIgnoreCase))
@@ -214,7 +214,7 @@ namespace Spfx.Runtime.Server.Processes
                 filenameChoices.Insert(0, preferredFilename);
             }
 
-            foreach(var file in filenameChoices)
+            foreach (var file in filenameChoices)
             {
                 foreach (var ext in extensionChoices)
                 {

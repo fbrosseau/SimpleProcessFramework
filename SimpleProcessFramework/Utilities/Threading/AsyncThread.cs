@@ -1,5 +1,4 @@
-﻿using Spfx.Diagnostics;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -88,7 +87,7 @@ namespace Spfx.Utilities.Threading
                 {
                     m_acquireLockTask.OnCompleted(continuation);
                 }
-                else 
+                else
                 {
                     var copy = m_acquireLockTask;
                     ThreadPool.QueueUserWorkItem(s =>

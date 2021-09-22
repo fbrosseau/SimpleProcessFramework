@@ -24,7 +24,7 @@ namespace Spfx.Runtime.Common
         {
             Logger = typeResolver.GetLogger(GetType(), uniqueInstance: true, friendlyName);
             TypeResolver = typeResolver;
-            
+
             m_pendingWrites = new AsyncQueue<IPendingOperation>
             {
                 DisposeIgnoredItems = true
@@ -34,7 +34,7 @@ namespace Spfx.Runtime.Common
         protected override void OnDispose()
         {
             Logger.Info?.Trace("AbstractInterprocessConnection::OnDispose");
-            
+
             var ex = m_caughtException;
             m_pendingWrites.Dispose(ex);
 
@@ -199,7 +199,7 @@ namespace Spfx.Runtime.Common
                 {
                     return base.TrySetResult((TResult)result);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     return TrySetException(ex);
                 }

@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Spfx.Utilities;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes;
-using Spfx.Utilities.Threading;
-using Spfx.Diagnostics.Logging;
 using Spfx.Runtime.Server.Processes.Windows;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server
 {
@@ -198,7 +198,7 @@ namespace Spfx.Runtime.Server
                 endpointOutcome = await processBroker.CreateEndpoint(endpointReq).ConfigureAwait(false);
                 m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} -> CreateEndpoint result is {endpointOutcome}");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 m_logger.Warn?.Trace(ex, $"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} failed: " + ex.Message);
 

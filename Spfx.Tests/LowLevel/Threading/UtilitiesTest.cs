@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
-using System.Threading.Tasks;
 using Spfx.Utilities.Threading;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Tests.LowLevel.Threading
 {

@@ -43,7 +43,7 @@ namespace Spfx.Utilities
             if (!HostFeaturesHelper.LocalProcessIsNetfx)
                 return original;
 
-            if(s_netfxExceptionTidyRegex is null)
+            if (s_netfxExceptionTidyRegex is null)
             {
                 s_netfxExceptionTidyRegexMatchEvaluator = m =>
                 {
@@ -110,7 +110,7 @@ namespace Spfx.Utilities
             if (a.Length != b.Length)
                 return false;
 
-            for(int i = 0; i < a.Length; ++i)
+            for (int i = 0; i < a.Length; ++i)
             {
                 if (!EqualityComparer<T>.Default.Equals(a[i], b[i]))
                     return false;
@@ -125,7 +125,7 @@ namespace Spfx.Utilities
                 return -1;
 
             int hash = 0;
-            for(int i = 0; i < values.Length;++i)
+            for (int i = 0; i < values.Length; ++i)
             {
                 hash ^= EqualityComparer<T>.Default.GetHashCode(values[i]) + i;
             }

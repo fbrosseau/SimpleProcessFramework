@@ -1,8 +1,8 @@
-﻿using NUnit.Framework;
-using System.Threading.Tasks;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Spfx.Utilities.Threading;
-using FluentAssertions;
 using System;
+using System.Threading.Tasks;
 
 namespace Spfx.Tests.LowLevel.Threading
 {

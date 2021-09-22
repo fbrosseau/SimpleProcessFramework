@@ -36,7 +36,7 @@ namespace Spfx.Runtime.Server.Processes
                     container.Run();
                 graceful = true;
             }
-            catch(Exception ex) when (SubprocessMainShared.FilterFatalException(ex))
+            catch (Exception ex) when (SubprocessMainShared.FilterFatalException(ex))
             {
                 SubprocessMainShared.HandleFatalException(ex);
             }

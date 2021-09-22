@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Spfx.Utilities.Threading;
+using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Utilities.Threading;
 
 namespace Spfx.Tests.Utilities
 {
@@ -61,7 +58,7 @@ namespace Spfx.Tests.Utilities
                 }, null, Timeout.Infinite, Timeout.Infinite);
             }
 
-            if(ct.CanBeCanceled)
+            if (ct.CanBeCanceled)
             {
                 ctr = ct.Register(() =>
                 {

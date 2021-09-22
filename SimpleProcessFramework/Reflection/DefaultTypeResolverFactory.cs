@@ -1,11 +1,11 @@
-﻿using Spfx.Interfaces;
+﻿using Spfx.Diagnostics;
+using Spfx.Diagnostics.Logging;
+using Spfx.Interfaces;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Server;
-using Spfx.Serialization;
-using Spfx.Diagnostics.Logging;
-using System;
-using Spfx.Diagnostics;
 using Spfx.Runtime.Server.Listeners;
+using Spfx.Serialization;
+using System;
 
 namespace Spfx.Reflection
 {

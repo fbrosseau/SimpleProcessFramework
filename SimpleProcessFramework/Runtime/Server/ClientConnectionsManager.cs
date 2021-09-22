@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
+using Spfx.Runtime.Server.Listeners;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Reflection;
-using Spfx.Runtime.Exceptions;
-using Spfx.Runtime.Server.Listeners;
-using Spfx.Utilities;
-using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {
@@ -34,7 +34,7 @@ namespace Spfx.Runtime.Server
                 m_listeners.Clear();
             }
 
-            lock(m_activeChannels)
+            lock (m_activeChannels)
             {
                 disposables.AddRange(m_activeChannels.Values);
                 m_activeChannels.Clear();

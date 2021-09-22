@@ -1,14 +1,14 @@
-﻿using System;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Spfx.Diagnostics.Logging;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
+using System;
+using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -28,7 +28,7 @@ namespace Spfx.Runtime.Server.Processes
 
         protected Process ExternalProcess { get; set; }
 
-        protected AbstractExternalProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver) 
+        protected AbstractExternalProcessTargetHandle(ProcessCreationInfo info, ITypeResolver typeResolver)
             : base(info, typeResolver)
         {
         }
@@ -134,7 +134,7 @@ namespace Spfx.Runtime.Server.Processes
         {
             HandleProcessExit(ExternalProcess);
         }
-        
+
         public void ReportConsoleOutput(StandardConsoleStream stream, string data)
         {
             var listener = stream == StandardConsoleStream.Out ? m_outListener : m_errListener;

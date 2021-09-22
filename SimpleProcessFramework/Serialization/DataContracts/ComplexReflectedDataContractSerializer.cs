@@ -16,8 +16,8 @@ namespace Spfx.Serialization.DataContracts
                 m_constructor = () => Activator.CreateInstance(actualType);
             else
                 m_constructor = () => FormatterServices.GetUninitializedObject(actualType);
-        }        
-        
+        }
+
         private struct ComplexDataContractDeserializationHandler : IDataContractDeserializationHandler
         {
             private readonly object m_graph;

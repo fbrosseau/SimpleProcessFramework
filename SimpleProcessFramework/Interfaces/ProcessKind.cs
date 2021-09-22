@@ -26,7 +26,7 @@
 
         public static bool IsNetfx(this ProcessKind k)
         {
-            switch(k)
+            switch (k)
             {
                 case ProcessKind.Netfx:
                 case ProcessKind.Netfx32:
@@ -62,7 +62,7 @@
 
         public static bool IsRealProcess(this ProcessKind k)
         {
-            switch(k)
+            switch (k)
             {
                 case ProcessKind.Default:
                 case ProcessKind.Wsl:

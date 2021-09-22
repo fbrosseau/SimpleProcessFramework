@@ -63,9 +63,9 @@ namespace Spfx.Interfaces
 
         public override int GetHashCode() => base.GetHashCode() ^ TargetRuntime.GetHashCode();
 
-        public static bool operator >(NetcoreTargetFramework a, NetcoreTargetFramework b) 
+        public static bool operator >(NetcoreTargetFramework a, NetcoreTargetFramework b)
             => ParseVersion(a?.TargetRuntime) > ParseVersion(b?.TargetRuntime);
-        public static bool operator <(NetcoreTargetFramework a, NetcoreTargetFramework b) 
+        public static bool operator <(NetcoreTargetFramework a, NetcoreTargetFramework b)
             => ParseVersion(a?.TargetRuntime) < ParseVersion(b?.TargetRuntime);
         public static bool operator >=(NetcoreTargetFramework a, NetcoreTargetFramework b)
             => ParseVersion(a?.TargetRuntime) >= ParseVersion(b?.TargetRuntime);
@@ -76,7 +76,7 @@ namespace Spfx.Interfaces
         public static bool operator !=(NetcoreTargetFramework a, NetcoreTargetFramework b)
             => !(a == b);
 
-        public override bool Equals(object obj) 
+        public override bool Equals(object obj)
             => Equals(obj as NetcoreTargetFramework);
         public bool Equals(NetcoreTargetFramework other)
         {

@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Spfx.Interfaces;
 using Spfx.Runtime.Server.Processes;
-using System.Diagnostics;
 using Spfx.Subprocess;
-using FluentAssertions;
 using Spfx.Utilities;
+using System.Diagnostics;
 
 namespace Spfx.Tests.Integration
 {
@@ -16,7 +16,7 @@ namespace Spfx.Tests.Integration
         {
             var builder = new CommandLineBuilder(DefaultTestResolver, ProcessClusterConfiguration.Default, new ProcessCreationInfo
             {
-                TargetFramework = fw, 
+                TargetFramework = fw,
                 ExtraCommandLineArguments = new[] { SubprocessMainShared.CommandLineArgs.CmdLinePrefix }
             }, false);
 

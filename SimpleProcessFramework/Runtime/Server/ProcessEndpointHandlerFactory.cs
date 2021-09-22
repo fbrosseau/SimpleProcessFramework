@@ -1,6 +1,7 @@
-﻿using Spfx.Utilities;
-using Spfx.Reflection;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Runtime.Exceptions;
 
 namespace Spfx.Runtime.Server
 {
@@ -32,7 +32,7 @@ namespace Spfx.Runtime.Server
                 var createMethod = typeof(ProcessEndpointHandlerFactory).GetMethods(BindingFlags.Public | BindingFlags.Static).First(m => m.Name == "Create" && m.IsGenericMethod);
                 return (IProcessEndpointHandler)createMethod.MakeGenericMethod(interfaceType).Invoke(null, new[] { parentProcess, endpointId, handler });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 if (ex is TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
@@ -42,7 +42,7 @@ namespace Spfx.Runtime.Server
         }
 
         private delegate ProcessEndpointHandler ProcessEndpointHandlerFactoryDelegate(IProcessInternal parentProcess, string endpointId, object target);
-        
+
         private static ProcessEndpointHandlerFactoryDelegate CreateFactory(Type type)
         {
             Guard.ArgumentNotNull(type, nameof(type));
@@ -116,7 +116,7 @@ namespace Spfx.Runtime.Server
 
 
             var allEventsToImplement = new List<EventInfo>();
-            foreach(var evtName in typeDescriptor.Events)
+            foreach (var evtName in typeDescriptor.Events)
             {
                 allEventsToImplement.Add(FindEvent(type, evtName));
             }

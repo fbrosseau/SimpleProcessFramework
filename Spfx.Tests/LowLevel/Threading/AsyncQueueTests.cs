@@ -1,8 +1,8 @@
-﻿using NUnit.Framework;
-using Spfx.Utilities.Threading;
-using FluentAssertions;
-using System.Threading.Tasks;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Tests.LowLevel.Threading
 {
@@ -57,7 +57,7 @@ namespace Spfx.Tests.LowLevel.Threading
                 disposingQueue.Enqueue(objectDisposed);
 
                 var dequeued = await disposingQueue.TryDequeue(expectSuccess: true);
-                dequeued.Should().BeSameAs(objectNotDisposed2);                
+                dequeued.Should().BeSameAs(objectNotDisposed2);
             }
 
             await WaitForAsync(() => objectDisposed.IsDisposed, OperationsTimeout);

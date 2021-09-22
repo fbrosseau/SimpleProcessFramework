@@ -1,18 +1,17 @@
-﻿using Spfx.Reflection;
-using Spfx.Utilities.Threading;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Spfx.Diagnostics.Logging;
+using Spfx.Reflection;
 using Spfx.Tests.Integration;
 using Spfx.Utilities;
-using System.Linq;
+using Spfx.Utilities.Runtime;
+using Spfx.Utilities.Threading;
 using System;
-using NUnit.Framework;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
-using Spfx.Utilities.Runtime;
-using Spfx.Tests.ClientProxy;
-using FluentAssertions;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Spfx.Tests
 {

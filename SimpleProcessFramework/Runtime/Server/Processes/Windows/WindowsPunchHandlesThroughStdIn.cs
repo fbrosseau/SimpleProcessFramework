@@ -51,7 +51,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
             await base.InitializeAsync(initData, ct).ConfigureAwait(false);
             m_pipePair = await NamelessNamedPipePair.CreatePair().ConfigureAwait(false);
         }
-        
+
         public override (Stream readStream, Stream writeStream) AcquireIOStreams()
         {
             var pair = m_pipePair;

@@ -1,10 +1,10 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Collections.Generic;
-using Spfx.Reflection;
-using Spfx.Interfaces;
-using Spfx.Diagnostics.Logging;
-using Spfx.Utilities.Runtime;
 using System.Linq;
 
 namespace Spfx.Runtime.Server.Processes.Hosting

@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Spfx.Runtime.Messages;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Runtime.Messages;
 
 namespace Spfx.Runtime.Server.Processes.Ipc
 {

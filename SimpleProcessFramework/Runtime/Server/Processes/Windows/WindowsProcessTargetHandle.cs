@@ -226,7 +226,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                     Win32Interop.DeleteProcThreadAttributeList(procThreadAttributeListBlock);
             }
         }
-        
+
         private void ThrowWin32Exception(string method, int? err = null)
         {
             throw new Win32Exception(err ?? Marshal.GetLastWin32Error());

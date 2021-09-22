@@ -152,7 +152,7 @@ namespace Spfx.Utilities.Threading
 
         private void OnIteratorFaulted(Exception ex)
         {
-            lock(m_queue)
+            lock (m_queue)
             {
                 m_isInIteratorCallback = false;
             }
@@ -373,7 +373,7 @@ namespace Spfx.Utilities.Threading
             m_iteratorExecutionCompletedHandler = OnIteratorCallbackCompleted;
             m_iteratorThreadpoolInvoker = ThreadPoolInvoker.Create(new AsyncQueueRescheduleItem { Parent = this });
 
-            switch(action)
+            switch (action)
             {
                 case Action<T> a:
                     m_iteratorActionCallback = a;

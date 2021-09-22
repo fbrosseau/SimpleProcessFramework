@@ -9,7 +9,7 @@ namespace Spfx.Reflection
             public static readonly Func<ITypeResolver, object> Func = CreateFactory();
         }
 
-        internal static Func<ITypeResolver, object> GetFactory<T, TImpl>() 
+        internal static Func<ITypeResolver, object> GetFactory<T, TImpl>()
             where TImpl : T
         {
             return FactoryImpl<T, TImpl>.Func;

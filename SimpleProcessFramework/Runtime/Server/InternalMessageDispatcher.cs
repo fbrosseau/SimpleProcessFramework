@@ -28,7 +28,7 @@ namespace Spfx.Runtime.Server
 
         public void ForwardMessage(IInterprocessClientProxy source, WrappedInterprocessMessage wrappedMessage)
         {
-            if(wrappedMessage.IsRequest || !source.IsExternalConnection)
+            if (wrappedMessage.IsRequest || !source.IsExternalConnection)
             {
                 m_processBroker.ForwardMessageToProcess(source, wrappedMessage);
             }

@@ -507,8 +507,7 @@ namespace Spfx.Utilities.Threading
             }
 
             var tcs = new TaskCompletionSource<TResult>(state);
-            task.ContinueWith(delegate
-            {
+            task.ContinueWith(delegate {
                 if (task.IsFaulted) tcs.TrySetException(task.Exception.InnerExceptions);
                 else if (task.IsCanceled) tcs.TrySetCanceled();
                 else tcs.TrySetResult(task.Result);

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Spfx.Reflection;
+using System;
 using System.Collections.Generic;
-using Spfx.Reflection;
 
 namespace Spfx.Serialization.Serializers
 {

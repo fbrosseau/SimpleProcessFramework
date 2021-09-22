@@ -35,7 +35,7 @@ namespace Spfx.Io
             Stream.Dispose();
             m_readQueue.Dispose();
         }
-        
+
         public ValueTask<StreamOrCode> GetNextFrame()
         {
             return m_readQueue.DequeueAsync();

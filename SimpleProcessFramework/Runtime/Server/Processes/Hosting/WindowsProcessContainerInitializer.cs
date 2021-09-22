@@ -1,11 +1,11 @@
-﻿using Spfx.Utilities.Threading;
-using System.Collections.Generic;
-using Spfx.Reflection;
+﻿using Microsoft.Win32.SafeHandles;
 using Spfx.Io;
-using System.IO.Pipes;
-using Microsoft.Win32.SafeHandles;
-using System;
+using Spfx.Reflection;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
+using System;
+using System.Collections.Generic;
+using System.IO.Pipes;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {

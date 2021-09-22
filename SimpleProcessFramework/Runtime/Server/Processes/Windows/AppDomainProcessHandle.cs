@@ -1,16 +1,16 @@
 ﻿#if WINDOWS_BUILD
 
+using Microsoft.Win32.SafeHandles;
+using Spfx.Interfaces;
+using Spfx.Reflection;
+using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Win32.SafeHandles;
-using Spfx.Interfaces;
-using Spfx.Reflection;
-using Spfx.Utilities;
-using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server.Processes.Windows
 {
@@ -61,7 +61,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
             var consoleRedirector = await WindowsConsoleRedirector.CreateAsync(this).ConfigureAwait(false);
 
-            PrepareConsoleRedirection(Process.GetCurrentProcess(), ProcessUniqueId);          
+            PrepareConsoleRedirection(Process.GetCurrentProcess(), ProcessUniqueId);
 
             Action callback = new AppDomainStartData
             {

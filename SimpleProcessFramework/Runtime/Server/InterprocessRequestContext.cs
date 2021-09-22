@@ -1,12 +1,12 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Diagnostics;
 using Spfx.Reflection;
 using Spfx.Runtime.Messages;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {
@@ -83,7 +83,7 @@ namespace Spfx.Runtime.Server
         private void MarkAsCompleted()
         {
             m_handler.CompleteCall(this);
-            
+
             if (Completion.IsCompletedSuccessfully())
             {
                 Client.SendMessage(new RemoteCallSuccessResponse(Request.CallId, Completion.Result));

@@ -15,7 +15,7 @@ namespace Spfx.Runtime.Server.Listeners
     {
         private IBinarySerializer m_serializer;
         private TimeSpan m_receiveConnectionTimeout;
-        
+
         internal const int MagicStartCode = unchecked((int)0xF00DBEEF);
         internal static byte[] MagicStartCodeBytes { get; } = BitConverter.GetBytes(MagicStartCode);
 
@@ -92,7 +92,7 @@ namespace Spfx.Runtime.Server.Listeners
                 await clientStream.FlushAsync(ct).ConfigureAwait(false);
                 return clientStream;
             }
-            catch 
+            catch
             {
                 if (clientStream != null)
                     await clientStream.DisposeAsync().ConfigureAwait(false);

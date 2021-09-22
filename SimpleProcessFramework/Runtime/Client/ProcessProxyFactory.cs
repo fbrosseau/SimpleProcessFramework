@@ -1,5 +1,6 @@
-﻿using Spfx.Utilities;
-using Spfx.Reflection;
+﻿using Spfx.Reflection;
+using Spfx.Runtime.Client.Events;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Runtime.Client.Events;
 
 namespace Spfx.Runtime.Client
 {
@@ -155,7 +155,7 @@ namespace Spfx.Runtime.Client
                     ilgen.Emit(OpCodes.Ldloc, cancellationTokenLocal);
                     ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.WrapValueTaskReturnMethod, null);
                 }
-                else if(retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                else if (retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(ValueTask<>))
                 {
                     ilgen.EmitCall(OpCodes.Callvirt, ProcessProxyImplementation.Reflection.GetWrapValueTaskOfTReturnMethod(retType.GetGenericArguments()[0]), null);
                 }
@@ -163,7 +163,7 @@ namespace Spfx.Runtime.Client
                 ilgen.Emit(OpCodes.Ret);
             }
 
-            string GetEventInfoFieldName(EventInfo evt) 
+            string GetEventInfoFieldName(EventInfo evt)
                 => "FieldInfo__" + evt.Name;
 
             var events = allInterfaces.SelectMany(i => i.GetEvents()).ToList();
@@ -234,12 +234,12 @@ namespace Spfx.Runtime.Client
                 methodInfoField.SetValue(null, new ReflectedMethodInfo(m, cacheVisitedTypes: true));
             }
 
-            foreach(var evt in events)
+            foreach (var evt in events)
             {
                 var eventInfoField = finalType.GetField(GetEventInfoFieldName(evt), BindingFlags.NonPublic | BindingFlags.Static);
                 eventInfoField.SetValue(null, new ReflectedEventInfo(evt, cacheVisitedTypes: true));
             }
-                       
+
             return (Func<ProcessProxyImplementation>)Delegate.CreateDelegate(typeof(Func<ProcessProxyImplementation>), factoryMethod);
         }
     }

@@ -1,7 +1,6 @@
 ﻿#if WINDOWS_BUILD
 
 using Spfx.Interfaces;
-using Spfx.Utilities.ApiGlue;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,7 +21,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                     .Where(kvp => kvp.Key != null)
                     .ToDictionary(kvp => (string)kvp.Key, kvp => kvp.Value?.ToString() ?? "");
 
-            private static readonly UnicodeEncoding s_unicodeNoBom = new (false, true);
+            private static readonly UnicodeEncoding s_unicodeNoBom = new(false, true);
 
             private MemoryStream m_blockWriterStream;
             private StreamWriter m_blockWriter;
@@ -35,7 +34,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 m_sortedEnvironmentVariablesList = new List<KeyValuePair<string, string>>();
                 m_environmentVariables = new Dictionary<string, string>(s_defaultVariables.Count + 32);
 
-                foreach(var kvp in s_defaultVariables)
+                foreach (var kvp in s_defaultVariables)
                 {
                     AddVariable(kvp.Key, kvp.Value);
                 }
@@ -54,7 +53,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 if (vars is null)
                     return;
 
-                foreach(var kvp in vars)
+                foreach (var kvp in vars)
                 {
                     AddVariable(kvp.Key, kvp.Value);
                 }

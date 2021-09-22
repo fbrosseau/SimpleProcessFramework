@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using Spfx.Diagnostics.Logging;
-using System.IO;
 using Spfx.Reflection;
+using System.IO;
 
 namespace Spfx.Tests.Integration
 {

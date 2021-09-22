@@ -25,7 +25,7 @@ namespace Spfx.Utilities.Threading
             : this(() => Task.FromResult(factory()))
         {
         }
-        
+
         public AsyncLazy(Func<Task<T>> factory)
         {
             m_originalTask = new Task<Task<T>>(() =>

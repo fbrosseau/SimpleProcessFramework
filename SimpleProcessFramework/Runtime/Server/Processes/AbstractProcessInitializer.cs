@@ -42,7 +42,7 @@ namespace Spfx.Runtime.Server.Processes
         public virtual bool RequiresLockedEnvironmentVariables => false;
         public virtual IEnumerable<StringKeyValuePair> ExtraEnvironmentVariables
             => Enumerable.Empty<StringKeyValuePair>();
-        public virtual IEnumerable<SafeHandleToInherit> ExtraHandlesToInherit 
+        public virtual IEnumerable<SafeHandleToInherit> ExtraHandlesToInherit
             => Enumerable.Empty<SafeHandleToInherit>();
 
         protected Process Process { get; private set; }

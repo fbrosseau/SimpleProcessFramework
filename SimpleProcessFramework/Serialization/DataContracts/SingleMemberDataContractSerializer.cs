@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Spfx.Runtime.Exceptions;
+using Spfx.Serialization.Serializers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Spfx.Runtime.Exceptions;
-using Spfx.Serialization.Serializers;
 
 namespace Spfx.Serialization.DataContracts
 {
@@ -55,7 +55,7 @@ namespace Spfx.Serialization.DataContracts
             private bool m_graphInitialized;
             private readonly SingleMemberDataContractSerializer m_serializer;
 
-            public SingleMemberContractHandler(SingleMemberDataContractSerializer serializer) 
+            public SingleMemberContractHandler(SingleMemberDataContractSerializer serializer)
             {
                 m_serializer = serializer;
                 m_graph = null;

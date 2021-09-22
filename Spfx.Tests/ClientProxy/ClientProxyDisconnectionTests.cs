@@ -1,15 +1,10 @@
 ﻿using FluentAssertions;
-using Spfx.Utilities.Threading;
 using NUnit.Framework;
-using Spfx.Runtime.Exceptions;
 using Spfx.Tests.Integration;
+using Spfx.Utilities.Threading;
 using System;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
-using Spfx.Interfaces;
-using System.Diagnostics;
 
 namespace Spfx.Tests.ClientProxy
 {
@@ -60,7 +55,7 @@ namespace Spfx.Tests.ClientProxy
 
             var dummyCall = ifaceProxy.GetDummyValue(delay: TimeSpan.FromDays(1));
 
-            switch(method)
+            switch (method)
             {
                 case ProcessDestroyMethods.CluserDispose:
                     await iface.DisposeAsync().WT();

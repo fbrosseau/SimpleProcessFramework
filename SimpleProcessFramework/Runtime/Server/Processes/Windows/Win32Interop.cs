@@ -114,8 +114,8 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool LogonUser(
-            [MarshalAs(UnmanagedType.LPWStr)]string lpszUsername,
-            [MarshalAs(UnmanagedType.LPWStr)]string lpszDomain,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpszUsername,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpszDomain,
             IntPtr passwordBytes,
             int dwLogonType,
             int dwLogonProvider,
@@ -123,9 +123,9 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool LogonUser(
-            [MarshalAs(UnmanagedType.LPWStr)]string lpszUsername,
-            [MarshalAs(UnmanagedType.LPWStr)]string lpszDomain,
-            [MarshalAs(UnmanagedType.LPWStr)]string password,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpszUsername,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpszDomain,
+            [MarshalAs(UnmanagedType.LPWStr)] string password,
             int dwLogonType,
             int dwLogonProvider,
             out SafeFileHandle phToken);

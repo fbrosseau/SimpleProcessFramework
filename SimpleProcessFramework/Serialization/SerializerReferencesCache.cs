@@ -161,7 +161,7 @@ namespace Spfx.Serialization
         internal DeserializerReferencesCache CreateReverseMap()
         {
             var output = new DeserializerReferencesCache();
-            foreach(var reference in m_referencesByObject)
+            foreach (var reference in m_referencesByObject)
             {
                 output.SetReferenceKey(reference.Key, reference.Value);
             }

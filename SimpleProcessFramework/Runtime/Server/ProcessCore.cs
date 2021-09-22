@@ -1,19 +1,19 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Serialization;
+using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
-using Spfx.Diagnostics.Logging;
 
 namespace Spfx.Runtime.Server
 {
@@ -304,7 +304,7 @@ namespace Spfx.Runtime.Server
                 m_logger.Info?.Trace("InitializeEndpointAsync succeeded");
                 return new LocalProcessCreationResult(ProcessCreationResults.CreatedNew, handler);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 m_logger.Warn?.Trace(ex, $"InitializeEndpoint for {endpointId} failed");
                 if (removeFromEndpoints)

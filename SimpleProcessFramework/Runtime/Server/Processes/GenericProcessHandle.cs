@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Spfx.Diagnostics.Logging;
+﻿using Spfx.Diagnostics.Logging;
 using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
@@ -10,6 +7,9 @@ using Spfx.Runtime.Server.Processes.Hosting;
 using Spfx.Serialization;
 using Spfx.Utilities;
 using Spfx.Utilities.Threading;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {
@@ -124,7 +124,7 @@ namespace Spfx.Runtime.Server.Processes
                 await WaitForInitializationComplete().ConfigureAwait(false);
                 TransferMessageToRemote(connectionId, wrappedMessage);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 OnDeliveryFailed(wrappedMessage, ex);
             }

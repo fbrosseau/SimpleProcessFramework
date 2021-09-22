@@ -1,13 +1,12 @@
 ﻿using Spfx.Reflection;
+using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Messages;
+using Spfx.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Spfx.Utilities.Threading;
-using Spfx.Utilities;
-using Spfx.Runtime.Client.Events;
 
 namespace Spfx.Runtime.Client
 {

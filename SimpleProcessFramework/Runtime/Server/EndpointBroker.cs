@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Spfx.Interfaces;
+using System;
 using System.Threading.Tasks;
-using Spfx.Interfaces;
 
 namespace Spfx.Runtime.Server
 {

@@ -1,5 +1,5 @@
-﻿using System;
-using Spfx.Utilities;
+﻿using Spfx.Utilities;
+using System;
 using System.Linq;
 using System.Reflection;
 

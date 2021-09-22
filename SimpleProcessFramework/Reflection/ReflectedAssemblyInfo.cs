@@ -25,7 +25,7 @@ namespace Spfx.Reflection
             if (s_knownAssemblies.ContainsKey(assembly))
                 return;
 
-            var asmInfo = new ReflectedAssemblyInfo(assembly); 
+            var asmInfo = new ReflectedAssemblyInfo(assembly);
             s_knownAssemblies[assembly] = asmInfo;
             s_knownAssembliesByName[assembly.FullName] = asmInfo;
         }

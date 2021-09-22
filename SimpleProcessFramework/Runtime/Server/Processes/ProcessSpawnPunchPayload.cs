@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using Spfx.Interfaces;
-using System.Threading;
+﻿using Spfx.Interfaces;
 using Spfx.Subprocess;
 using Spfx.Utilities.Threading;
+using System;
+using System.IO;
+using System.Threading;
 
 namespace Spfx.Runtime.Server.Processes
 {

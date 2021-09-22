@@ -1,7 +1,6 @@
 ﻿using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using System.IO;
-using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 
@@ -13,7 +12,7 @@ namespace Spfx.Runtime.Client
             : base(destination, typeResolver)
         {
         }
-        
+
         protected override async Task<Stream> CreateFinalStream(Stream ns)
         {
             try

@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using Spfx.Interfaces;
 
 namespace Spfx.Tests.Integration
 {

@@ -52,7 +52,7 @@ namespace Spfx.Tests.Integration
                 procInfo.TargetFramework = fw;
                 procInfo.ExtraEnvironmentVariables = new[] { new StringKeyValuePair(envVar, envValue) };
             });
-             
+
             Assert.AreEqual(envValue, Unwrap(iface.TestInterface.GetEnvironmentVariable(envVar)));
         }
 

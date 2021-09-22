@@ -57,7 +57,7 @@ namespace Spfx.Reflection
         }
 
         public int GetArgumentCount() => Arguments?.Length ?? 0;
-               
+
         public override bool Equals(object obj) { return Equals(obj as ReflectedMethodInfo); }
         public override int GetHashCode() => Type.GetHashCode() ^ Name.GetHashCode();
         public override string ToString() => Name;

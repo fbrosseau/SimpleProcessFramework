@@ -41,7 +41,7 @@ namespace Spfx.Utilities
             if (m_disposables is null)
                 return;
 
-            foreach(var d in m_disposables)
+            foreach (var d in m_disposables)
             {
                 d.Dispose();
             }

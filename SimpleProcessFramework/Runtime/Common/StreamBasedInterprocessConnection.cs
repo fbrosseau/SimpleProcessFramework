@@ -66,7 +66,7 @@ namespace Spfx.Runtime.Common
             {
                 if (Message != null)
                     return base.GetTinySummaryString();
-                return $"<Code: {m_code.Value}>"; 
+                return $"<Code: {m_code.Value}>";
             }
         }
 
@@ -117,7 +117,7 @@ namespace Spfx.Runtime.Common
             m_keepAliveTask?.FireAndForget();
             base.OnDispose();
         }
-        
+
         protected override IPendingOperation CreatePendingOperation<TResult>(IInterprocessMessage msg, CancellationToken ct)
         {
             return new PendingStreamOperation<TResult>(this, msg, ct);
@@ -237,6 +237,6 @@ namespace Spfx.Runtime.Common
             KeepAlive = -1
         }
 
-        internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();       
+        internal abstract Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync();
     }
 }

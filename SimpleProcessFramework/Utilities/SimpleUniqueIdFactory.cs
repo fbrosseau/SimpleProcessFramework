@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -30,7 +29,7 @@ namespace Spfx.Utilities
 
         public TValue TryGetById(long id)
         {
-            lock(m_values)
+            lock (m_values)
             {
                 m_values.TryGetValue(id, out TValue t);
                 return t;
@@ -61,7 +60,7 @@ namespace Spfx.Utilities
 
         public TValue[] DisposeAndGetAllValues()
         {
-            lock(m_values)
+            lock (m_values)
             {
                 Dispose();
                 var vals = m_values.Values.ToArray();

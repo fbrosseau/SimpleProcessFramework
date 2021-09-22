@@ -1,7 +1,7 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Io;
 using Spfx.Reflection;
-using Spfx.Io;
 using Spfx.Runtime.Server.Processes.Ipc;
+using Spfx.Utilities;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {

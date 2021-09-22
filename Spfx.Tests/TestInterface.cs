@@ -1,17 +1,17 @@
-﻿using Spfx.Interfaces;
-using Spfx.Diagnostics.Logging;
+﻿using Spfx.Diagnostics.Logging;
+using Spfx.Interfaces;
 using Spfx.Reflection;
 using Spfx.Runtime.Server;
+using Spfx.Tests.Integration;
+using Spfx.Utilities;
+using Spfx.Utilities.Runtime;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using Spfx.Utilities;
-using Spfx.Utilities.Runtime;
-using Spfx.Tests.Integration;
-using System.Runtime.Serialization;
 
 namespace Spfx.Tests
 {

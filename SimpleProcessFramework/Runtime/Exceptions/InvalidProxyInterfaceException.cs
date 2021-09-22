@@ -4,7 +4,7 @@ namespace Spfx.Runtime.Exceptions
 {
     public class InvalidProxyInterfaceException : Exception
     {
-        public InvalidProxyInterfaceException(string message) 
+        public InvalidProxyInterfaceException(string message)
             : base(message)
         {
         }

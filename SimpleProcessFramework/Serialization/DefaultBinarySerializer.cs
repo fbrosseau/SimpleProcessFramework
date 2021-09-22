@@ -5,7 +5,6 @@ using Spfx.Serialization.DataContracts;
 using Spfx.Serialization.Serializers;
 using Spfx.Utilities;
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

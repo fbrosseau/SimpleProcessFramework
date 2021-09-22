@@ -2,7 +2,6 @@
 using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;

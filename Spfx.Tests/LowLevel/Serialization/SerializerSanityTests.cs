@@ -1,12 +1,12 @@
 ﻿using NUnit.Framework;
+using Spfx.Reflection;
 using Spfx.Serialization;
+using Spfx.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Spfx.Utilities;
 using System.Net;
-using Spfx.Reflection;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Spfx.Tests.LowLevel.Serialization

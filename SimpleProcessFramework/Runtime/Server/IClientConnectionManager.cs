@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Spfx.Utilities.Threading;
+using System.Collections.Generic;
 using System.Net;
-using Spfx.Utilities.Threading;
 
 namespace Spfx.Runtime.Server
 {

@@ -5,8 +5,6 @@ using Spfx.Utilities.Runtime;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.Serialization;
-using System.Threading;
 
 namespace Spfx
 {
@@ -18,7 +16,7 @@ namespace Spfx
 
         static ProcessClusterConfiguration()
         {
-            Default = new ProcessClusterConfiguration {IsReadOnly = true};
+            Default = new ProcessClusterConfiguration { IsReadOnly = true };
         }
 
         public Type TypeResolverFactoryType { get; set; } = typeof(DefaultTypeResolverFactory);
@@ -72,7 +70,7 @@ namespace Spfx
         public const string DefaultDefaultNetfxCodeBase = "../net48";
         public string DefaultNetfxCodeBase { get; set; } = DefaultDefaultNetfxCodeBase;
 
-        public string DefaultNetcoreCodeBase { get; set; } 
+        public string DefaultNetcoreCodeBase { get; set; }
 
         public bool FallbackToBestAvailableProcessKind { get; set; }
 
@@ -82,7 +80,7 @@ namespace Spfx
 
         public bool EnableDebugChecks { get; set; } = HostFeaturesHelper.IsDebugBuild;
 
-        public Dictionary<TargetFramework, string> RuntimeCodeBases { get; set; } 
+        public Dictionary<TargetFramework, string> RuntimeCodeBases { get; set; }
             = new Dictionary<TargetFramework, string>();
         public Dictionary<TargetFramework, string> DefaultExecutableNames { get; set; }
             = new Dictionary<TargetFramework, string>();
@@ -91,7 +89,7 @@ namespace Spfx
         public bool PrintErrorInRegularOutput { get; set; }
 
         public TimeSpan IpcConnectionKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(30);
-        
+
         public bool Append32BitSuffix { get; set; } = true;
         public string SuffixFor32BitProcesses { get; set; } = "32";
 

@@ -1,5 +1,4 @@
 ﻿using Spfx.Utilities;
-using System;
 using System.Runtime.Serialization;
 
 namespace Spfx.Interfaces

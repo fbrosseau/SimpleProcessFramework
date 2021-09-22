@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
@@ -33,7 +32,7 @@ namespace System.Collections.Generic
 #else
         public static bool TryAdd<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue val)
         {
-            if(!dict.ContainsKey(key))
+            if (!dict.ContainsKey(key))
             {
                 dict[key] = val;
                 return true;
@@ -45,7 +44,7 @@ namespace System.Collections.Generic
 
 #if NETFRAMEWORK || NETSTANDARD2_0
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EnsureCapacity<TKey,TValue>(this Dictionary<TKey, TValue> dict, int cap)
+        public static void EnsureCapacity<TKey, TValue>(this Dictionary<TKey, TValue> dict, int cap)
         {
             // oh well!
         }

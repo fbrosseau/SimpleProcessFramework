@@ -21,7 +21,7 @@ namespace Spfx.Runtime.Client
         ProcessEndpointAddress Destination { get; }
 
         ValueTask<ProcessEndpointMethodDescriptor> GetRemoteMethodDescriptor(ProcessEndpointAddress destination, ReflectedMethodInfo calledMethod);
-        
+
         ValueTask ChangeEventSubscription(EventSubscriptionChangeRequest req);
 
         ValueTask SubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs, object> handler, object state);

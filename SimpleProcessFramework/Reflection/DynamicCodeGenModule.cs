@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using Spfx.Properties;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using Spfx.Properties;
 
 namespace Spfx.Reflection
 {

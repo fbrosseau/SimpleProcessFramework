@@ -1,12 +1,11 @@
-﻿using System;
-using Spfx.Utilities.Threading;
-using System.Threading;
-using System.Threading.Tasks;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Client.Events;
 using Spfx.Runtime.Messages;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Tests.LowLevel.CodeGen
 {

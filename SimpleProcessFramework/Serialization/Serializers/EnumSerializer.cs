@@ -31,7 +31,7 @@ namespace Spfx.Serialization.Serializers
 
             if (TypeofT.GetCustomAttribute<FlagsAttribute>() != null)
             {
-                if(vals.Length <= 5)
+                if (vals.Length <= 5)
                 {
                     vals = vals
                         .Select(EnumToNumber)

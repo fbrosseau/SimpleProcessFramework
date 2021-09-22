@@ -2,13 +2,8 @@
 using Spfx.Reflection;
 using Spfx.Runtime.Client;
 using Spfx.Runtime.Client.Events;
-using Spfx.Runtime.Messages;
-using Spfx.Utilities;
 using Spfx.Utilities.Threading;
 using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spfx
@@ -151,7 +146,7 @@ namespace Spfx
             return (T)(object)proxy;
         }
 
-        public static ProcessEndpointAddress GetEndpointAddress(object proxyObject) 
+        public static ProcessEndpointAddress GetEndpointAddress(object proxyObject)
             => ProcessProxyImplementation.Unwrap(proxyObject).RemoteAddress;
 
         public IClusterProxy CreateClusterProxy(ProcessEndpointAddress addr) => CreateClusterProxy(addr.HostAuthority);

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Spfx.Interfaces;
+﻿using Spfx.Interfaces;
 using Spfx.Io;
 using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
@@ -13,6 +9,10 @@ using Spfx.Subprocess;
 using Spfx.Utilities;
 using Spfx.Utilities.Runtime;
 using Spfx.Utilities.Threading;
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {

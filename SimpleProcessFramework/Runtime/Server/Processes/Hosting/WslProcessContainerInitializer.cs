@@ -1,8 +1,8 @@
-﻿using Spfx.Utilities;
+﻿using Spfx.Io;
 using Spfx.Reflection;
-using Spfx.Io;
-using System.Net.Sockets;
+using Spfx.Utilities;
 using System;
+using System.Net.Sockets;
 
 namespace Spfx.Runtime.Server.Processes.Hosting
 {
@@ -10,7 +10,7 @@ namespace Spfx.Runtime.Server.Processes.Hosting
     {
         private readonly NetworkStream m_stream;
 
-        public WslProcessContainerInitializer(ProcessSpawnPunchPayload payload, ITypeResolver typeResolver) 
+        public WslProcessContainerInitializer(ProcessSpawnPunchPayload payload, ITypeResolver typeResolver)
             : base(payload, typeResolver)
         {
             Logger.Info?.Trace("Creating Unix socket to " + payload.ReadPipe);

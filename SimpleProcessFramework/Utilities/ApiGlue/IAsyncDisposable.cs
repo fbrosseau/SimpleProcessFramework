@@ -12,8 +12,8 @@ namespace System
 }
 #else
 
-using System.Runtime.CompilerServices;
 using System;
+using System.Runtime.CompilerServices;
 
 [assembly: TypeForwardedTo(typeof(IAsyncDisposable))]
 

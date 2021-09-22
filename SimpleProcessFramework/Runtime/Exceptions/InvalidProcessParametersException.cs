@@ -8,7 +8,7 @@ namespace Spfx.Runtime.Exceptions
         [DataMember]
         public string Filename { get; }
 
-        public MissingSubprocessExecutableException(string filename) 
+        public MissingSubprocessExecutableException(string filename)
             : base("The target executable does not exist: " + filename)
         {
             Filename = filename;
@@ -18,7 +18,7 @@ namespace Spfx.Runtime.Exceptions
     [DataContract]
     public class InvalidProcessParametersException : SerializableException
     {
-        public InvalidProcessParametersException(string message) 
+        public InvalidProcessParametersException(string message)
             : base(message)
         {
         }

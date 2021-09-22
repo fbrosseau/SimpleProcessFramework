@@ -1,7 +1,7 @@
-﻿using Spfx.Utilities;
-using Spfx.Runtime.Messages;
-using System.Threading.Tasks;
+﻿using Spfx.Runtime.Messages;
 using Spfx.Runtime.Server.Processes.Hosting;
+using Spfx.Utilities;
+using System.Threading.Tasks;
 
 namespace Spfx.Runtime.Server.Processes
 {

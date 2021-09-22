@@ -9,7 +9,7 @@ namespace Spfx.Utilities.Runtime
 {
     internal static class WslUtilities
     {
-        private static readonly ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new (StringComparer.OrdinalIgnoreCase);
+        private static readonly ThreadSafeAppendOnlyDictionary<string, string> s_windowsToLinuxPathMappings = new(StringComparer.OrdinalIgnoreCase);
 
         internal static class WellKnownUtilities
         {

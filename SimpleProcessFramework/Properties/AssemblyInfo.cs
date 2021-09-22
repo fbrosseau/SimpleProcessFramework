@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Spfx.Properties;
+﻿using Spfx.Properties;
 using Spfx.Reflection;
+using System;
+using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Spfx.Tests" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
 [assembly: InternalsVisibleTo("Spfx.TestApp" + SimpleProcessFrameworkPublicKey.AssemblyNameSuffix)]
