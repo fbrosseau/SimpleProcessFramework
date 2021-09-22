@@ -128,8 +128,8 @@ namespace Spfx.Runtime.Server.Processes.Hosting
             try
             {
                 m_logger.Info?.Trace("OnTeardownRequestReceived");
-                await m_processCore.TeardownAsync();
-                await m_connector.TeardownAsync();
+                await m_processCore.TeardownAsync().ConfigureAwait(false);
+                await m_connector.TeardownAsync().ConfigureAwait(false);
             }
             finally
             {

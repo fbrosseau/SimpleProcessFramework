@@ -22,8 +22,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         protected override async Task DoInitialize()
         {
             SendCode(InterprocessFrameType.Handshake1);
-            await ReceiveCode(InterprocessFrameType.Handshake2);
-            await Owner.CompleteInitialization();
+            await ReceiveCode(InterprocessFrameType.Handshake2).ConfigureAwait(false);
+            await Owner.CompleteInitialization().ConfigureAwait(false);
             SendCode(InterprocessFrameType.Handshake3);
         }
 

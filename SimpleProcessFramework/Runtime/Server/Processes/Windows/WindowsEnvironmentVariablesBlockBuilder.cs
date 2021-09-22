@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Spfx.Runtime.Server.Processes.Windows
@@ -14,30 +15,20 @@ namespace Spfx.Runtime.Server.Processes.Windows
     {
         private class WindowsEnvironmentVariablesBlockBuilder
         {
-            private static readonly Dictionary<string, string> s_defaultVariables;
-            private static readonly UnicodeEncoding s_unicodeNoBom = new UnicodeEncoding(false, true);
+            private static readonly Dictionary<string, string> s_defaultVariables =
+                Environment.GetEnvironmentVariables()
+                    .Cast<object>()
+                    .Select(o => (DictionaryEntry)o)
+                    .Where(kvp => kvp.Key != null)
+                    .ToDictionary(kvp => (string)kvp.Key, kvp => kvp.Value?.ToString() ?? "");
+
+            private static readonly UnicodeEncoding s_unicodeNoBom = new (false, true);
 
             private MemoryStream m_blockWriterStream;
             private StreamWriter m_blockWriter;
             private Dictionary<string, string> m_environmentVariables;
             private List<KeyValuePair<string, string>> m_sortedEnvironmentVariablesList;
             private byte[] m_finalBlock;
-
-            static WindowsEnvironmentVariablesBlockBuilder()
-            {
-                var defaultVars = new Dictionary<string, string>();
-
-                foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
-                {
-                    if (env.Key is string key)
-                    {
-                        string val = env.Value?.ToString() ?? "";
-                        defaultVars[key] = val;
-                    }
-                }
-
-                s_defaultVariables = defaultVars;
-            }
 
             public WindowsEnvironmentVariablesBlockBuilder()
             {

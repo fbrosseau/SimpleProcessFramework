@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Spfx.Utilities
 {
+    [SuppressMessage("Interoperability", "CA1419:Provide a parameterless constructor that is as visible as the containing type for concrete types derived from 'System.Runtime.InteropServices.SafeHandle'", Justification = "Not used.")]
     internal class UnmanagedAllocationSafeHandle : SafeHandle
     {
         public long Size { get; }

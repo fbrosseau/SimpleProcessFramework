@@ -4,7 +4,7 @@ using Spfx.Reflection;
 
 namespace Spfx.Serialization.Serializers
 {
-    internal class ListSerializer
+    internal static class ListSerializer
     {
         public static ITypeSerializer Create(Type elementType)
         {

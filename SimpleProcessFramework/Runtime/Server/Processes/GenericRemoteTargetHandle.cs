@@ -49,14 +49,14 @@ namespace Spfx.Runtime.Server.Processes
                 await Task.Run(async () =>
                 {
                     await remoteProcessHandles.InitializeAsync(RemotePunchPayload, ct).ConfigureAwait(false);
-                    m_targetProcess = await SpawnProcess(remoteProcessHandles, ct);
-                    await remoteProcessHandles.CompleteHandshakeAsync();
-                }, ct).WithCancellation(ct);
+                    m_targetProcess = await SpawnProcess(remoteProcessHandles, ct).ConfigureAwait(false);
+                    await remoteProcessHandles.CompleteHandshakeAsync().ConfigureAwait(false);
+                }, ct).WithCancellation(ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 ReportFatalException(ex);
-                ex = await GetInitFailureException();
+                ex = await GetInitFailureException().ConfigureAwait(false);
                 OnProcessLost("SpawnProcess failed", ex);
                 throw;
             }
@@ -72,12 +72,12 @@ namespace Spfx.Runtime.Server.Processes
 
             var initTask = m_ipcConnector.InitializeAsync(ct).WithCancellation(ct);
             var failureTask = ProcessExitEvent;
-            var winnerTask = await Task.WhenAny(initTask, failureTask);
+            var winnerTask = await Task.WhenAny(initTask, failureTask).ConfigureAwait(false);
             if (ReferenceEquals(winnerTask, failureTask) || initTask.IsFaultedOrCanceled())
             {
                 var ex = initTask.IsFaultedOrCanceled() ? initTask.GetExceptionOrCancel() : null;
                 ReportFatalException(ex);
-                (await GetInitFailureException()).Rethrow();
+                (await GetInitFailureException().ConfigureAwait(false)).Rethrow();
             }
 
             disposeBag.ReleaseAll();

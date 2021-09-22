@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Spfx.Utilities
 {
-    class BadCodeAssert
+    internal static class BadCodeAssert
     {
         [Conditional("DEBUG")]
         internal static void Assert(string message)

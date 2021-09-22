@@ -49,7 +49,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 var s = SocketUtilities.CreateUnixSocket();
                 try
                 {
-                    var accept = await m_listenSocket.AcceptAsync(s);
+                    var accept = await m_listenSocket.AcceptAsync(s).ConfigureAwait(false);
                     m_networkStream = new NetworkStream(accept);
                     m_listenSocket.Dispose();
                 }

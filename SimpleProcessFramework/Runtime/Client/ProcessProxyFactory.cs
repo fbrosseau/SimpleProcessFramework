@@ -15,12 +15,7 @@ namespace Spfx.Runtime.Client
     {
         private static class FactoryStorage<T>
         {
-            internal static readonly Func<ProcessProxyImplementation> Func;
-
-            static FactoryStorage()
-            {
-                Func = CreateFactory(ReflectionUtilities.GetType<T>());
-            }
+            internal static readonly Func<ProcessProxyImplementation> Func = CreateFactory(ReflectionUtilities.GetType<T>());
         }
 
         internal static ProcessProxyImplementation CreateImplementation<T>()
@@ -72,7 +67,7 @@ namespace Spfx.Runtime.Client
                 string baseName = "MethodInfo__" + m.Name;
                 string actualName = baseName;
                 int seed = 0;
-                while(methodInfoFieldNames.Values.Contains(actualName))
+                while (methodInfoFieldNames.ContainsValue(actualName))
                 {
                     actualName = baseName + seed;
                     ++seed;

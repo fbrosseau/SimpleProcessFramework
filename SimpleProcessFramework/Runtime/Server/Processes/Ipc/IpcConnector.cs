@@ -73,8 +73,8 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             if (!Shutdown1ReceivedEvent.IsSet)
             {
                 SendCode(InterprocessFrameType.Teardown1);
-                await Shutdown2ReceivedEvent.WaitAsync(ct);
-                await base.OnTeardownAsync(ct);
+                await Shutdown2ReceivedEvent.WaitAsync(ct).ConfigureAwait(false);
+                await base.OnTeardownAsync(ct).ConfigureAwait(false);
             }
 
             if (Shutdown2ReceivedEvent.IsSet)
@@ -84,7 +84,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
             }
 
             SendCode(InterprocessFrameType.Teardown2);
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         protected abstract Task DoInitialize();
@@ -92,7 +92,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         public async Task InitializeAsync(CancellationToken ct)
         {
             Logger.Info?.Trace("InitializeAsync");
-            await DoInitialize();
+            await DoInitialize().ConfigureAwait(false);
             ReadLoop().FireAndForget();
             Logger.Info?.Trace("InitializeAsync completed");
         }
@@ -175,7 +175,7 @@ namespace Spfx.Runtime.Server.Processes.Ipc
         {
             Logger.Debug?.Trace("Expecting code " + expectedCode);
 
-            using var frame = await ReadPipe.GetNextFrame();
+            using var frame = await ReadPipe.GetNextFrame().ConfigureAwait(false);
 
             if (frame.Code is null)
                 throw new SerializationException("Expected a single frame code");

@@ -580,7 +580,7 @@ namespace Spfx.Utilities.Threading
             return new ThreadSwitchAwaitable(threadName, priority);
         }
 
-        public class TaskSchedulerSwitchAwaiter : ICriticalNotifyCompletion
+        public class TaskSchedulerSwitchAwaiter : INotifyCompletion
         {
             private readonly TaskFactory m_factory;
 
@@ -592,9 +592,11 @@ namespace Spfx.Utilities.Threading
             }
 
             public bool IsCompleted => false;
-            public void OnCompleted(Action a) => m_factory.StartNew(a);
-            public void UnsafeOnCompleted(Action a) => m_factory.StartNew(a);
             public void GetResult() { }
+
+#pragma warning disable CA2008 // Pass TaskScheduler???
+            public void OnCompleted(Action a) => m_factory.StartNew(a);
+#pragma warning restore CA2008
         }
 
         internal static TaskSchedulerSwitchAwaiter GetAwaiter(this TaskScheduler scheduler)

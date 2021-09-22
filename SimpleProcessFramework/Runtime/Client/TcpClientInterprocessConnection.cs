@@ -1,8 +1,8 @@
-﻿using Spfx.Io;
-using Spfx.Reflection;
+﻿using Spfx.Reflection;
 using Spfx.Runtime.Exceptions;
 using Spfx.Runtime.Messages;
 using Spfx.Utilities;
+using Spfx.Utilities.Threading;
 using System;
 using System.IO;
 using System.Net;
@@ -23,7 +23,7 @@ namespace Spfx.Runtime.Client
             return (ProcessEndpointDescriptor)await SerializeAndSendMessage(new EndpointDescriptionRequest
             {
                 Destination = destination
-            });
+            }).ConfigureAwait(false);
         }
 
         internal override async Task<(Stream readStream, Stream writeStream)> ConnectStreamsAsync()
@@ -35,7 +35,7 @@ namespace Spfx.Runtime.Client
 
             try
             {
-                await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination.HostEndpoint, cb, s), client.EndConnect, null);
+                await Task.Factory.FromAsync((cb, s) => client.BeginConnect(Destination.HostEndpoint, cb, s), client.EndConnect, null).ConfigureAwait(false);
             }
             catch (SocketException ex)
             {
@@ -44,14 +44,11 @@ namespace Spfx.Runtime.Client
             
             var ns = disposeBag.Add(new NetworkStream(client));
 
-            var finalStream = disposeBag.Add(await CreateFinalStream(ns));
+            var finalStream = disposeBag.Add(await CreateFinalStream(ns).ConfigureAwait(false));
 
-            var timeout = Task.Delay(TimeSpan.FromSeconds(30));
             var auth = Authenticate(finalStream);
 
-            var winner = await Task.WhenAny(timeout, auth);
-
-            if (ReferenceEquals(winner, timeout))
+            if (!await auth.TryWaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false))
                 throw new TimeoutException("Authentication timed out");
 
             disposeBag.ReleaseAll();

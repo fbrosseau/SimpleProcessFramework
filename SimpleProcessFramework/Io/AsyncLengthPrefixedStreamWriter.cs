@@ -62,7 +62,7 @@ namespace Spfx.Io
                     }
                 }
 
-                await m_pendingWrites.ForEachAsync(DoWrite);
+                await m_pendingWrites.ForEachAsync(DoWrite).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

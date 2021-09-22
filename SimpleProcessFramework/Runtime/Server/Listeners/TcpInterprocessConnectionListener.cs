@@ -62,7 +62,8 @@ namespace Spfx.Runtime.Server.Listeners
         {
             while (true)
             {
-                var s = await m_listener.AcceptSocketAsync();
+                var s = await m_listener.AcceptSocketAsync().ConfigureAwait(false);
+
                 Task.Run(() =>
                     CreateChannelFromStream(
                         new NetworkStream(s, ownsSocket: true),

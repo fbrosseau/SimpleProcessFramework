@@ -14,7 +14,7 @@ namespace Spfx.Io
         public static async ValueTask<int> ReadLittleEndian32BitInt(this Stream stream, CancellationToken ct = default)
         {
             var buf = new byte[4];
-            await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf), ct);
+            await stream.ReadAllBytesAsync(new ArraySegment<byte>(buf), ct).ConfigureAwait(false);
             return BinaryPrimitives.ReadInt32LittleEndian(buf);
         }
 
@@ -67,7 +67,7 @@ namespace Spfx.Io
 
         public static async ValueTask<Stream> ReadLengthPrefixedBlockAsync(this Stream stream, int maximumSize = int.MaxValue, byte[] sizeBuffer = null, CancellationToken ct = default)
         {
-            var res = await stream.ReadCodeOrLengthPrefixedBlockAsync(maximumSize, sizeBuffer, ct);
+            var res = await stream.ReadCodeOrLengthPrefixedBlockAsync(maximumSize, sizeBuffer, ct).ConfigureAwait(false);
             if (res.Code == 0)
                 return Stream.Null;
             if (res.Code != null)

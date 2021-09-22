@@ -74,7 +74,7 @@ namespace Spfx
             m_logger.Info?.Trace(nameof(OnTeardownAsync));
             await m_processBroker.TeardownAsync(ct).ConfigureAwait(false);
             await m_connectionsManager.TeardownAsync(ct).ConfigureAwait(false);
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         protected override void OnDispose()

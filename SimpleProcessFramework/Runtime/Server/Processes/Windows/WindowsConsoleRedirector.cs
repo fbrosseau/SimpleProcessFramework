@@ -26,8 +26,8 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         public static async Task<WindowsConsoleRedirector> CreateAsync(IConsoleConsumer consumer)
         {
-            var outPair = await NamelessNamedPipePair.CreatePair();
-            var errPair = await NamelessNamedPipePair.CreatePair();
+            var outPair = await NamelessNamedPipePair.CreatePair().ConfigureAwait(false);
+            var errPair = await NamelessNamedPipePair.CreatePair().ConfigureAwait(false);
 
             return new WindowsConsoleRedirector(consumer, outPair, errPair);
         }
@@ -51,7 +51,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 using var reader = new StreamReader(stream, Console.OutputEncoding, true);
                 while (true)
                 {
-                    var line = await reader.ReadLineAsync();
+                    var line = await reader.ReadLineAsync().ConfigureAwait(false);
                     if (line is null)
                         break;
 

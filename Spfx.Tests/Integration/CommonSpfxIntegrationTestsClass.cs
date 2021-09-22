@@ -71,7 +71,7 @@ namespace Spfx.Tests.Integration
                 cluster.AddListener(new TcpInterprocessConnectionListener(0));
 
             var exceptionHandler = new ExceptionReportingEndpoint();
-            cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler);
+            cluster.MasterProcess.InitializeEndpointAsync<IExceptionReportingEndpoint>(ExceptionReportingEndpoint.EndpointId, exceptionHandler).FireAndForget();
 
             return cluster;
         }

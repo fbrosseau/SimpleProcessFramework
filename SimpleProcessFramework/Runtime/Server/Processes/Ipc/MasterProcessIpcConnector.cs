@@ -13,10 +13,10 @@ namespace Spfx.Runtime.Server.Processes.Ipc
 
         protected override async Task DoInitialize()
         {
-            await ReceiveCode(InterprocessFrameType.Handshake1);
-            await Owner.CompleteInitialization();
+            await ReceiveCode(InterprocessFrameType.Handshake1).ConfigureAwait(false);
+            await Owner.CompleteInitialization().ConfigureAwait(false);
             SendCode(InterprocessFrameType.Handshake2);
-            await ReceiveCode(InterprocessFrameType.Handshake3);
+            await ReceiveCode(InterprocessFrameType.Handshake3).ConfigureAwait(false);
         }
     }
 }

@@ -5,14 +5,14 @@ using System.Threading;
 
 namespace Spfx.Utilities
 {
-    internal class SimpleUniqueIdFactory
+    internal static class SimpleUniqueIdFactory
     {
         public const long InvalidId = 0;
     }
 
     internal class SimpleUniqueIdFactory<TValue> : Disposable
     {
-        private readonly Dictionary<long, TValue> m_values = new Dictionary<long, TValue>();
+        private readonly Dictionary<long, TValue> m_values = new();
         private long m_nextId;
 
         public long GetNextId(TValue val)

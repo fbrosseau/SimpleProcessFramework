@@ -3,7 +3,7 @@ using System;
 
 namespace Spfx.Serialization.Serializers
 {
-    internal class ArraySerializer
+    internal static class ArraySerializer
     {
         public static ITypeSerializer Create(Type elementType)
         {

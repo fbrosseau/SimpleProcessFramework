@@ -16,12 +16,7 @@ namespace Spfx.Runtime.Server
     {
         private static class FactoryStorage<T>
         {
-            internal static readonly ProcessEndpointHandlerFactoryDelegate Func;
-
-            static FactoryStorage()
-            {
-                Func = CreateFactory(ReflectionUtilities.GetType<T>());
-            }
+            internal static readonly ProcessEndpointHandlerFactoryDelegate Func = CreateFactory(ReflectionUtilities.GetType<T>());
         }
 
         public static IProcessEndpointHandler Create<T>(IProcessInternal parentProcess, string endpointId, T realTarget)

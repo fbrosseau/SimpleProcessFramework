@@ -19,7 +19,7 @@ namespace Spfx.Runtime.Client
             try
             {
                 var tlsAuthenticator = TypeResolver.CreateSingleton<IClientSslStreamFactory>();
-                return await tlsAuthenticator.CreateStreamAndAuthenticateAsync(ns, "<Todo>");
+                return await tlsAuthenticator.CreateStreamAndAuthenticateAsync(ns, "<Todo>").ConfigureAwait(false);
             }
             catch (AuthenticationException ex)
             {

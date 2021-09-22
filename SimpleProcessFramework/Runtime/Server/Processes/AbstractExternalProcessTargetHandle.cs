@@ -62,7 +62,7 @@ namespace Spfx.Runtime.Server.Processes
             if (ExternalProcess != null && ExternalProcess.Id != ProcessUtilities.CurrentProcessId)
                 ExternalProcess?.TryKill();
 
-            var caughtException = await base.GetInitFailureException();
+            var caughtException = await base.GetInitFailureException().ConfigureAwait(false);
             if (caughtException is InvalidProcessParametersException)
                 return caughtException;
 
@@ -74,7 +74,7 @@ namespace Spfx.Runtime.Server.Processes
             {
                 var outputsClosedTask = Task.WhenAll(m_errStreamClosed.WaitAsync().AsTask(), m_outStreamClosed.WaitAsync().AsTask());
 
-                if (!await outputsClosedTask.TryWaitAsync(TimeSpan.FromMilliseconds(500)))
+                if (!await outputsClosedTask.TryWaitAsync(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false))
                 {
                     lock (procOutput)
                     {
@@ -104,7 +104,7 @@ namespace Spfx.Runtime.Server.Processes
                 punchHandles.InitializeInLock();
                 ExternalProcess = createProcessCallback();
                 punchHandles.HandleProcessCreatedInLock(ExternalProcess);
-            });
+            }).ConfigureAwait(false);
 
             ct.ThrowIfCancellationRequested();
             punchHandles.HandleProcessCreatedAfterLock();

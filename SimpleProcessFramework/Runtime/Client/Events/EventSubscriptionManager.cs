@@ -99,7 +99,7 @@ namespace Spfx.Runtime.Client.Events
             RaiseAllEndpointsLost(null);
             await m_subscriptionThread.TeardownAsync(ct).ConfigureAwait(false);
             await m_eventRaisingThread.TeardownAsync(ct).ConfigureAwait(false);
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         protected override void OnDispose()

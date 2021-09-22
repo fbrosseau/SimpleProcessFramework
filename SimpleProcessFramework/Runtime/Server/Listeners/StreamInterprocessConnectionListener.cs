@@ -16,7 +16,7 @@ namespace Spfx.Runtime.Server.Listeners
         private IBinarySerializer m_serializer;
         private TimeSpan m_receiveConnectionTimeout;
         
-        internal static readonly int MagicStartCode = unchecked((int)0xF00DBEEF);
+        internal const int MagicStartCode = unchecked((int)0xF00DBEEF);
         internal static byte[] MagicStartCodeBytes { get; } = BitConverter.GetBytes(MagicStartCode);
 
         public override void Start(ITypeResolver typeResolver)
@@ -32,10 +32,10 @@ namespace Spfx.Runtime.Server.Listeners
             {
                 Logger.Debug?.Trace($"Starting CreateChannelFromStream for {remoteEndpoint}->{localEndpoint}");
                 var clientHandshakeTask = DoHandshake(s);
-                if (!await clientHandshakeTask.TryWaitAsync(TimeSpan.FromSeconds(30)))
+                if (!await clientHandshakeTask.TryWaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false))
                     return;
 
-                var finalStream = await clientHandshakeTask;
+                var finalStream = await clientHandshakeTask.ConfigureAwait(false);
 
                 var conn = new ServerInterprocessChannel(TypeResolver, finalStream, finalStream, localEndpoint, remoteEndpoint);
                 Logger.Debug?.Trace($"Successfully received connection {remoteEndpoint}: {conn.UniqueId}");
@@ -61,9 +61,9 @@ namespace Spfx.Runtime.Server.Listeners
 
                 using var ctr = ct.Register(() => { rawStream.DisposeAsync().FireAndForget(); });
 
-                clientStream = await CreateFinalStream(rawStream, ct);
+                clientStream = await CreateFinalStream(rawStream, ct).ConfigureAwait(false);
 
-                var code = await clientStream.ReadLittleEndian32BitInt(ct);
+                var code = await clientStream.ReadLittleEndian32BitInt(ct).ConfigureAwait(false);
                 if (code != MagicStartCode)
                 {
                     string details = null;
@@ -79,7 +79,7 @@ namespace Spfx.Runtime.Server.Listeners
                     throw new InvalidClientConnectionProtocolException(details);
                 }
 
-                using var msg = await clientStream.ReadLengthPrefixedBlockAsync(RemoteClientConnectionRequest.MaximumMessageSize, ct: ct);
+                using var msg = await clientStream.ReadLengthPrefixedBlockAsync(RemoteClientConnectionRequest.MaximumMessageSize, ct: ct).ConfigureAwait(false);
                 /*var clientMessage = */
                 m_serializer.Deserialize<object>(msg);
 
@@ -89,14 +89,14 @@ namespace Spfx.Runtime.Server.Listeners
                 }, lengthPrefix: true);
 
                 await serializedResponse.CopyToAsync(clientStream, ct).ConfigureAwait(false);
-                await clientStream.FlushAsync(ct);
+                await clientStream.FlushAsync(ct).ConfigureAwait(false);
                 return clientStream;
             }
             catch 
             {
                 if (clientStream != null)
-                    await clientStream.DisposeAsync();
-                await rawStream.DisposeAsync();
+                    await clientStream.DisposeAsync().ConfigureAwait(false);
+                await rawStream.DisposeAsync().ConfigureAwait(false);
                 throw;
             }
         }

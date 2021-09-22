@@ -10,7 +10,7 @@ using Spfx.Diagnostics;
 
 namespace Spfx.Runtime.Server
 {
-    internal class InterprocessRequestContext : IInterprocessRequestContext
+    internal class InterprocessRequestContext : Disposable, IInterprocessRequestContext
     {
         private static readonly Action<Task<object>, object> s_rawOnRequestCompleted = RawOnRequestCompleted;
         private readonly IProcessEndpointHandler m_handler;
@@ -50,10 +50,12 @@ namespace Spfx.Runtime.Server
             m_cts = null;
         }
 
-        public void Dispose()
+        protected override void OnDispose()
         {
             Cancel();
             m_cts?.Dispose();
+
+            base.OnDispose();
         }
 
         public void Fail(Exception ex)

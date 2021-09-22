@@ -70,14 +70,14 @@ namespace Spfx.Runtime.Client
             await dataStream.WriteAsync(
                 StreamInterprocessConnectionListener.MagicStartCodeBytes,
                 0,
-                StreamInterprocessConnectionListener.MagicStartCodeBytes.Length);
+                StreamInterprocessConnectionListener.MagicStartCodeBytes.Length).ConfigureAwait(false);
 
             using (var hello = BinarySerializer.Serialize<object>(new RemoteClientConnectionRequest(), lengthPrefix: true))
             {
                 await hello.CopyToAsync(dataStream).ConfigureAwait(false);
             }
 
-            using var responseStream = await dataStream.ReadLengthPrefixedBlockAsync();
+            using var responseStream = await dataStream.ReadLengthPrefixedBlockAsync().ConfigureAwait(false);
             var response = (RemoteClientConnectionResponse)BinarySerializer.Deserialize<object>(responseStream);
 
             if (response.Success)
@@ -144,7 +144,7 @@ namespace Spfx.Runtime.Client
                         var innerOp = (IPendingOperation)s;
                         var innerThis = (StreamBasedClientInterprocessConnection)innerOp.Owner;
                         innerThis.DiscardPendingRequest(((IInterprocessRequest)innerOp.Message).CallId);
-                    }, op).FireAndForget();
+                    }, op, TaskScheduler.Default).FireAndForget();
                 }
 
                 await base.DoWrite(op, dataStream).ConfigureAwait(false);
@@ -172,7 +172,7 @@ namespace Spfx.Runtime.Client
 
             if (remoteDescription is null)
             {
-                var rawDescriptor = await GetRemoteEndpointMetadata(destination, calledMethod.Type);
+                var rawDescriptor = await GetRemoteEndpointMetadata(destination, calledMethod.Type).ConfigureAwait(false);
                 remoteDescription = new DescribedRemoteEndpoint
                 {
                     RemoteMethods = rawDescriptor.Methods.ToDictionary(m => m.Method)

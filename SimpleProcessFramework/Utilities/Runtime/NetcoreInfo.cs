@@ -231,7 +231,7 @@ namespace Spfx.Utilities.Runtime
         internal static Version ParseNetcoreVersion(string value)
         {
             Guard.ArgumentNotNullOrEmpty(value, nameof(value));
-            if (!value.Contains("."))
+            if (!value.Contains('.'))
                 return new Version(int.Parse(value), 0);
 
             return new Version(value);

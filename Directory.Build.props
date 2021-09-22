@@ -5,8 +5,9 @@
 
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <Product>The SimpleProcessFramework</Product>
-    <MinorVersion>827</MinorVersion>
+    <MinorVersion>828</MinorVersion>
     <Version>0.$(MinorVersion).$(OfficialBuildNumber)</Version>
     <SpfxNugetVersion>$(Version)-alpha</SpfxNugetVersion>
     <ProductVersion>$(Version)</ProductVersion>
@@ -71,4 +72,10 @@
     <SpfxAllTargetFrameworks>net48;$(SpfxAllTargetFrameworks)</SpfxAllTargetFrameworks>
     <SpfxNugetName>SimpleProcessFramework</SpfxNugetName>
   </PropertyGroup>
+
+  <!--
+  <ItemGroup>
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)/.editorconfig"/>
+  </ItemGroup>
+  -->
 </Project>

@@ -145,6 +145,7 @@ namespace Spfx.Serialization
 
         private static readonly Dictionary<Type, ITypeSerializer> s_knownSerializers;
 
+#pragma warning disable CA1810 // explicit static cctor
         static DefaultBinarySerializer()
         {
             s_knownSerializers = new Dictionary<Type, ITypeSerializer>();
@@ -204,6 +205,7 @@ namespace Spfx.Serialization
             AddSerializer(typeof(bool), BoolSerializer.Serializer);
             AddSerializer(typeof(bool?), BoolSerializer.NullableSerializer);
         }
+#pragma warning restore CA1810
 
         private static void WriteCertificate2(SerializerSession session, X509Certificate2 cert) => WriteCertificate(session, cert);
         private static X509Certificate ReadCertificate(DeserializerSession session) => ReadCertificate2(session);

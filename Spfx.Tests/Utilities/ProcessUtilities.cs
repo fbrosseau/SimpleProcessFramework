@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Spfx.Utilities.Threading;
 
 namespace Spfx.Tests.Utilities
 {
@@ -41,8 +42,8 @@ namespace Spfx.Tests.Utilities
             void CleanupAllRegistrations()
             {
                 proc.Exited -= exitHandler;
-                _ = timer?.DisposeAsync();
-                _ = ctr.DisposeAsync();
+                timer?.DisposeAsync().FireAndForget();
+                ctr.DisposeAsync().FireAndForget();
             }
 
             exitHandler = (sender, e) =>

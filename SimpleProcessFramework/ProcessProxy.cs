@@ -206,18 +206,18 @@ namespace Spfx
         public static void UnsubscribeEndpointLost(object proxyObject, Action<EndpointLostEventArgs, object> handler, object state)
         {
             var impl = ProcessProxyImplementation.Unwrap(proxyObject);
-            impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler, state);
+            impl.ParentProxy.SubscribeEndpointLost(impl.RemoteAddress, handler, state).FireAndForget();
         }
 
         public void UnsubscribeEndpointLost(string address, Action<EndpointLostEventArgs> handler)
         {
             var (handlerWrapper, s) = WrapSimpleHandler(handler);
-            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handlerWrapper, s);
+            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handlerWrapper, s).FireAndForget();
         }
 
         public void UnsubscribeEndpointLost(string address, Action<EndpointLostEventArgs, object> handler, object state)
         {
-            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler, state);
+            SubscribeEndpointLost(ProcessEndpointAddress.Parse(address), handler, state).FireAndForget();
         }
 
         public void UnsubscribeEndpointLost(ProcessEndpointAddress address, Action<EndpointLostEventArgs> handler)

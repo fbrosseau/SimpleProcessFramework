@@ -2,7 +2,7 @@
 
 namespace Spfx.Reflection
 {
-    internal class DependencyInjectionFactoryProvider
+    internal static class DependencyInjectionFactoryProvider
     {
         private static class FactoryImpl<T, TImpl>
         {

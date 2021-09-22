@@ -25,7 +25,7 @@ namespace Spfx.Runtime.Server.Processes
             await DoProtectedCreateProcess(punchHandles, () =>
             {
                 return Process.Start(startInfo) ?? throw new InvalidOperationException("Process.Start returned null");
-            }, ct);
+            }, ct).ConfigureAwait(false);
 
             if (builder.ManuallyRedirectConsoleOutput)
             {
@@ -49,9 +49,9 @@ namespace Spfx.Runtime.Server.Processes
                 var stdin = punchHandles.PayloadText;
                 Task.Run(async () =>
                 {
-                    await ExternalProcess.StandardInput.WriteLineAsync(stdin);
+                    await ExternalProcess.StandardInput.WriteLineAsync(stdin).ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
-                    await ExternalProcess.StandardInput.FlushAsync();
+                    await ExternalProcess.StandardInput.FlushAsync().ConfigureAwait(false);
                 }, ct).FireAndForget();
             }
 

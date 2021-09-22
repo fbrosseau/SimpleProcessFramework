@@ -28,7 +28,7 @@ namespace Spfx.Runtime.Server.Processes
         protected override async Task<ProcessInformation> CreateActualProcessAsync(ProcessSpawnPunchPayload punchPayload, CancellationToken ct)
         {
             m_processContainer.Initialize(new StringReader(punchPayload.SerializeToString()));
-            await m_rawProcessContainer.CompleteInitialization(ct);
+            await m_rawProcessContainer.CompleteInitialization(ct).ConfigureAwait(false);
             return new ProcessInformation(ProcessUniqueId, ProcessUtilities.CurrentProcessId, ProcessCreationInfo.TargetFramework);
         }
 

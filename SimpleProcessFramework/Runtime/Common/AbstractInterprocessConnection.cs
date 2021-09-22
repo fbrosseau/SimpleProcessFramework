@@ -65,7 +65,7 @@ namespace Spfx.Runtime.Common
         {
             try
             {
-                await m_pendingWrites.ForEachAsync(ExecuteWrite);
+                await m_pendingWrites.ForEachAsync(ExecuteWrite).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

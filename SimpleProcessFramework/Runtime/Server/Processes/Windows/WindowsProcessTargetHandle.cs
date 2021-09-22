@@ -73,7 +73,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 };
 
                 using var consoleRedirector = builder.ManuallyRedirectConsoleOutput
-                    ? await WindowsConsoleRedirector.CreateAsync(this)
+                    ? await WindowsConsoleRedirector.CreateAsync(this).ConfigureAwait(false)
                     : null;
 
                 SafeHandle clientInputHandle = null;
@@ -197,7 +197,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                             tempHandle.Dispose();
                         }
                     }
-                }, ct);
+                }, ct).ConfigureAwait(false);
 
                 if (consoleRedirector != null)
                 {

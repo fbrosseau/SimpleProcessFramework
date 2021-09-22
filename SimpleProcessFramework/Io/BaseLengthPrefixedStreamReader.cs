@@ -49,7 +49,7 @@ namespace Spfx.Io
 
                 while (true)
                 {
-                    var frame = await ReceiveNextFrame();
+                    var frame = await ReceiveNextFrame().ConfigureAwait(false);
                     if (frame.IsEof)
                     {
                         m_readQueue.CompleteAdding().FireAndForget();

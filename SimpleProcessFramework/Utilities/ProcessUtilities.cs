@@ -11,7 +11,11 @@ namespace Spfx.Utilities
 {
     internal static class ProcessUtilities
     {
+#if NET6_0_OR_GREATER
+        public static int CurrentProcessId => Environment.ProcessId;
+#else
         public static int CurrentProcessId { get; } = Process.GetCurrentProcess().Id;
+#endif
 
         public static bool TryKill(this Process proc)
         {
@@ -73,7 +77,7 @@ namespace Spfx.Utilities
             await ProcessCreationUtilities.InvokeCreateProcessAsync(() =>
             {
                 proc = Process.Start(procInfo);
-            });
+            }).ConfigureAwait(false);
 
             var output = new StringBuilder();
             int nullsReceivedCount = 0;

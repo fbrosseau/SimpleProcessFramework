@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace Spfx.Serialization.Serializers
 {
-    internal class EnumSerializer
+    internal static class EnumSerializer
     {
         public static ITypeSerializer Create(Type enumType)
         {

@@ -87,14 +87,14 @@ namespace Spfx.Runtime.Common
             {
                 var tasks = new List<Task>();
 
-                async Task DisposeStream(Stream s)
+                static async Task DisposeStream(Stream s)
                 {
                     if (s is SslStream ssl)
                     {
-                        await ssl.ShutdownAsync();
+                        await ssl.ShutdownAsync().ConfigureAwait(false);
                     }
 
-                    await s.DisposeAsync();
+                    await s.DisposeAsync().ConfigureAwait(false);
                 }
 
                 tasks.Add(DisposeStream(ReadStream));
@@ -163,13 +163,13 @@ namespace Spfx.Runtime.Common
             try
             {
                 Logger.Info?.Trace("Begin ConnectStreams");
-                (ReadStream, WriteStream) = await ConnectStreamsAsync();
+                (ReadStream, WriteStream) = await ConnectStreamsAsync().ConfigureAwait(false);
 
                 RescheduleKeepAlive();
 
                 Logger.Info?.Trace("ConnectStreams succeeded, starting Recv&Write loops");
                 BeginWrites();
-                await ReceiveLoop();
+                await ReceiveLoop().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

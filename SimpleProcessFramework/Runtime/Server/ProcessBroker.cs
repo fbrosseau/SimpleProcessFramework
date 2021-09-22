@@ -89,14 +89,14 @@ namespace Spfx.Runtime.Server
             }
 
             m_logger.Info?.Trace($"Starting teardown of {processes.Count} processes");
-            await TeardownAll(processes.Select(h => h.Handle), ct);
+            await TeardownAll(processes.Select(h => h.Handle), ct).ConfigureAwait(false);
             m_logger.Info?.Trace("Teardown of processes completed");
 
-            await m_masterProcess.TeardownAsync(ct);
+            await m_masterProcess.TeardownAsync(ct).ConfigureAwait(false);
 
             m_logger.Info?.Trace("Teardown of master process completed");
 
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         private IProcessHandle GetSubprocess(string targetProcess, bool throwIfMissing)
@@ -148,7 +148,7 @@ namespace Spfx.Runtime.Server
                 if (existingHandle != null)
                 {
                     m_logger.Info?.Trace($"CreateProcess {info.ProcessUniqueId}: Already exists");
-                    await existingHandle.Handle.WaitForInitializationComplete();
+                    await existingHandle.Handle.WaitForInitializationComplete().ConfigureAwait(false);
                     m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Process init complete");
                     return ProcessCreationResults.AlreadyExists;
                 }
@@ -156,7 +156,7 @@ namespace Spfx.Runtime.Server
                 handle.ProcessExited += OnProcessExited;
 
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Starting creation");
-                await handle.CreateProcess();
+                await handle.CreateProcess().ConfigureAwait(false);
                 m_logger.Debug?.Trace($"CreateProcess {info.ProcessUniqueId}: Creation complete. PID is {handle.ProcessInfo.OsPid}");
 
                 return ProcessCreationResults.CreatedNew;
@@ -164,7 +164,7 @@ namespace Spfx.Runtime.Server
             catch (Exception ex)
             {
                 m_logger.Warn?.Trace(ex, $"CreateProcess {info.ProcessUniqueId} failed: " + ex.Message);
-                await DestroyHandleAsync(info.ProcessUniqueId, handle);
+                await DestroyHandleAsync(info.ProcessUniqueId, handle).ConfigureAwait(false);
                 m_logger.Debug?.Trace($"CreateProcess teardown complete of failed process {info.ProcessUniqueId}");
                 throw;
             }
@@ -191,11 +191,11 @@ namespace Spfx.Runtime.Server
 
             try
             {
-                processOutcome = await CreateProcess(processReq);
+                processOutcome = await CreateProcess(processReq).ConfigureAwait(false);
                 m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} -> CreateProcess result is {processOutcome}");
                 var addr = $"/{processReq.ProcessInfo.ProcessUniqueId}/{WellKnownEndpoints.EndpointBroker}";
                 var processBroker = MasterProcess.ClusterProxy.CreateInterface<IEndpointBroker>(addr);
-                endpointOutcome = await processBroker.CreateEndpoint(endpointReq);
+                endpointOutcome = await processBroker.CreateEndpoint(endpointReq).ConfigureAwait(false);
                 m_logger.Info?.Trace($"CreateProcessAndEndpoint {processReq.ProcessInfo.ProcessUniqueId}/{endpointReq.EndpointId} -> CreateEndpoint result is {endpointOutcome}");
             }
             catch(Exception ex)
@@ -204,7 +204,7 @@ namespace Spfx.Runtime.Server
 
                 if (processOutcome == ProcessCreationResults.CreatedNew)
                 {
-                    await DestroyProcess(processReq.ProcessInfo.ProcessUniqueId, onlyIfEmpty: true);
+                    await DestroyProcess(processReq.ProcessInfo.ProcessUniqueId, onlyIfEmpty: true).ConfigureAwait(false);
                 }
 
                 throw;
@@ -258,7 +258,7 @@ namespace Spfx.Runtime.Server
                 }
                 finally
                 {
-                    await DestroyHandleAsync(processUniqueId);
+                    await DestroyHandleAsync(processUniqueId).ConfigureAwait(false);
                 }
             }
 
@@ -390,7 +390,7 @@ namespace Spfx.Runtime.Server
                 }
             }
 
-            await knownProcess.Handle.TeardownAsync(TimeSpan.FromSeconds(5));
+            await knownProcess.Handle.TeardownAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             m_logger.Debug?.Trace("DestroyHandle: Completed for " + processUniqueId);
         }
 

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Spfx.Utilities
 {
-    internal class Guard
+    internal static class Guard
     {
         [DebuggerStepThrough, DebuggerHidden, MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ArgumentNotNull(object argValue, string argName)

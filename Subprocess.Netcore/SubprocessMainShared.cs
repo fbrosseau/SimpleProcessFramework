@@ -17,13 +17,13 @@ namespace Spfx.Subprocess
         Crash
     }
 
-    internal class SubprocessMainShared
+    internal static class SubprocessMainShared
     {
         public static class CommandLineArgs
         {
             public const string CmdLinePrefix = "--spfx-";
-            public static readonly string DebugCmdLineArg = CmdLinePrefix + "debug";
-            public static readonly string DescribeCmdLineArg = CmdLinePrefix + "describe";
+            public const string DebugCmdLineArg = CmdLinePrefix + "debug";
+            public const string DescribeCmdLineArg = CmdLinePrefix + "describe";
 
             public static string[] GetAllKnownCommandLineArgs() => new[] { DebugCmdLineArg, DescribeCmdLineArg };
         }

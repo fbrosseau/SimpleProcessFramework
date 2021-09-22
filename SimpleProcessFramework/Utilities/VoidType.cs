@@ -2,7 +2,7 @@
 {
     internal struct VoidType
     {
-        public static VoidType Value = new VoidType();
+        public static readonly VoidType Value;
         public static object BoxedValue { get; } = Value;
     }
 }

@@ -57,9 +57,9 @@ namespace Spfx.Runtime.Server.Processes.Windows
                 null,
                 new[] { ProcessUniqueId, null, appDomainSetup });
 
-            await DoProtectedCreateProcess(handles, () => Process.GetCurrentProcess(), ct);
+            await DoProtectedCreateProcess(handles, () => Process.GetCurrentProcess(), ct).ConfigureAwait(false);
 
-            var consoleRedirector = await WindowsConsoleRedirector.CreateAsync(this);
+            var consoleRedirector = await WindowsConsoleRedirector.CreateAsync(this).ConfigureAwait(false);
 
             PrepareConsoleRedirection(Process.GetCurrentProcess(), ProcessUniqueId);          
 

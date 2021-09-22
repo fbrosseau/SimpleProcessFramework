@@ -45,7 +45,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
                     }
                     catch
                     {
-                        await Task.Delay(TimeSpan.FromMilliseconds(50), ct);
+                        await Task.Delay(TimeSpan.FromMilliseconds(50), ct).ConfigureAwait(false);
                     }
                 }
             }
@@ -57,7 +57,7 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
                 var combinedConnect = TaskEx.WhenAllOrRethrow(serverConnect, clientConnect).AsTask();
 
-                if (!await combinedConnect.TryWaitAsync(TimeSpan.FromSeconds(10)))
+                if (!await combinedConnect.TryWaitAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false))
                     throw new TimeoutException("Loopback connection should have been instantaneous!");
 
                 return new NamelessNamedPipePair(serverStream, remotePipe);

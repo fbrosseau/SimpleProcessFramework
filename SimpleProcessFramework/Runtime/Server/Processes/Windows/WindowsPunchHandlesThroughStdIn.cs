@@ -48,8 +48,8 @@ namespace Spfx.Runtime.Server.Processes.Windows
 
         public override async ValueTask InitializeAsync(ProcessSpawnPunchPayload initData, CancellationToken ct)
         {
-            await base.InitializeAsync(initData, ct);
-            m_pipePair = await NamelessNamedPipePair.CreatePair();
+            await base.InitializeAsync(initData, ct).ConfigureAwait(false);
+            m_pipePair = await NamelessNamedPipePair.CreatePair().ConfigureAwait(false);
         }
         
         public override (Stream readStream, Stream writeStream) AcquireIOStreams()

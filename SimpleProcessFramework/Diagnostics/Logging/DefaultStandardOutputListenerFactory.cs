@@ -43,7 +43,7 @@ namespace Spfx.Diagnostics.Logging
                 : this(pattern, (p, id, fmt) => valueProvider(fmt))
             {
             }
-            
+
             public PatternValueProvider(string pattern, ValueProviderCallback valueProvider)
             {
                 Pattern = pattern;
@@ -128,7 +128,7 @@ namespace Spfx.Diagnostics.Logging
         }
     }
 
-    public class DefaultStandardOutputListener : IStandardOutputListener
+    public class DefaultStandardOutputListener : Disposable, IStandardOutputListener
     {
         private readonly TextWriter m_writer;
         private readonly Action<TextWriter, string> m_format;
@@ -142,10 +142,6 @@ namespace Spfx.Diagnostics.Logging
         public void OutputReceived(string data)
         {
             m_format(m_writer, data);
-        }
-
-        public void Dispose()
-        {
         }
     }
 }

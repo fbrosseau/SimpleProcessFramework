@@ -64,7 +64,7 @@ namespace Spfx.Runtime.Server.Processes
                 m_createProcessCancellation = cts;
 
                 Logger.Debug?.Trace("Starting CreateProcess...");
-                ProcessInfo = await CreateActualProcessAsync(punchPayload, cts.Token);
+                ProcessInfo = await CreateActualProcessAsync(punchPayload, cts.Token).ConfigureAwait(false);
                 m_initEvent.Set();
                 m_createProcessCancellation = null;
                 Logger.Info?.Trace($"CreateProcess succeeded (PID {ProcessInfo.OsPid})");
@@ -72,7 +72,7 @@ namespace Spfx.Runtime.Server.Processes
             catch (Exception ex)
             {
                 ReportFatalException(ex);
-                ex = await GetInitFailureException();
+                ex = await GetInitFailureException().ConfigureAwait(false);
 
                 Logger.Warn?.Trace(ex, "CreateProcess failed: " + ex.Message);
                 m_initEvent.Dispose();
@@ -121,7 +121,7 @@ namespace Spfx.Runtime.Server.Processes
         {
             try
             {
-                await WaitForInitializationComplete();
+                await WaitForInitializationComplete().ConfigureAwait(false);
                 TransferMessageToRemote(connectionId, wrappedMessage);
             }
             catch(Exception ex)

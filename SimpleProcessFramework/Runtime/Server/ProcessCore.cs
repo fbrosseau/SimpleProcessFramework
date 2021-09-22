@@ -187,7 +187,7 @@ namespace Spfx.Runtime.Server
             await TeardownAll(endpoints, ct).ConfigureAwait(false);
             m_logger.Info?.Trace("OnTeardownAsync of endpoints completed");
 
-            await base.OnTeardownAsync(ct);
+            await base.OnTeardownAsync(ct).ConfigureAwait(false);
         }
 
         public async Task InitializeAsync()
@@ -300,7 +300,7 @@ namespace Spfx.Runtime.Server
                     removeFromEndpoints = true;
                 }
 
-                await wrapper.InitializeAsync();
+                await wrapper.InitializeAsync().ConfigureAwait(false);
                 m_logger.Info?.Trace("InitializeEndpointAsync succeeded");
                 return new LocalProcessCreationResult(ProcessCreationResults.CreatedNew, handler);
             }
@@ -389,7 +389,7 @@ namespace Spfx.Runtime.Server
             {
                 try
                 {
-                    await ep.TeardownAsync(m_clusterConfig.DestroyEndpointTimeout);
+                    await ep.TeardownAsync(m_clusterConfig.DestroyEndpointTimeout).ConfigureAwait(false);
                 }
                 finally
                 {

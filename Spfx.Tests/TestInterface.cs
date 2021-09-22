@@ -154,7 +154,7 @@ namespace Spfx.Tests
 
         public Task<bool> IsSubscribedToEvent() => Task.FromResult(TestEvent != null);
 
-        public static readonly string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);
+        public const string ThrowingMethodName = nameof(ThrowException_ThisMethodNameShouldBeInExceptionCallstack);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void ThrowException_ThisMethodNameShouldBeInExceptionCallstack(ReflectedTypeInfo exceptionToThrow, string exceptionText)
